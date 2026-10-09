@@ -79,7 +79,7 @@ export function createReception(scene,{box,pipe,plaque,plaster,paint,floor,wood,
   box(3.65,.08,.58,0,ground+.98,front+.18,wood);
   plaque('ДЕЖУРНАЯ ЧАСТЬ',3.3,.34,0,ground+2.76,front+.105);
   // Save telephone replaces the tray on the public counter.
-  const phoneGroup=new THREE.Group();phoneGroup.position.set(.95,ground+1.0625,front+.18);scene.add(phoneGroup);
+  const phoneGroup=new THREE.Group();phoneGroup.position.set(.95,ground+1.0625,front+.25);scene.add(phoneGroup);
   const ivory=new THREE.MeshStandardMaterial({color:'#f1eee3',roughness:.4});
   box(.42,.085,.48,0,0,0,ivory,phoneGroup);
   box(.34,.04,.16,0,.08,-.12,ivory,phoneGroup);
@@ -90,7 +90,7 @@ export function createReception(scene,{box,pipe,plaque,plaster,paint,floor,wood,
   for(let i=0;i<=160;i++){const t=i/160,a=t*Math.PI*32;cordPoints.push(new THREE.Vector3(.205+Math.cos(a)*.012,.025+t*.13+Math.sin(a)*.012,.13-t*.25));}
   phoneGroup.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(cordPoints),180,.004,6,false),ivory));
   const phoneTarget=new THREE.Mesh(new THREE.BoxGeometry(.46,.26,.5),new THREE.MeshBasicMaterial({visible:false}));
-  phoneTarget.position.set(.95,ground+1.13,front+.18);phoneTarget.userData.type='savePhone';scene.add(phoneTarget);phoneGroup.attach(phoneTarget);phoneGroup.userData.editor={id:'save-phone',label:'Телефон сохранения'};
+  phoneTarget.position.set(.95,ground+1.13,front+.25);phoneTarget.userData.type='savePhone';scene.add(phoneTarget);phoneGroup.attach(phoneTarget);phoneGroup.scale.setScalar(.72);phoneGroup.position.y=ground+1.0506;phoneGroup.userData.editor={id:'save-phone',label:'Телефон сохранения',revision:2};
   box(.11,.06,.09,-.9,ground+1.05,front+.27,dark);pipe([-.9,ground+1.08,front+.27],[-.9,ground+1.18,front+.22],.009,dark);
   // The working desktop meets the back edge of the public sill at z=-3.76,
   // at the same height, with no detached table or overlapping top faces.
@@ -120,12 +120,19 @@ export function createReception(scene,{box,pipe,plaque,plaster,paint,floor,wood,
   for(let row=0;row<4;row++)for(let col=0;col<11;col++)box(.029,.009,.024,-.185+col*.037,.017,-.052+row*.03,keysMaterial,keyboard);
   box(.15,.009,.022,-.03,.018,.053,keysMaterial,keyboard);
   box(.21,.008,.20,.11,ground+1.026,deskZ-.13,dark);
-  const mouse=new THREE.Mesh(new THREE.SphereGeometry(1,24,16),casing);mouse.scale.set(.032,.023,.05);mouse.position.set(.11,ground+1.051,deskZ-.13);scene.add(mouse);
-  box(.004,.008,.012,.11,ground+1.074,deskZ-.142,iron);
-  pipe([.11,ground+1.031,deskZ-.18],[.24,ground+1.031,deskZ+.10],.003,dark);
+  const mouse=new THREE.Group();mouse.position.set(.11,ground+1.034,deskZ-.13);mouse.rotation.y=Math.PI+.25;scene.add(mouse);
+  const shell=new THREE.Mesh(new THREE.SphereGeometry(1,32,20),casing);shell.scale.set(.032,.025,.047);shell.position.y=.015;mouse.add(shell);
+  for(const x of [-.015,.015]){const button=box(.025,.006,.029,x,.034,.020,casing,mouse);button.rotation.x=-.12;}
+  box(.002,.004,.036,0,.038,.018,dark,mouse);box(.007,.007,.016,0,.039,.010,iron,mouse);
+  mouse.updateMatrixWorld(true);computer.updateMatrixWorld(true);
+  const cableStart=mouse.localToWorld(new THREE.Vector3(0,.007,.050));
+  const cableEnd=computer.localToWorld(new THREE.Vector3(.18,.165,-.026));
+  box(.027,.014,.013,.18,.165,-.026,dark,computer);
+  const cablePoints=[cableStart,new THREE.Vector3(.16,ground+1.027,deskZ-.27),new THREE.Vector3(.30,ground+1.027,deskZ-.21),new THREE.Vector3(.35,ground+1.027,deskZ+.05),new THREE.Vector3(cableEnd.x,ground+1.05,cableEnd.z),cableEnd];
+  const cable=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(cablePoints),64,.003,8,false),dark);scene.add(cable);
   const workstation=new THREE.Group();workstation.position.set(.1,ground+1.02,deskZ);scene.add(workstation);workstation.userData.editor={id:'workstation',label:'Компьютер, клавиатура и мышь'};
   for(const object of scene.children.slice(workstationStart,-1))workstation.attach(object);
-  for(let i=0;i<3;i++)box(.3,.024,.35,-1+i*.018,ground+1.032+i*.025,deskZ+.01,'#c5bda3');
+  for(let i=0;i<3;i++)box(.25,.024,.27,-.73+i*.009,ground+1.032+i*.025,deskZ-.05,'#c5bda3');
   const board=box(.88,.85,.03,2.76,ground+1.8,-4.7,wood);board.rotation.y=Math.PI/2;
   // Forms inside the booth and a waiting bench outside it.
   for(let i=0;i<3;i++)box(.018,.36,.22,2.735,ground+1.9-i*.16,-4.7,'#d5d0bd');

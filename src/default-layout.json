@@ -3,11 +3,11 @@
   "objects": [
     {
       "id": "save-phone",
-      "revision": 1,
+      "revision": 2,
       "position": [
         0.95,
-        -2.2350000000000003,
-        -3.428572471785534
+        -2.2658,
+        -3.4
       ],
       "rotation": [
         0,

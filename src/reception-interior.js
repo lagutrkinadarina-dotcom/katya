@@ -24,12 +24,6 @@ export function furnishReception(scene,{ground,wood,frame,dark,pipe,plaque}){
     for(const x of [-.48,.48])rounded(.08,.04,.12,x,.05,0,steel,fixture);
     const light=new THREE.PointLight(0xffe9be,z<-4?7:9,z<-4?4.3:6,2);light.position.set(0,-.25,0);fixture.add(light);
   }
-  // Ceiling conduit follows the walls, with elbow sections rather than floating strips.
-  for(const x of [-2.72,2.72]){
-    pipe([x,ground+2.86,-3.5],[x,ground+2.86,6.45],.022,steel);
-    pipe([x,ground+.08,-3.5],[x,ground+2.86,-3.5],.024,steel);
-  }
-  pipe([-2.72,ground+2.86,-3.5],[2.72,ground+2.86,-3.5],.022,steel);
   // Slatted waiting bench with bent steel supports, wood end grain and screws.
   const bench=new THREE.Group();bench.position.set(-2.56,ground,.8);scene.add(bench);editable(bench,'bench','Скамья',true);
   for(const x of [-.15,0,.15])rounded(.135,.045,1.8,x,.46,0,wood,bench);
@@ -124,7 +118,8 @@ export function furnishReception(scene,{ground,wood,frame,dark,pipe,plaque}){
   rounded(.13,.018,.04,.025,.49,0,steel,extinguisher);
   const hose=new THREE.CatmullRomCurve3([new THREE.Vector3(.035,.45,0),new THREE.Vector3(.15,.40,.02),new THREE.Vector3(.13,.13,.02)]);
   mesh(new THREE.TubeGeometry(hose,24,.009,8,false),dark,0,0,0,extinguisher);
-  rounded(.11,.16,.004,-.018,.23,.085,paper,extinguisher);
+  const labelMap=canvasMap((ctx,w,h)=>{ctx.fillStyle='#d7d3bd';ctx.fillRect(0,0,w,h);ctx.fillStyle='#88372a';ctx.fillRect(0,0,w,110);ctx.fillStyle='#f3edd4';ctx.font='bold 52px Arial';ctx.fillText('ОГНЕТУШИТЕЛЬ',30,78);ctx.fillStyle='#29352e';ctx.font='bold 60px Arial';ctx.fillText('ОП–2',220,208);ctx.font='32px Arial';['1. Снять пломбу','2. Направить на очаг','3. Нажать рычаг'].forEach((text,i)=>ctx.fillText(text,40,300+i*70));for(let i=0;i<5;i++)ctx.fillRect(40,580+i*42,w-80,5);},768,768);
+  const curvedLabel=new THREE.Mesh(new THREE.CylinderGeometry(.0856,.0856,.165,48,1,true,-.72,1.44),new THREE.MeshStandardMaterial({map:labelMap,roughness:.8}));curvedLabel.position.y=.235;curvedLabel.rotation.y=-Math.PI/2;extinguisher.add(curvedLabel);
   // Evacuation plan and booth clock are readable canvas faces on modelled frames.
   const plan=canvasMap((ctx,w,h)=>{ctx.fillStyle='#cbc6b1';ctx.fillRect(0,0,w,h);ctx.fillStyle='#333e32';ctx.font='bold 48px Arial';ctx.fillText('ПЛАН ЭВАКУАЦИИ',75,90);ctx.strokeStyle='#515e4d';ctx.lineWidth=10;ctx.strokeRect(120,190,520,650);for(let i=0;i<4;i++){ctx.beginPath();ctx.moveTo(120,320+i*125);ctx.lineTo(640,320+i*125);ctx.stroke();}ctx.beginPath();ctx.moveTo(360,190);ctx.lineTo(360,840);ctx.stroke();ctx.strokeStyle='#82453a';ctx.lineWidth=12;ctx.beginPath();ctx.moveTo(220,760);ctx.lineTo(460,760);ctx.lineTo(460,260);ctx.stroke();ctx.fillStyle='#386747';ctx.fillRect(420,198,80,45);});
   const planGroup=new THREE.Group();planGroup.position.set(2.80,ground+1.84,3.13);planGroup.rotation.y=-Math.PI/2;scene.add(planGroup);editable(planGroup,'evacuation-plan','План эвакуации',false);
@@ -191,16 +186,31 @@ export function furnishReception(scene,{ground,wood,frame,dark,pipe,plaque}){
   const led=new THREE.MeshStandardMaterial({color:'#bb231c',emissive:'#ee2318',emissiveIntensity:1.6});mesh(new THREE.SphereGeometry(.006,12,8),led,.047,.025,.171,camera);
   rounded(.14,.32,.10,2.70,ground+2.57,-3.22,steel);
   // Wall calendar behind the officer, electrical panel and public forms.
-  const calendarMap=canvasMap((ctx,w,h)=>{ctx.fillStyle='#c1bca7';ctx.fillRect(0,0,w,h);ctx.fillStyle='#384139';ctx.fillRect(30,30,w-60,240);ctx.fillStyle='#d0cab5';ctx.font='bold 48px Arial';ctx.fillText('ОКТЯБРЬ',80,340);ctx.font='32px Arial';for(let i=0;i<31;i++)ctx.fillText(String(i+1),55+i%7*98,420+Math.floor(i/7)*100);});
-  panel(calendarMap,.34,.47,-1.15,ground+1.94,-6.07);
+  const calendarMap=canvasMap((ctx,w,h)=>{
+    ctx.fillStyle='#e2dbc5';ctx.fillRect(0,0,w,h);ctx.fillStyle='#34413a';ctx.fillRect(0,0,w,140);
+    ctx.fillStyle='#f2ebd3';ctx.textAlign='center';ctx.font='bold 78px Arial';ctx.fillText('ОКТЯБРЬ',w/2,103);
+    ctx.fillStyle='#30392f';ctx.font='bold 48px Arial';ctx.fillText('2026',w/2,210);
+    const days=['ПН','ВТ','СР','ЧТ','ПТ','СБ','ВС'];ctx.font='bold 30px Arial';days.forEach((day,i)=>ctx.fillText(day,75+i*103,294));
+    for(let day=1;day<=31;day++){const cell=day+2,x=75+(cell%7)*103,y=400+Math.floor(cell/7)*109;ctx.fillStyle=(cell%7)>4?'#944739':'#202b24';ctx.font='bold 58px Arial';ctx.fillText(String(day),x,y);
+      if(day===9||day===22){ctx.strokeStyle='#9a3028';ctx.lineWidth=6;ctx.beginPath();ctx.ellipse(x,y-20,41,44,-.13,0,Math.PI*2);ctx.stroke();}}
+    // Uneven torn edge and two leftover paper layers under the current page.
+    ctx.fillStyle='#b5ab93';ctx.beginPath();ctx.moveTo(0,h);for(let x=0;x<=w;x+=30)ctx.lineTo(x,h-17+(x%90)*.15);ctx.lineTo(w,h);ctx.fill();
+  },1024,1280);calendarMap.anisotropy=8;
+  function calendar(x,y,z,rotation=0,w=.34,h=.47){
+    const group=new THREE.Group();group.position.set(x,y,z);group.rotation.y=rotation;scene.add(group);
+    for(let i=0;i<2;i++)rounded(w,h,.001,0,-.003-i*.003,-.003-i*.002,paper,group);
+    const page=panel(calendarMap,w,h,0,0,.002,group);page.material.emissive.set('#c5bfa8');page.material.emissiveMap=calendarMap;page.material.emissiveIntensity=.08;
+    for(const x of [-w*.26,w*.26])mesh(new THREE.TorusGeometry(.012,.002,6,16),steel,x,h*.49,.004,group);
+  }
+  calendar(-1.15,ground+1.94,-6.07);
   const wallPanel=new THREE.Group();wallPanel.position.set(-2.79,ground+1.98,-1.37);wallPanel.rotation.y=Math.PI/2;scene.add(wallPanel);editable(wallPanel,'electrical-panel','Электрощиток',false);
   rounded(.24,.46,.065,0,0,0,agedMetal,wallPanel);rounded(.19,.37,.006,0,0,.037,steel,wallPanel);
   rounded(.04,.015,.012,.065,0,.045,frame,wallPanel);
-  for(const z of [-2.9,-2.4]){const forms=panel(calendarMap,.30,.39,2.80,ground+1.82,z);forms.rotation.y=-Math.PI/2;}
+  for(const z of [-2.9,-2.4])calendar(2.80,ground+1.82,z,-Math.PI/2,.30,.39);
   // Document piles across the reception counter, clear of the save telephone.
-  for(const [x,z,count]of [[-1.39,-3.93,6],[-.83,-3.48,4],[-.49,-3.46,3]])for(let i=0;i<count;i++){
+  for(const [x,z,count]of [[-1.15,-4.26,6],[-1.39,-3.35,4],[-.37,-3.33,3]])for(let i=0;i<count;i++){
     rounded(.29,.017,.24,x+(i%2)*.009,ground+1.03+i*.022,z,i%2?paper:wood);
   }
-  for(const z of [-6.05,-3.50])rounded(5.45,.085,.03,0,ground+.045,z,steel);
+
 
 }
