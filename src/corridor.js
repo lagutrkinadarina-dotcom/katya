@@ -73,11 +73,9 @@ export function createCorridor(scene, renderer) {
   const streetUpdates=[createStreetWindow(scene,-17,-1,{plaster,paint}),createStreetWindow(scene,7,1,{plaster,paint})];
   // The open entrance overlooks a staircase with a real lower landing and right turn.
   const concrete=new THREE.MeshStandardMaterial({color:'#777d76',roughness:.92});
-  box(9.5,6.8,.16,7.55,-.1,2.56,plaster);
-  box(6,6.8,.16,5.8,-.1,5.44,plaster);
-  // No wall across the downstairs exit: a two-metre opening turns right.
-  box(3.5,3.3,.16,10.55,1.65,5.44,plaster);
-  box(.16,6.8,4.27,12.3,-.1,4.695,plaster);
+  box(9.4,3.3,.16,7.6,1.65,2.56,plaster);
+  box(9.4,3.3,.16,7.6,1.65,5.44,plaster);
+  box(.16,3.3,2.88,12.3,1.65,4,plaster);
   box(9.5,.12,2.9,7.55,3.3,4,plaster);
   box(2.2,.16,2.8,4,-.08,4,floor);
   for(let i=0;i<16;i++){
@@ -90,25 +88,9 @@ export function createCorridor(scene, renderer) {
     pipe([5.05,1,z],[9.6,-2.36,z],.04,trim);
   }
 
-  // Keep the lower passage wholly behind the window wall (z < 7).
-  // A short right turn joins a hallway running back into the building.
-  const lowerWall=plaster;
-  const landingShape=new THREE.Shape();
-  for(const [i,[x,z]]of [[9.3,2.6],[12.22,2.6],[12.22,6.75],[2.68,6.75],[2.68,5.52],[9.3,5.52]].entries()){
-    if(i===0)landingShape.moveTo(x,-z);else landingShape.lineTo(x,-z);
-  }
-  landingShape.closePath();
-  const landingFloor=new THREE.Mesh(new THREE.ShapeGeometry(landingShape),concrete);
-  landingFloor.rotation.x=-Math.PI/2;landingFloor.position.y=-3.365;landingFloor.receiveShadow=true;scene.add(landingFloor);
-  box(9.48,3.2,.16,7.64,-1.765,6.83,lowerWall);
-  // The existing full-height stair wall is also the hallway wall; do not duplicate its face.
-  box(.2,3.3,.16,2.7,-1.71,5.44,lowerWall);
-  box(9.4,.12,1.46,7.6,-.12,6.1,lowerWall);
-
-
-  const downstairsSign=plaque('1 ЭТАЖ →',1.3,.26,12.19,-1.05,4.1);downstairsSign.rotation.y=-Math.PI/2;
-  const lowerLight=new THREE.PointLight(0xd2decd,10,6,2);lowerLight.position.set(11.3,-.65,6.1);scene.add(lowerLight);
-  box(.65,.045,.3,11.1,-.13,6.1,new THREE.MeshStandardMaterial({color:'#e8d9bb',emissive:'#ffc98e',emissiveIntensity:1.6}));
+  // The lower shell is built once by createReception, including the left-hand return.
+  const downstairsSign=plaque('← 1 ЭТАЖ',1.3,.26,12.19,-1.05,3.6);downstairsSign.rotation.y=-Math.PI/2;
+  const lowerLight=new THREE.PointLight(0xd2decd,8,6,2);lowerLight.position.set(11.3,-.65,1.95);scene.add(lowerLight);
   const stairSign=plaque('2 ЭТАЖ · ЛЕСТНИЦА →',2.2,.28,2.83,2.96,4);stairSign.rotation.y=-Math.PI/2;
   const arrowSign=plaque('↓  1 ЭТАЖ',1.3,.28,7,1.15,2.67);
   const landingLight=new THREE.PointLight(0xd2decd,13,6,2);landingLight.position.set(4,2.6,4);scene.add(landingLight);
@@ -212,6 +194,6 @@ export function createCorridor(scene, renderer) {
   const red=new THREE.MeshStandardMaterial({color:'#873b2e',roughness:.55});
   pipe([2.8,.32,-15],[2.8,.88,-15],.12,red);box(.1,.12,.14,2.8,.97,-15,dark);
   pipe([2.66,.84,-15],[2.66,1,-15],.025,dark);
-  const npcTarget=createReception(scene,{box,pipe,plaque,plaster,paint,floor,wood,iron,dark});
-  return {doors,interactables:[...doors,phoneTarget,npcTarget],updateStreet:time=>streetUpdates.forEach(update=>update(time))};
+  const {npcTarget,passageDoor}=createReception(scene,{box,pipe,plaque,plaster,paint,floor,wood,iron,dark});
+  return {doors,passageDoor,interactables:[...doors,phoneTarget,npcTarget,passageDoor],updateStreet:time=>streetUpdates.forEach(update=>update(time))};
 }

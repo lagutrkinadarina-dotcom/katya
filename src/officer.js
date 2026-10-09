@@ -9,7 +9,13 @@ export function createOfficer(){
   const sphere=new THREE.SphereGeometry(1,32,24);
   const oval=(material,x,y,z,sx,sy,sz)=>mesh(sphere,material,x,y,z,sx,sy,sz);
   function shape(points,material,y,depth=1){const g=new THREE.LatheGeometry(points.map(([r,h])=>new THREE.Vector2(r,h)),48);return mesh(g,material,0,y,0,1,1,depth);}
-  function limb(a,b,r1,r2,material){const start=new THREE.Vector3(...a),end=new THREE.Vector3(...b),dir=end.clone().sub(start),radius=(r1+r2)/2;const m=mesh(new THREE.CapsuleGeometry(radius,Math.max(.01,dir.length()-radius*1.4),8,24),material,...start.clone().add(end).multiplyScalar(.5).toArray());m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dir.normalize());return m;}
+  function limb(a,b,r1,r2,material){return sleeve([a,b],[r1,r2],material);}
+  function sleeve(points,radii,material){
+    const curve=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p))),count=32,sides=24,frames=curve.computeFrenetFrames(count,false),positions=[],indices=[];
+    for(let i=0;i<=count;i++){const t=i/count,p=curve.getPointAt(t),f=t*(radii.length-1),j=Math.min(radii.length-2,Math.floor(f)),r=THREE.MathUtils.lerp(radii[j],radii[j+1],f-j);for(let k=0;k<=sides;k++){const angle=k/sides*Math.PI*2,v=p.clone().addScaledVector(frames.normals[i],Math.cos(angle)*r).addScaledVector(frames.binormals[i],Math.sin(angle)*r);positions.push(v.x,v.y,v.z);}}
+    for(let i=0;i<count;i++)for(let k=0;k<sides;k++){const a=i*(sides+1)+k,b=a+sides+1;indices.push(a,a+1,b,b,a+1,b+1);}
+    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));g.setIndex(indices);g.computeVertexNormals();return mesh(g,material,0,0,0);
+  }
 
   for(const side of [-1,1]){
     limb([side*.105,.8,0],[side*.11,.43,.005],.098,.083,navy);
@@ -28,8 +34,7 @@ export function createOfficer(){
     oval(black,side*.059,1.653,.123,.003,.004,.002);
     const brow=oval(black,side*.062,1.682,.11,.027,.004,.006);brow.rotation.z=-side*.09;
     oval(skin,side*.06,1.64,.107,.026,.004,.007);
-    limb([side*.225,1.275,0],[side*.28,1.05,.012],.086,.071,navy);
-    limb([side*.28,1.05,.012],[side*.24,.87,.13],.071,.054,navy);
+    sleeve([[side*.195,1.29,0],[side*.26,1.22,0],[side*.28,1.05,.012],[side*.26,.94,.085],[side*.24,.858,.135]],[.09,.083,.071,.061,.048],navy);
     oval(skin,side*.24,.823,.143,.047,.065,.027);
     for(let i=0;i<4;i++)oval(skin,side*.24+(i-1.5)*.018,.805,.153,.009,.035,.013);
     const shoulder=oval(seam,side*.2,1.319,.015,.086,.012,.033);shoulder.rotation.z=side*.12;
