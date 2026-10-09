@@ -14,7 +14,7 @@ export function createCorridor(scene, renderer) {
   skyContext.fillStyle=skyGradient;skyContext.fillRect(0,0,512,256);
   const sky=new THREE.CanvasTexture(skyCanvas);sky.mapping=THREE.EquirectangularReflectionMapping;sky.colorSpace=THREE.SRGBColorSpace;scene.background=sky;
   scene.fog = new THREE.Fog('#182329', 13, 34);
-  scene.add(new THREE.HemisphereLight(0xdce7e4, 0x39443e, 1.65));
+  const ambient=new THREE.HemisphereLight(0xdce7e4,0x39443e,1.65);ambient.name='stationAmbient';scene.add(ambient);
   let seed = 41;
   const random = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
   function texture(kind) {

@@ -10,8 +10,9 @@ export function canWalk(x,z,eyeY,doorOpen=false){
   // Leave the centre, reception counter and stair doorway clear of furnishings.
   if(inside(x,z,-2.8,-2.10,-.36,2.52))return false;
   if(inside(x,z,-2.8,-1.94,-3.06,-2.03))return false;
-  if(inside(x,z,2.05,2.8,4.15,5.25))return false;
-  if(inside(x,z,1.98,2.8,5.45,6.42))return false;
+  if(inside(x,z,2.05,2.8,2.68,4.20))return false;
+  if(inside(x,z,-2.8,-1.99,2.29,3.28))return false;
+  if(inside(x,z,1.97,2.8,-1.71,.56))return false;
   return true;
 }
 const stairHeight=x=>-3.365*Math.max(0,Math.min(1,(x-5.05)/4.45));

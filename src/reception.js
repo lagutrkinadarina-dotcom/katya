@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {receptionSurface} from './reception-surfaces.js';
 import {createOfficer} from './officer.js';
 import {furnishReception} from './reception-interior.js';
 import {createWallStrip,alignFloorTiles} from './architecture.js';
@@ -6,10 +7,10 @@ import {createWallStrip,alignFloorTiles} from './architecture.js';
 export function createReception(scene,{box,pipe,plaque,plaster,paint,floor,wood,iron,dark}){
   const ground=-3.365;
   // Local materials keep the upper corridor and its tile grid unchanged.
-  plaster=plaster.clone();plaster.color.set('#9da18b');
-  paint=paint.clone();paint.color.set('#354c43');paint.roughness=.84;
+  plaster=plaster.clone();plaster.color.set('#999b88');plaster.map=receptionSurface('wall');plaster.bumpMap=plaster.map;plaster.bumpScale=.007;
+  paint=paint.clone();paint.color.set('#334a40');paint.map=plaster.map;paint.roughness=.84;
   wood=wood.clone();wood.color.set('#988067');wood.roughness=.73;
-  floor=floor.clone();floor.color.set('#b5b09e');floor.roughness=.49;
+  floor=floor.clone();floor.color.set('#c2bba7');floor.map=receptionSurface('tile');floor.bumpMap=floor.map;floor.bumpScale=.012;floor.roughness=.39;
 
   const frame=new THREE.MeshStandardMaterial({color:'#cbcfc7',roughness:.6});
 
@@ -77,7 +78,6 @@ export function createReception(scene,{box,pipe,plaque,plaster,paint,floor,wood,
   box(.56,.035,.07,-.54,ground+1.32,front+.06,frame);
   box(3.65,.08,.58,0,ground+.98,front+.18,wood);
   plaque('ДЕЖУРНАЯ ЧАСТЬ',3.3,.34,0,ground+2.76,front+.105);
-  plaque('ДЕЖУРНЫЙ · ЛЕБЕДЕВ',1.2,.16,0,ground+.74,front+.103);
   // Save telephone replaces the tray on the public counter.
   const phoneGroup=new THREE.Group();phoneGroup.position.set(.95,ground+1.0625,front+.18);scene.add(phoneGroup);
   const ivory=new THREE.MeshStandardMaterial({color:'#f1eee3',roughness:.4});
@@ -126,7 +126,7 @@ export function createReception(scene,{box,pipe,plaque,plaster,paint,floor,wood,
   const board=box(.88,.85,.03,2.76,ground+1.8,-4.7,wood);board.rotation.y=Math.PI/2;
   // Forms inside the booth and a waiting bench outside it.
   for(let i=0;i<3;i++)box(.018,.36,.22,2.735,ground+1.9-i*.16,-4.7,'#d5d0bd');
-  furnishReception(scene,{ground,wood,frame,dark,pipe});
+  furnishReception(scene,{ground,wood,frame,dark,pipe,plaque});
   const officer=createOfficer();officer.position.set(-.35,ground,-4.75);officer.rotation.y=.25;scene.add(officer);
   // Interaction belongs to the reception window, so the player can speak through the glass.
   const target=new THREE.Mesh(new THREE.BoxGeometry(3.4,1.46,.06),new THREE.MeshBasicMaterial({visible:false}));target.position.set(0,ground+1.72,front+.06);target.userData.type='dutyOfficer';scene.add(target);
