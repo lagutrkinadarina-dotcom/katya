@@ -65,17 +65,18 @@ export function createCorridor(scene, renderer) {
   box(6,.12,24,0,3.36,-5,'#7d8276');
   for(const x of [-3,3]) {
     if(x<0){box(.15,3.3,24,x,1.65,-5,plaster);box(.19,1.2,24,x,.6,-5,paint);}else{
-      for(const [length,z]of [[19.6,-7.2],[1.6,6.2]]){box(.15,3.3,length,x,1.65,z,plaster);box(.19,1.2,length,x,.6,z,paint);}
+      for(const [length,z]of [[19.48,-7.26],[1.48,6.26]])box(.19,1.2,length,x,.6,z,paint);
       box(.15,.55,2.8,x,3.025,4,plaster);
     }
-    if(x<0){box(.23,.07,24,x,1.24,-5,'#acac94');box(.24,.13,24,x,.07,-5,dark);}else for(const [length,z]of [[19.6,-7.2],[1.6,6.2]]){box(.23,.07,length,x,1.24,z,'#acac94');box(.24,.13,length,x,.07,z,dark);}
+    if(x<0){box(.23,.07,24,x,1.24,-5,'#acac94');box(.24,.13,24,x,.07,-5,dark);}else for(const [length,z]of [[19.48,-7.26],[1.48,6.26]]){box(.23,.07,length,x,1.24,z,'#acac94');box(.24,.13,length,x,.07,z,dark);}
     box(.23,.12,24,x,3.18,-5,'#a5aa99');
   }
   const streetUpdates=[createStreetWindow(scene,-17,-1,{plaster,paint}),createStreetWindow(scene,7,1,{plaster,paint})];
   // The open entrance overlooks a staircase with a real lower landing and left turn.
   const concrete=new THREE.MeshStandardMaterial({color:'#777d76',roughness:.92});
-  // Match the lower shell's mitered east/south corners instead of stacking box end caps.
-  createWallStrip(scene,[[2.9,2.56],[12.3,2.56],[12.3,5.44],[2.98,5.44]],0,[[3.3,plaster]]);
+  // One continuous shell joins the corridor to both sides of the stair opening.
+  // Separate corridor boxes previously overlapped the stair end caps and flickered.
+  createWallStrip(scene,[[3,-17],[3,2.56],[12.3,2.56],[12.3,5.44],[3,5.44],[3,7]],0,[[3.3,plaster]]);
   box(9.48,.12,3.04,7.64,3.3,4,plaster);
   alignFloorTiles(box(2.2,.16,2.8,4,-.075,4,floor));
   for(let i=0;i<16;i++){
