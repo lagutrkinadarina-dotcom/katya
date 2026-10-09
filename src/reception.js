@@ -68,12 +68,13 @@ export function createReception(scene,{box,pipe,plaque,plaster,paint,floor,wood,
   for(const x of [-1.76,1.76])box(.1,1.57,.16,x,ground+1.72,front+.03,frame);
   for(const y of [.97,2.47])box(3.62,.09,.16,0,ground+y,front+.03,frame);
   box(.06,1.5,.12,.68,ground+1.72,front+.025,frame);
-  const glass=new THREE.MeshPhysicalMaterial({color:'#abc6c2',transparent:true,opacity:.14,roughness:.18,metalness:.04,side:THREE.DoubleSide,depthWrite:false});
-  // Two large panes and a small open speaking slot above the counter.
-  const addGlass=(w,h,x,y)=>{const pane=new THREE.Mesh(new THREE.PlaneGeometry(w,h),glass);pane.position.set(x,ground+y,front+.028);pane.renderOrder=2;scene.add(pane);};
+  // One continuous unlit pane avoids lighting seams between separately sorted panels.
+  const glass=new THREE.MeshBasicMaterial({color:'#b5d1c8',transparent:true,opacity:.055,side:THREE.DoubleSide,depthWrite:false});
+  const glassShape=new THREE.Shape();
+  [[-1.71,1.015],[-.8,1.015],[-.8,1.32],[-.28,1.32],[-.28,1.015],[1.71,1.015],[1.71,2.425],[-1.71,2.425]].forEach(([x,y],i)=>i?glassShape.lineTo(x,y):glassShape.moveTo(x,y));glassShape.closePath();
+  const pane=new THREE.Mesh(new THREE.ShapeGeometry(glassShape),glass);pane.position.set(0,ground,front+.028);pane.renderOrder=2;pane.name='reception-glass';scene.add(pane);
   const reflectionMaterial=new THREE.MeshBasicMaterial({color:'#d6e3df',transparent:true,opacity:.045,depthWrite:false,side:THREE.DoubleSide});
   for(const x of [-1.2,1.2]){const reflection=new THREE.Mesh(new THREE.PlaneGeometry(.09,1.3),reflectionMaterial);reflection.position.set(x,ground+1.77,front+.037);reflection.rotation.z=-.22;reflection.renderOrder=3;scene.add(reflection);}
-  addGlass(1.11,1.43,1.23,1.72);addGlass(2.4,1.12,-.54,1.89);addGlass(.91,.31,-1.285,1.16);addGlass(.91,.31,.225,1.16);
   for(const x of [-.8,-.28])box(.035,.32,.04,x,ground+1.16,front+.06,frame);
   box(.56,.035,.07,-.54,ground+1.32,front+.06,frame);
   box(3.65,.08,.58,0,ground+.98,front+.18,wood);

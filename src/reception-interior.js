@@ -141,11 +141,15 @@ export function furnishReception(scene,{ground,wood,frame,dark,pipe,plaque}){
   const ceramic=material('#d1c7ac',.46),coffee=material('#3b261c',.25);
   const cupProfile=[[.029,0],[.033,.004],[.041,.087],[.041,.094],[.036,.094],[.035,.085],[.027,.013],[0,.013]];
   mesh(new THREE.LatheGeometry(cupProfile.map(([r,y])=>new THREE.Vector2(r,y)),32),ceramic,0,0,0,cup);
-  const cupHandle=mesh(new THREE.TorusGeometry(.024,.006,8,24),ceramic,-.042,.048,0,cup);cupHandle.rotation.y=Math.PI/2;
+  // The handle lies in the cup's side plane and joins the body at two points.
+  const handleCurve=new THREE.CatmullRomCurve3([new THREE.Vector3(-.036,.075,0),new THREE.Vector3(-.062,.078,0),new THREE.Vector3(-.071,.049,0),new THREE.Vector3(-.058,.024,0),new THREE.Vector3(-.032,.024,0)]);
+  mesh(new THREE.TubeGeometry(handleCurve,28,.0055,10,false),ceramic,0,0,0,cup);
   const coffeeSurface=mesh(new THREE.CircleGeometry(.035,32),coffee,0,.083,0,cup);coffeeSurface.rotation.x=-Math.PI/2;
   const steamGroup=new THREE.Group();steamGroup.position.y=.085;cup.add(steamGroup);
-  const steam=[];for(let i=0;i<12;i++){const vaporMaterial=new THREE.MeshBasicMaterial({color:'#dfe3d7',transparent:true,opacity:0,depthWrite:false});const puff=mesh(new THREE.SphereGeometry(1,8,6),vaporMaterial,0,0,0,steamGroup);puff.scale.set(.005,.008,.005);puff.castShadow=false;puff.renderOrder=5;puff.name='coffee-steam';steam.push(puff);}
-  const updateSteam=time=>steam.forEach((puff,i)=>{const phase=(time*.25+i/12)%1;puff.position.set(Math.sin(time*.65+i)*(.003+phase*.018),phase*.24,Math.cos(time*.5+i)*(.003+phase*.012));const radius=.005+phase*.013;puff.scale.set(radius,radius*1.7,radius);puff.material.opacity=Math.sin(phase*Math.PI)*.15;});
+  // Soft alpha billboards form drifting wisps instead of visible sphere polygons.
+  const steamMap=canvasMap((ctx,w,h)=>{const gradient=ctx.createRadialGradient(w/2,h/2,0,w/2,h/2,w*.48);gradient.addColorStop(0,'rgba(232,238,228,.5)');gradient.addColorStop(.4,'rgba(232,238,228,.2)');gradient.addColorStop(1,'rgba(232,238,228,0)');ctx.fillStyle=gradient;ctx.fillRect(0,0,w,h);},64,64);
+  const steam=[];for(let i=0;i<12;i++){const material=new THREE.SpriteMaterial({map:steamMap,transparent:true,opacity:0,depthWrite:false});const puff=new THREE.Sprite(material);puff.scale.set(.014,.03,1);puff.name='coffee-steam';steamGroup.add(puff);steam.push(puff);}
+  const updateSteam=time=>steam.forEach((puff,i)=>{const phase=(time*.22+i/12)%1;puff.position.set(Math.sin(time*.6+i*.8)*(.002+phase*.014),phase*.23,Math.cos(time*.45+i*.8)*(.002+phase*.008));puff.scale.set(.016+phase*.024,.032+phase*.041,1);puff.material.opacity=Math.sin(phase*Math.PI)*.32;});
   // Rear archive shelves and folders bring depth to the booth without covering the NPC.
   const shelves=new THREE.Group();shelves.position.set(1.99,ground,-5.78);scene.add(shelves);editable(shelves,'archive-shelves','Архивные полки',false);
   for(const x of [-.48,.48])rounded(.04,1.98,.37,x,1,0,steel,shelves);
