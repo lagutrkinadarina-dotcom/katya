@@ -58,11 +58,33 @@ export function createCorridor(scene, renderer) {
   box(6,.15,24,0,-.08,-5,floor);
   box(6,.12,24,0,3.36,-5,'#7d8276');
   for(const x of [-3,3]) {
-    box(.15,3.3,24,x,1.65,-5,plaster);box(.19,1.2,24,x,.6,-5,paint);
-    box(.23,.07,24,x,1.24,-5,'#acac94');box(.24,.13,24,x,.07,-5,dark);
+    if(x<0){box(.15,3.3,24,x,1.65,-5,plaster);box(.19,1.2,24,x,.6,-5,paint);}else{
+      for(const [length,z]of [[19.6,-7.2],[1.6,6.2]]){box(.15,3.3,length,x,1.65,z,plaster);box(.19,1.2,length,x,.6,z,paint);}
+      box(.15,.55,2.8,x,3.025,4,plaster);
+    }
+    if(x<0){box(.23,.07,24,x,1.24,-5,'#acac94');box(.24,.13,24,x,.07,-5,dark);}else for(const [length,z]of [[19.6,-7.2],[1.6,6.2]]){box(.23,.07,length,x,1.24,z,'#acac94');box(.24,.13,length,x,.07,z,dark);}
     box(.23,.12,24,x,3.18,-5,'#a5aa99');
   }
   const streetUpdates=[createStreetWindow(scene,-17,-1,{plaster,paint}),createStreetWindow(scene,7,1,{plaster,paint})];
+  // Open stairwell: a descending flight is visible, but a locked railing blocks access.
+  const concrete=new THREE.MeshStandardMaterial({color:'#777d76',roughness:.92});
+  box(5.2,6.8,.16,5.4,-.1,2.56,plaster);box(5.2,6.8,.16,5.4,-.1,5.44,plaster);
+  box(.16,6.8,2.9,8,-.1,4,plaster);box(5.2,.12,2.9,5.4,3.3,4,plaster);
+  box(.55,.16,2.8,3.18,-.08,4,concrete);
+  for(let i=0;i<15;i++){
+    const x=3.5+i*.29,y=-.21-i*.21;
+    box(.3,.21,2.4,x,y-.105,4,concrete);
+    box(.045,.025,2.4,x-.125,y+.012,4,brass);
+    if(i%2===0)for(const z of [2.8,5.2])pipe([x,y,z],[x,y+1,z],.025,dark);
+  }
+  for(const z of [2.8,5.2])pipe([3.35,.83,z],[7.75,-2.35,z],.04,trim);
+  box(1,.15,2.8,7.6,-3.23,4,concrete);
+  for(const z of [2.66,3,3.4,3.8,4.2,4.6,5,5.34])pipe([2.6,.05,z],[2.6,1.07,z],.025,dark);
+  pipe([2.6,1.08,2.6],[2.6,1.08,5.4],.045,trim);pipe([2.6,.35,2.6],[2.6,.35,5.4],.025,dark);
+  box(.09,.15,.12,2.55,.7,4,brass);
+  const stairSign=plaque('2 ЭТАЖ · ЛЕСТНИЦА',2.2,.28,2.83,2.96,4);stairSign.rotation.y=-Math.PI/2;
+  const barrierSign=plaque('ПРОХОД ЗАКРЫТ',1,.19,2.55,.74,4);barrierSign.rotation.y=-Math.PI/2;
+  const stairLight=new THREE.PointLight(0x94b1bf,12,7,2);stairLight.position.set(5,-.6,4);scene.add(stairLight);
   const doors=[];
   function door(x,z,type,label) {
     const group=new THREE.Group();group.position.set(x,0,z);group.rotation.y=x<0?Math.PI/2:-Math.PI/2;scene.add(group);
@@ -103,7 +125,7 @@ export function createCorridor(scene, renderer) {
     const valve=new THREE.Mesh(new THREE.TorusGeometry(.065,.012,8,16),brass);valve.position.set(-side*.1,.75,.86);valve.rotation.y=Math.PI/2;group.add(valve);
     for(const u of [-.45,.45])box(.16,.12,.05,side*.1,.35,u,dark,group);
   }
-  radiator(-1,4);radiator(1,2);radiator(-1,-5);radiator(1,-11);
+  radiator(-1,4);radiator(1,.7);radiator(-1,-5);radiator(1,-11);
   for(const z of [3,-3,-9,-15]) {
     box(1.55,.1,.53,0,3.21,z,dark);
     const glow=new THREE.MeshStandardMaterial({color:'#ebecd8',emissive:'#e6e8ce',emissiveIntensity:2});
