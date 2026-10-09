@@ -15,8 +15,8 @@ export function createReception(scene,{box,pipe,plaque,plaster,paint,floor,wood,
   // belongs only to the lobby/return hall, so it cannot jut across the stair opening.
   const ceilingOutline=[[-2.9,-6.2],[2.9,-6.2],[2.9,1.25],[12.3,1.25],[12.3,2.64],[2.9,2.64],[2.9,6.83],[-2.9,6.83]],ceilingShape=new THREE.Shape();
   ceilingOutline.forEach(([x,z],i)=>i?ceilingShape.lineTo(x,-z):ceilingShape.moveTo(x,-z));ceilingShape.closePath();
-  // Keep the ceiling below the upper floor slab (bottom -0.145), never over its tiles.
-  const ceiling=new THREE.Mesh(new THREE.ExtrudeGeometry(ceilingShape,{depth:.18,steps:1,bevelEnabled:false}),plaster);
+  // Fill the header up to the upper wall at y=0; tiles remain above it at y=0.005.
+  const ceiling=new THREE.Mesh(new THREE.ExtrudeGeometry(ceilingShape,{depth:.335,steps:1,bevelEnabled:false}),plaster);
   ceiling.rotation.x=-Math.PI/2;ceiling.position.y=-.335;ceiling.castShadow=true;ceiling.receiveShadow=true;scene.add(ceiling);
   // Mitered wall strips share one footprint at every bend. Box end caps cannot leave
   // the former narrow columns or overlapping faces at the lobby/passage corners.
