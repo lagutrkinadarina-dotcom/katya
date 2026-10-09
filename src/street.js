@@ -37,7 +37,7 @@ export function createStreetWindow(scene, z, facing, materials) {
   // The outdoor ground is 3.5 metres below the second-floor corridor.
   const exterior=new THREE.Group();exterior.position.y=-3.5;root.add(exterior);root=exterior;
   // Night sky, opposite pavement, road, and a row of apartment buildings.
-  box(140,24,.1,0,8,-24,mat('#142b40',true));
+  // The scene background supplies an endless sky rather than a finite backdrop.
   box(120,.1,19,0,-.11,-10,mat('#263137'));
   box(120,.12,3,0,-.02,-2,mat('#737b77'));box(120,.12,3,0,-.02,-11,mat('#65706c'));
   box(120,.19,.15,0,-.015,-3.45,mat('#a8aa98'));box(120,.19,.15,0,-.015,-9.45,mat('#a8aa98'));
