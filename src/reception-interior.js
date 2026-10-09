@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {drawNotice} from './notice-art.js';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 
 // Modelled furnishings stay inside the lobby shell; the staircase is left untouched.
@@ -38,16 +39,10 @@ export function furnishReception(scene,{ground,wood,frame,dark,pipe,plaque}){
   rounded(2.05,1.25,.065,0,0,0,wood,notices);
   rounded(1.94,1.14,.018,0,0,.04,material('#74634a'),notices);
   const noticeTitle=plaque('ИНФОРМАЦИЯ',1.92,.16,0,.71,.037,notices);
-  const headings=['РОЗЫСК','ПРОПАЛ ЧЕЛОВЕК','ОБЪЯВЛЕНИЕ','ОРИЕНТИРОВКА','ПРИЁМ ГРАЖДАН','ИНФОРМАЦИЯ'];
-  for(let i=0;i<12;i++){
-    const map=canvasMap((ctx,w,h)=>{
-      ctx.fillStyle=i%2?'#cbc5b3':'#d7d1be';ctx.fillRect(0,0,w,h);ctx.fillStyle='#35372f';ctx.textAlign='center';ctx.font='bold 48px Arial';ctx.fillText(headings[i%6],w/2,74);
-      if(i%3===0||i%3===1){ctx.fillStyle='#999b90';ctx.fillRect(180,115,408,365);ctx.fillStyle='#484d49';ctx.beginPath();ctx.ellipse(w/2,250,83,107,0,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.ellipse(w/2,484,170,140,0,Math.PI,Math.PI*2);ctx.fill();ctx.fillStyle='#242d29';ctx.fillRect(w/2-49,225,32,9);ctx.fillRect(w/2+17,225,32,9);ctx.fillRect(w/2-22,304,44,7);}
-      for(let row=0;row<15;row++){ctx.fillStyle='#6b6e61';ctx.fillRect(55,520+row*27,540+(row%3)*45,4);}
-      ctx.strokeStyle='#8c483a';ctx.lineWidth=5;ctx.strokeRect(78,910,610,64);
-    });
-    const note=panel(map,.41,.33,-.70+(i%4)*.47,.38-Math.floor(i/4)*.36,.055+i*.0007,notices);note.rotation.z=(i%3-1)*.025;
-    mesh(new THREE.SphereGeometry(.009,10,8),red,note.position.x,note.position.y+.15,.07,notices);
+  for(let i=0;i<6;i++){
+    const map=canvasMap((ctx,w,h)=>drawNotice(ctx,w,h,i),1024,1280);map.anisotropy=8;
+    const note=panel(map,.55,.49,-.62+(i%3)*.62,.275-Math.floor(i/3)*.54,.055+i*.0007,notices);note.rotation.z=(i%3-1)*.015;
+    mesh(new THREE.SphereGeometry(.009,10,8),red,note.position.x,note.position.y+.23,.07,notices);
   }
   // Organic leaves have bent midribs, tapered edges and individually oriented stems.
   const foliage=[material('#334331'),material('#495538'),material('#596143')],soil=material('#292c23'),pot=material('#554b3b');
@@ -183,34 +178,46 @@ export function furnishReception(scene,{ground,wood,frame,dark,pipe,plaque}){
   rounded(.17,.105,.30,0,0,0,frame,camera);rounded(.19,.018,.34,0,.062,.015,frame,camera);
   rounded(.135,.085,.015,0,0,.158,steel,camera);
   const lens=cylinder(.029,.029,.02,-.025,0,.178,dark,camera);lens.rotation.x=Math.PI/2;
-  const led=new THREE.MeshStandardMaterial({color:'#bb231c',emissive:'#ee2318',emissiveIntensity:1.6});mesh(new THREE.SphereGeometry(.006,12,8),led,.047,.025,.171,camera);
+  const led=new THREE.MeshStandardMaterial({color:'#bb231c',emissive:'#ee2318',emissiveIntensity:1.6});const recordingLed=mesh(new THREE.SphereGeometry(.006,12,8),led,.047,.025,.171,camera);recordingLed.name='recording-led';
   rounded(.14,.32,.10,2.70,ground+2.57,-3.22,steel);
   // Wall calendar behind the officer, electrical panel and public forms.
-  const calendarMap=canvasMap((ctx,w,h)=>{
+  const makeCalendarMap=(torn=false)=>canvasMap((ctx,w,h)=>{
     ctx.fillStyle='#e2dbc5';ctx.fillRect(0,0,w,h);ctx.fillStyle='#34413a';ctx.fillRect(0,0,w,140);
-    ctx.fillStyle='#f2ebd3';ctx.textAlign='center';ctx.font='bold 78px Arial';ctx.fillText('ОКТЯБРЬ',w/2,103);
+    ctx.fillStyle='#f2ebd3';ctx.textAlign='center';ctx.font='bold 78px Arial';ctx.fillText(torn?'СЕНТЯБРЬ':'ОКТЯБРЬ',w/2,103);
     ctx.fillStyle='#30392f';ctx.font='bold 48px Arial';ctx.fillText('2026',w/2,210);
     const days=['ПН','ВТ','СР','ЧТ','ПТ','СБ','ВС'];ctx.font='bold 30px Arial';days.forEach((day,i)=>ctx.fillText(day,75+i*103,294));
-    for(let day=1;day<=31;day++){const cell=day+2,x=75+(cell%7)*103,y=400+Math.floor(cell/7)*109;ctx.fillStyle=(cell%7)>4?'#944739':'#202b24';ctx.font='bold 58px Arial';ctx.fillText(String(day),x,y);
-      if(day===9||day===22){ctx.strokeStyle='#9a3028';ctx.lineWidth=6;ctx.beginPath();ctx.ellipse(x,y-20,41,44,-.13,0,Math.PI*2);ctx.stroke();}}
+    for(let day=1;day<=(torn?30:31);day++){const cell=day+(torn?0:2),x=75+(cell%7)*103,y=400+Math.floor(cell/7)*109;ctx.fillStyle=(cell%7)>4?'#944739':'#202b24';ctx.font='bold 58px Arial';ctx.fillText(String(day),x,y);
+      if(!torn&&(day===9||day===22)){ctx.strokeStyle='#9a3028';ctx.lineWidth=6;ctx.beginPath();ctx.ellipse(x,y-20,41,44,-.13,0,Math.PI*2);ctx.stroke();}}
     // Uneven torn edge and two leftover paper layers under the current page.
     ctx.fillStyle='#b5ab93';ctx.beginPath();ctx.moveTo(0,h);for(let x=0;x<=w;x+=30)ctx.lineTo(x,h-17+(x%90)*.15);ctx.lineTo(w,h);ctx.fill();
-  },1024,1280);calendarMap.anisotropy=8;
-  function calendar(x,y,z,rotation=0,w=.34,h=.47){
+  },1024,1280);
+  const calendarMap=makeCalendarMap(),tornCalendarMap=makeCalendarMap(true);calendarMap.anisotropy=8;tornCalendarMap.anisotropy=8;
+  function calendar(x,y,z,rotation=0,w=.34,h=.47,torn=false){
     const group=new THREE.Group();group.position.set(x,y,z);group.rotation.y=rotation;scene.add(group);
-    for(let i=0;i<2;i++)rounded(w,h,.001,0,-.003-i*.003,-.003-i*.002,paper,group);
-    const page=panel(calendarMap,w,h,0,0,.002,group);page.material.emissive.set('#c5bfa8');page.material.emissiveMap=calendarMap;page.material.emissiveIntensity=.08;
+    let page;const map=torn?tornCalendarMap:calendarMap;
+    if(torn){
+      // Only the top of the sheet remains: the jagged silhouette exposes the wall.
+      const shape=new THREE.Shape();shape.moveTo(-w/2,h/2);shape.lineTo(w/2,h/2);
+      for(let i=12;i>=0;i--)shape.lineTo(-w/2+w*i/12,h*.02+Math.sin(i*2.3)*h*.07+(i%2)*h*.025);
+      shape.closePath();const geometry=new THREE.ShapeGeometry(shape);const positions=geometry.attributes.position;const uv=geometry.attributes.uv;
+      for(let i=0;i<positions.count;i++)uv.setXY(i,positions.getX(i)/w+.5,positions.getY(i)/h+.5);
+      page=mesh(geometry,new THREE.MeshStandardMaterial({map,roughness:.9,side:THREE.DoubleSide}),0,0,.002,group);
+    }else{
+      for(let i=0;i<2;i++)rounded(w,h,.001,0,-.003-i*.003,-.003-i*.002,paper,group);
+      page=panel(calendarMap,w,h,0,0,.002,group);
+    }
+    page.material.emissive.set('#c5bfa8');page.material.emissiveMap=map;page.material.emissiveIntensity=.08;
     for(const x of [-w*.26,w*.26])mesh(new THREE.TorusGeometry(.012,.002,6,16),steel,x,h*.49,.004,group);
   }
   calendar(-1.15,ground+1.94,-6.07);
   const wallPanel=new THREE.Group();wallPanel.position.set(-2.79,ground+1.98,-1.37);wallPanel.rotation.y=Math.PI/2;scene.add(wallPanel);editable(wallPanel,'electrical-panel','Электрощиток',false);
   rounded(.24,.46,.065,0,0,0,agedMetal,wallPanel);rounded(.19,.37,.006,0,0,.037,steel,wallPanel);
   rounded(.04,.015,.012,.065,0,.045,frame,wallPanel);
-  for(const z of [-2.9,-2.4])calendar(2.80,ground+1.82,z,-Math.PI/2,.30,.39);
+  calendar(2.80,ground+1.82,-2.9,-Math.PI/2,.30,.39,true);
+  calendar(2.80,ground+1.82,-2.4,-Math.PI/2,.30,.39);
   // Document piles across the reception counter, clear of the save telephone.
   for(const [x,z,count]of [[-1.15,-4.26,6],[-1.39,-3.35,4],[-.37,-3.33,3]])for(let i=0;i<count;i++){
     rounded(.29,.017,.24,x+(i%2)*.009,ground+1.03+i*.022,z,i%2?paper:wood);
   }
-
-
+  return {update(time){const on=Math.floor(time*1.25)%2===0;led.emissiveIntensity=on?2.4:0;led.color.set(on?'#e93827':'#421611');}};
 }

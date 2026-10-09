@@ -120,10 +120,9 @@ export function createReception(scene,{box,pipe,plaque,plaster,paint,floor,wood,
   for(let row=0;row<4;row++)for(let col=0;col<11;col++)box(.029,.009,.024,-.185+col*.037,.017,-.052+row*.03,keysMaterial,keyboard);
   box(.15,.009,.022,-.03,.018,.053,keysMaterial,keyboard);
   box(.21,.008,.20,.11,ground+1.026,deskZ-.13,dark);
-  const mouse=new THREE.Group();mouse.position.set(.11,ground+1.034,deskZ-.13);mouse.rotation.y=Math.PI+.25;scene.add(mouse);
+  const mouse=new THREE.Group();mouse.position.set(.11,ground+1.034,deskZ-.13);mouse.rotation.y=.25;scene.add(mouse);
   const shell=new THREE.Mesh(new THREE.SphereGeometry(1,32,20),casing);shell.scale.set(.032,.025,.047);shell.position.y=.015;mouse.add(shell);
-  for(const x of [-.015,.015]){const button=box(.025,.006,.029,x,.034,.020,casing,mouse);button.rotation.x=-.12;}
-  box(.002,.004,.036,0,.038,.018,dark,mouse);box(.007,.007,.016,0,.039,.010,iron,mouse);
+  const wheel=box(.007,.006,.016,0,.039,.018,iron,mouse);
   mouse.updateMatrixWorld(true);computer.updateMatrixWorld(true);
   const cableStart=mouse.localToWorld(new THREE.Vector3(0,.007,.050));
   const cableEnd=computer.localToWorld(new THREE.Vector3(.18,.165,-.026));
@@ -132,13 +131,12 @@ export function createReception(scene,{box,pipe,plaque,plaster,paint,floor,wood,
   const cable=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(cablePoints),64,.003,8,false),dark);scene.add(cable);
   const workstation=new THREE.Group();workstation.position.set(.1,ground+1.02,deskZ);scene.add(workstation);workstation.userData.editor={id:'workstation',label:'Компьютер, клавиатура и мышь'};
   for(const object of scene.children.slice(workstationStart,-1))workstation.attach(object);
-  for(let i=0;i<3;i++)box(.25,.024,.27,-.73+i*.009,ground+1.032+i*.025,deskZ-.05,'#c5bda3');
   const board=box(.88,.85,.03,2.76,ground+1.8,-4.7,wood);board.rotation.y=Math.PI/2;
   // Forms inside the booth and a waiting bench outside it.
   for(let i=0;i<3;i++)box(.018,.36,.22,2.735,ground+1.9-i*.16,-4.7,'#d5d0bd');
-  furnishReception(scene,{ground,wood,frame,dark,pipe,plaque});
+  const interior=furnishReception(scene,{ground,wood,frame,dark,pipe,plaque});
   const officer=createOfficer();officer.position.set(-.35,ground,-4.75);officer.rotation.y=.25;scene.add(officer);
   // Interaction belongs to the reception window, so the player can speak through the glass.
   const target=new THREE.Mesh(new THREE.BoxGeometry(3.4,1.46,.06),new THREE.MeshBasicMaterial({visible:false}));target.position.set(0,ground+1.72,front+.06);target.userData.type='dutyOfficer';scene.add(target);
-  return {npcTarget:target,passageDoor,phoneTarget,updateOfficer:time=>{officer.userData.update(time);}};
+  return {npcTarget:target,passageDoor,phoneTarget,updateOfficer:time=>{officer.userData.update(time);interior.update(time);}};
 }
