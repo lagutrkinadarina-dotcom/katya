@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {createStreetWindow} from './street.js';
 
 // All surfaces are generated locally: no downloaded textures or model assets.
 export function createCorridor(scene, renderer) {
@@ -61,8 +62,7 @@ export function createCorridor(scene, renderer) {
     box(.23,.07,24,x,1.24,-5,'#acac94');box(.24,.13,24,x,.07,-5,dark);
     box(.23,.12,24,x,3.18,-5,'#a5aa99');
   }
-  box(6,3.3,.15,0,1.65,-17,plaster);box(6,1.2,.18,0,.6,-17,paint);
-  box(6,3.3,.15,0,1.65,7,plaster);
+  const streetUpdates=[createStreetWindow(scene,-17,-1,{plaster,paint}),createStreetWindow(scene,7,1,{plaster,paint})];
   const doors=[];
   function door(x,z,type,label) {
     const group=new THREE.Group();group.position.set(x,0,z);group.rotation.y=x<0?Math.PI/2:-Math.PI/2;scene.add(group);
@@ -123,10 +123,10 @@ export function createCorridor(scene, renderer) {
     for(let i=0;i<4;i++)box(.23,.008,.006,x,y+.08-i*.045,.06,'#858879',board);
     box(.02,.02,.01,x,y+.15,.065,'#974e3f',board);
   }
-  plaque('УЧАСТОК № 7',2,.35,0,2.2,-16.89);
-  plaque('ВЫХОД',.85,.22,0,2.88,-16.88);
+  plaque('УЧАСТОК № 7',1.8,.22,0,.63,-16.86);
+  plaque('УЧАСТОК № 7',1.8,.22,0,3.12,-16.86);
   const red=new THREE.MeshStandardMaterial({color:'#873b2e',roughness:.55});
   pipe([2.8,.32,-15],[2.8,.88,-15],.12,red);box(.1,.12,.14,2.8,.97,-15,dark);
   pipe([2.66,.84,-15],[2.66,1,-15],.025,dark);
-  return doors;
+  return {doors,updateStreet:time=>streetUpdates.forEach(update=>update(time))};
 }
