@@ -205,10 +205,44 @@ export function createCorridor(scene, renderer) {
     for(let i=0;i<4;i++)box(.23,.008,.006,x,y+.08-i*.045,.06,'#858879',board);
     box(.02,.02,.01,x,y+.15,.065,'#974e3f',board);
   }
-  plaque('УЧАСТОК № 7',1.8,.22,0,.63,-16.86);
-  plaque('УЧАСТОК № 7',1.8,.22,0,3.12,-16.86);
+  // Archive desk centred at the far window, with a separate save telephone.
+  box(2.5,.12,.85,0,.85,-15.7,wood);
+  for(const x of [-1.08,1.08])for(const z of [-16,-15.4])box(.1,.79,.1,x,.4,z,trim);
+  box(2.16,.27,.06,0,.62,-16.02,wood);
+  const paper=new THREE.MeshStandardMaterial({color:'#d9d0b7',roughness:.95});
+  const folder=new THREE.MeshStandardMaterial({color:'#a2936d',roughness:.85});
+  for(const [x,z,count,angle]of [[-.86,-15.75,5,.13],[-.35,-15.86,3,-.15],[.14,-15.8,4,.08]]){
+    const stack=new THREE.Group();stack.position.set(x,.917,z);stack.rotation.y=angle;scene.add(stack);
+    for(let i=0;i<count;i++){
+      box(.34,.026,.43,(i%2)*.018,i*.032,0,paper,stack);
+      box(.36,.005,.45,(i%2)*.018,i*.032+.016,0,folder,stack);
+      box(.21,.002,.055,(i%2)*.018,i*.032+.019,.09,paper,stack);
+    }
+    const labelCanvas=document.createElement('canvas');labelCanvas.width=512;labelCanvas.height=256;
+    const labelContext=labelCanvas.getContext('2d');labelContext.fillStyle='#dbd1b6';labelContext.fillRect(0,0,512,256);
+    labelContext.fillStyle='#363d35';labelContext.font='bold 37px Arial';labelContext.textAlign='center';labelContext.fillText('УГОЛОВНОЕ ДЕЛО',256,95);
+    labelContext.font='30px Arial';labelContext.fillText('АРХИВ · № '+(41+count),256,150);
+    labelContext.strokeStyle='#8e5145';labelContext.lineWidth=6;labelContext.strokeRect(75,180,362,50);
+    const labelMap=new THREE.CanvasTexture(labelCanvas);labelMap.colorSpace=THREE.SRGBColorSpace;
+    const label=new THREE.Mesh(new THREE.PlaneGeometry(.29,.16),new THREE.MeshStandardMaterial({map:labelMap,roughness:.9}));
+    label.rotation.x=-Math.PI/2;label.position.set(((count-1)%2)*.018,(count-1)*.032+.020,0);stack.add(label);
+  }
+  const phoneGroup=new THREE.Group();phoneGroup.position.set(.83,.95,-15.65);scene.add(phoneGroup);
+  const ivory=new THREE.MeshStandardMaterial({color:'#f1eee3',roughness:.4});
+  const base=box(.42,.085,.48,0,0,0,ivory,phoneGroup);base.userData.type='savePhone';
+  box(.34,.04,.16,0,.08,-.12,ivory,phoneGroup);
+  for(const x of [-.16,.16])box(.09,.095,.16,x,.105,-.12,ivory,phoneGroup);
+  box(.36,.055,.07,0,.147,-.12,ivory,phoneGroup);
+  for(let row=0;row<4;row++)for(let col=0;col<3;col++){
+    box(.06,.018,.042,(col-1)*.085,.058,.015+row*.052,iron,phoneGroup);
+  }
+  const cordPoints=[];
+  for(let i=0;i<=160;i++){const t=i/160,a=t*Math.PI*32;cordPoints.push(new THREE.Vector3(1.035+Math.cos(a)*.012,.975+t*.13+Math.sin(a)*.012,-15.52-t*.25));}
+  const cord=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(cordPoints),180,.004,6,false),ivory);scene.add(cord);
+  const phoneTarget=new THREE.Mesh(new THREE.BoxGeometry(.46,.26,.5),new THREE.MeshBasicMaterial({visible:false}));
+  phoneTarget.position.set(.83,1.01,-15.65);phoneTarget.userData.type='savePhone';scene.add(phoneTarget);
   const red=new THREE.MeshStandardMaterial({color:'#873b2e',roughness:.55});
   pipe([2.8,.32,-15],[2.8,.88,-15],.12,red);box(.1,.12,.14,2.8,.97,-15,dark);
   pipe([2.66,.84,-15],[2.66,1,-15],.025,dark);
-  return {doors,updateStreet:time=>streetUpdates.forEach(update=>update(time))};
+  return {doors,interactables:[...doors,phoneTarget],updateStreet:time=>streetUpdates.forEach(update=>update(time))};
 }
