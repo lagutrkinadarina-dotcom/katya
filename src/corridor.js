@@ -111,7 +111,35 @@ export function createCorridor(scene, renderer) {
   // The locked gate is flush with the entrance, before the upper landing.
   for(const z of [2.66,3,3.4,3.8,4.2,4.6,5,5.34])pipe([2.88,.05,z],[2.88,1.07,z],.025,dark);
   pipe([2.88,1.08,2.6],[2.88,1.08,5.4],.045,trim);pipe([2.88,.35,2.6],[2.88,.35,5.4],.025,dark);
-  box(.09,.15,.12,2.82,.7,5.12,brass);
+  // A rounded padlock and interlocking chain replace the placeholder cube.
+  const lock=new THREE.Group();lock.position.set(2.82,.63,5.1);lock.rotation.y=-Math.PI/2;scene.add(lock);
+  const steel=new THREE.MeshStandardMaterial({color:'#a7adb0',metalness:.88,roughness:.28});
+  const lockBody=new THREE.Shape();
+  lockBody.moveTo(-.065,0);lockBody.lineTo(.065,0);lockBody.quadraticCurveTo(.08,0,.08,.015);
+  lockBody.lineTo(.08,.15);lockBody.quadraticCurveTo(.08,.17,.06,.17);lockBody.lineTo(-.06,.17);
+  lockBody.quadraticCurveTo(-.08,.17,-.08,.15);lockBody.lineTo(-.08,.015);lockBody.quadraticCurveTo(-.08,0,-.065,0);
+  const body=new THREE.Mesh(new THREE.ExtrudeGeometry(lockBody,{depth:.055,bevelEnabled:true,bevelSize:.006,bevelThickness:.006,bevelSegments:3,steps:1,curveSegments:8}),brass);
+  body.castShadow=true;lock.add(body);
+  const shacklePath=new THREE.CatmullRomCurve3([
+    new THREE.Vector3(-.047,.15,.027),new THREE.Vector3(-.047,.22,.027),
+    new THREE.Vector3(-.035,.253,.027),new THREE.Vector3(0,.268,.027),
+    new THREE.Vector3(.035,.253,.027),new THREE.Vector3(.047,.22,.027),new THREE.Vector3(.047,.15,.027)
+  ]);
+  const shackle=new THREE.Mesh(new THREE.TubeGeometry(shacklePath,32,.011,10,false),steel);shackle.castShadow=true;lock.add(shackle);
+  const keyhole=new THREE.Mesh(new THREE.CircleGeometry(.012,16),dark);keyhole.position.set(0,.083,.062);lock.add(keyhole);
+  box(.009,.023,.004,0,.068,.062,dark,lock);
+  // Separate fixing eyes attach to the gate bars; the chain hangs beside the sign.
+  for(const x of [-.1,.24]){
+    box(.065,.065,.018,x,.25,-.047,steel,lock);
+    const eye=new THREE.Mesh(new THREE.TorusGeometry(.022,.006,8,16),steel);eye.position.set(x,.25,-.015);eye.rotation.y=Math.PI/2;lock.add(eye);
+  }
+  const linkGeometry=new THREE.TorusGeometry(.021,.0055,8,16);
+  for(let i=0;i<11;i++){
+    const t=i/10,link=new THREE.Mesh(linkGeometry,steel);
+    link.position.set(-.1+t*.34,.25-Math.sin(t*Math.PI)*.065,-.012);
+    link.scale.set(1.35,1,1);link.rotation.y=i%2?Math.PI/2:0;
+    link.castShadow=true;lock.add(link);
+  }
   const stairSign=plaque('2 ЭТАЖ · ЛЕСТНИЦА →',2.2,.28,2.83,2.96,4);stairSign.rotation.y=-Math.PI/2;
   const barrierSign=plaque('ПРОХОД ЗАКРЫТ',1.5,.26,2.79,.74,3.8);barrierSign.rotation.y=-Math.PI/2;
   const arrowSign=plaque('↓  1 ЭТАЖ',1.3,.28,7,1.15,2.67);
