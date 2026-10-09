@@ -1,0 +1,9 @@
+export function createTutorial(){
+  const node=document.createElement('aside');node.id='tutorial';node.setAttribute('aria-live','polite');node.hidden=true;document.body.append(node);
+  let active=false,moved=false,looked=false,travel=0,turn=0;
+  const instructions={move:['Осмотритесь','Нажмите WASD, чтобы пройти по коридору.'],look:['Управление взглядом','Подвигайте мышью, чтобы осмотреть участок.'],office:['Кабинет следователя','Пройдите к двери «01 · Следователь». Подойдите, наведитесь на дверь и нажмите ЛКМ.'],file:['Материалы дела','Наведите курсор на папку на столе и нажмите ЛКМ.'],log:['Проверьте улики','Закройте документ и нажмите на доску улик справа.'],interrogation:['Первый допрос','Вернитесь в коридор и войдите в кабинет «02 · Допрос».'],question:['Поговорите с подозреваемой','Нажмите на Марину, затем выберите вопрос в окне допроса.']};
+  let step='move';
+  function show(){if(!active){node.hidden=true;return;}node.hidden=false;if(node.dataset.step===step)return;node.dataset.step=step;const [title,text]=instructions[step];node.innerHTML=`<span>ПЕРВЫЕ ШАГИ</span><strong>${title}</strong><p>${text}</p>`;}
+  function update(mode,evidence){if(!active)return;if(!moved)step='move';else if(!looked)step='look';else if(!evidence.has('file'))step=mode==='office'?'file':'office';else if(!evidence.has('log'))step=mode==='office'?'log':'office';else step=mode==='interrogation'?'question':'interrogation';show();}
+  return {start(){active=true;moved=false;looked=false;travel=0;turn=0;step='move';show();},restore(saved){active=!!saved?.active;moved=!!saved?.moved;looked=!!saved?.looked;travel=moved?1:0;turn=looked?100:0;show();},movement(distance){travel+=distance;if(travel>.65)moved=true;},look(amount){turn+=amount;if(turn>80)looked=true;},finish(){active=false;show();},update,visibility(visible){node.hidden=!active||!visible;},get snapshot(){return {active,moved,looked};}};
+}
