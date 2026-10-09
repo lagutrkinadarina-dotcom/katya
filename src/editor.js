@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import defaultLayout from './default-layout.json';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {TransformControls} from 'three/addons/controls/TransformControls.js';
 
@@ -63,6 +64,9 @@ export function createEditor({scene,camera,canvas,release,onExit}){
     });
     for(const [object,entry]of valid)if(object&&(entry.revision||1)===(object.userData.editor.revision||1))restore(object,entry);
   }
+  // The approved project layout is the baseline for fresh browsers and reset actions.
+  apply(defaultLayout);
+  for(const object of items)defaults.set(object.userData.editor.id,snapshot(object));
   try{const stored=localStorage.getItem(STORAGE);if(stored)apply(JSON.parse(stored));}catch{status('Сохранённую расстановку не удалось загрузить.');}
   $('editor-save').onclick=()=>{try{localStorage.setItem(STORAGE,JSON.stringify(layout()));dirty=false;status('Расстановка сохранена в этом браузере.');}catch{status('Браузер не разрешил сохранение. Скачайте JSON.');}};
   $('editor-export').onclick=()=>{const url=URL.createObjectURL(new Blob([JSON.stringify(layout(),null,2)],{type:'application/json'}));const link=document.createElement('a');link.href=url;link.download='night-shift-layout.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
