@@ -5,6 +5,7 @@ import {art} from './art.js';
 import {createEditor} from './editor.js';
 import {createCorridor} from './corridor.js';
 import {createMenus} from './menu.js';
+import {officerDialog} from './officer-dialog.js';
 import {canWalk, floorHeight, doorwayOccupied} from './navigation.js';
 const $=s=>document.querySelector(s),overlay=$('#overlay'),room=$('#room'),canvas=$('#world');
 const state={mode:'corridor',evidence:new Set(),contradiction:false,ended:false,briefed:false,accessDoorOpen:false};
@@ -67,9 +68,10 @@ function togglePassageDoor(){
   requestAnimationFrame(animate);
 }
 function briefing(topic='welcome'){
-  const replies={welcome:'Доброй ночи. Я Лебедев, дежурный. Вам передали дело об убийстве журналиста Ильи Громова. Марина Соколова ждёт наверху. Ваша задача — выяснить, что произошло, проверить её версию и принять решение на основании доказательств. После нашего разговора вы сможете открыть дверь в проходе к лестнице и подняться на второй этаж.',start:'Поднимитесь на второй этаж, в кабинет «01 · Следователь». На столе лежит папка дела, а на доске — журнал доступа в клуб. Изучите оба документа. Затем зайдите в «02 · Допрос» и расспросите Соколову.',proof:'Сравнивайте ответы с документами. Когда найдёте несоответствие, предъявите улику на допросе. Новые сведения помогут запросить экспертизу через телефон в кабинете следователя. Не спешите с обвинением: сначала соберите полную цепочку доказательств.',save:'Белый телефон стоит на столе у дальнего окна второго этажа. Наберите 007 и позвоните — это сохранит расследование. При следующем запуске выберите «Продолжить».'};
-  panel(`<div class="eyebrow">1 ЭТАЖ / ДЕЖУРНАЯ ЧАСТЬ</div><h2>Дежурный Лебедев</h2><p class="lead">${replies[topic]}</p><div class="rule"></div><button class="choice" data-brief="start">С чего начать расследование?</button><button class="choice" data-brief="proof">Как проверить показания?</button><button class="choice" data-brief="save">Как сохранить игру?</button><button class="primary" id="leave-officer">Спасибо. Приступаю к делу.</button>`);
+  panel(officerDialog(topic));
+  const dialog=$('.panel');dialog.setAttribute('role','dialog');dialog.setAttribute('aria-modal','true');dialog.setAttribute('aria-labelledby','lebedev-title');
   document.querySelectorAll('[data-brief]').forEach(button=>button.onclick=()=>briefing(button.dataset.brief));$('#leave-officer').onclick=()=>{const fresh=!state.briefed;state.briefed=true;close();if(fresh)toast('Доступ к лестнице открыт. Подойдите к двери в проходе и нажмите ЛКМ.');};
+  $('#lebedev-title').focus({preventScroll:true});
 }
 function pause(){menus.pause();}
 const SAVE_KEY='night-shift-last-round-save-v1';
