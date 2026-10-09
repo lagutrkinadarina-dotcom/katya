@@ -4,13 +4,12 @@ import {furnishReceptionDetails} from './reception-details.js';
 import {createHoldingCell} from './holding-cell.js';
 import {drawNotice,noticePhotosReady} from './notice-art.js';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
-import {surfaceMaterial} from './materials.js';
 
 // Modelled furnishings stay inside the lobby shell; the staircase is left untouched.
 export function furnishReception(scene,{ground,wood,frame,dark,pipe,plaque}){
   const material=(color,roughness=.8,metalness=0)=>new THREE.MeshStandardMaterial({color,roughness,metalness});
   const editable=(object,id,label,solid=false)=>{object.userData.editor={id,label,solid,revision:['locker','cooler','radiator','archive-table'].includes(id)?2:1};return object;};
-  const steel=surfaceMaterial('steel',{color:'#737e72',roughness:.56,metalness:.48}),agedMetal=surfaceMaterial('steel',{roughness:.68,metalness:.32}),paper=material('#c8bfa6'),red=material('#863b2d',.5,.3);
+  const steel=material('#343c39',.55,.45),agedMetal=material('#646e60',.7,.3),paper=material('#c8bfa6'),red=material('#863b2d',.5,.3);
   function mesh(geometry,mat,x,y,z,parent=scene){const m=new THREE.Mesh(geometry,mat);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m;}
   function rounded(w,h,d,x,y,z,mat,parent=scene,r=.012){return mesh(new RoundedBoxGeometry(w,h,d,2,Math.min(r,w/4,h/4,d/4)),mat,x,y,z,parent);}
   const cylinder=(r1,r2,h,x,y,z,mat,parent=scene)=>mesh(new THREE.CylinderGeometry(r1,r2,h,24),mat,x,y,z,parent);
@@ -27,13 +26,7 @@ export function furnishReception(scene,{ground,wood,frame,dark,pipe,plaque}){
       for(const x of [-.63,.63])rounded(.045,.055,.065,x,-.056,offset,frame,fixture);
     }
     for(const x of [-.48,.48])rounded(.08,.04,.12,x,.05,0,steel,fixture);
-    const light=new THREE.PointLight(0xffebcf,z<-4?8:10,z<-4?4.3:6,2);light.position.set(0,-.25,0);fixture.add(light);
-    // Broad, feathered shadows anchor benches, desks and NPCs on the lower floor.
-    if(z===-1.6||z===5.2||z===-5.05){
-      const spot=new THREE.SpotLight(0xffebcf,z<-4?9:17,7,Math.PI/2.6,.9,2);spot.position.set(0,-.15,0);
-      const target=new THREE.Object3D();target.position.set(0,-2.96,0);fixture.add(target,spot);spot.target=target;
-      spot.castShadow=true;spot.shadow.mapSize.set(1024,1024);spot.shadow.bias=-.00015;spot.shadow.normalBias=.025;spot.shadow.camera.near=.15;spot.shadow.camera.far=7;
-    }
+    const light=new THREE.PointLight(0xffe9be,z<-4?7:9,z<-4?4.3:6,2);light.position.set(0,-.25,0);fixture.add(light);
   }
   // Slatted waiting bench with bent steel supports, wood end grain and screws.
   const bench=new THREE.Group();bench.position.set(-2.56,ground,.8);scene.add(bench);editable(bench,'bench','Скамья',true);

@@ -1,9 +1,8 @@
 import * as THREE from 'three';
-import {surfaceMaterial} from './materials.js';
 
 export function createHoldingCell(scene,{ground,wood,plaque}){
   const root=new THREE.Group();scene.add(root);root.name='holding-cell';root.userData.editor={id:'holding-cell',label:'Камера временного содержания',solid:true,revision:2};
-  const steel=surfaceMaterial('steel',{color:'#81877b',roughness:.58,metalness:.65});
+  const steel=new THREE.MeshStandardMaterial({color:'#454d47',roughness:.64,metalness:.65});
   const cloths=['#655a4c','#47565b'],skinTones=['#b6957a','#bda087'];
   const add=(geometry,material,x,y,z,parent=root)=>{const m=new THREE.Mesh(geometry,material);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m;};
   const box=(w,h,d,x,y,z,material=steel,parent=root)=>add(new THREE.BoxGeometry(w,h,d),material,x,y,z,parent);
