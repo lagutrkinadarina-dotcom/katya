@@ -70,10 +70,14 @@ export function createCorridor(scene, renderer) {
     box(.23,.12,24,x,3.18,-5,'#a5aa99');
   }
   const streetUpdates=[createStreetWindow(scene,-17,-1,{plaster,paint}),createStreetWindow(scene,7,1,{plaster,paint})];
-  // A walkable side landing leads towards the descending flight, not a dead end.
+  // The closed entrance overlooks a staircase with a real lower landing and right turn.
   const concrete=new THREE.MeshStandardMaterial({color:'#777d76',roughness:.92});
-  for(const z of [2.56,5.44])box(7.2,6.8,.16,6.4,-.1,z,plaster);
-  box(.16,6.8,2.9,10,-.1,4,plaster);box(7.2,.12,2.9,6.4,3.3,4,plaster);
+  box(9.5,6.8,.16,7.55,-.1,2.56,plaster);
+  box(6,6.8,.16,5.8,-.1,5.44,plaster);
+  // No wall across the downstairs exit: a two-metre opening turns right.
+  box(3.5,3.3,.16,10.55,1.65,5.44,plaster);
+  box(.16,6.8,2.9,12.3,-.1,4,plaster);
+  box(9.5,.12,2.9,7.55,3.3,4,plaster);
   box(2.2,.16,2.8,4,-.08,4,floor);
   for(let i=0;i<16;i++){
     const x=5.2+i*.29,y=-.21-i*.21;
@@ -84,13 +88,28 @@ export function createCorridor(scene, renderer) {
     pipe([3.1,1,z],[5.05,1,z],.04,trim);
     pipe([5.05,1,z],[9.6,-2.36,z],.04,trim);
   }
-  box(.8,.15,2.8,9.6,-3.44,4,concrete);
-  // The locked gate is at the top step; the landing remains accessible.
-  for(const z of [2.66,3,3.4,3.8,4.2,4.6,5,5.34])pipe([5.05,.05,z],[5.05,1.07,z],.025,dark);
-  pipe([5.05,1.08,2.6],[5.05,1.08,5.4],.045,trim);pipe([5.05,.35,2.6],[5.05,.35,5.4],.025,dark);
-  box(.09,.15,.12,4.99,.7,5.12,brass);
+  box(3,.15,2.8,10.8,-3.44,4,concrete);
+  box(2.2,.15,7.7,11.2,-3.44,9.2,floor);
+  for(const x of [10.1,12.3]){
+    box(.16,3.3,7.7,x,-1.71,9.2,plaster);
+    box(.2,1.1,7.7,x,-2.8,9.2,paint);
+    box(.23,.07,7.7,x,-2.22,9.2,trim);
+  }
+  box(2.3,3.3,.16,11.2,-1.71,13.1,plaster);
+  box(2.3,.1,7.7,11.2,-.02,9.2,plaster);
+  box(1.1,2.35,.12,11.2,-2.16,13,wood);
+  box(.12,.1,.05,11.58,-2.15,12.9,brass);
+  const downstairsSign=plaque('1 ЭТАЖ · ДЕЖУРНАЯ ЧАСТЬ →',2.1,.23,12.19,-1.05,4.05);downstairsSign.rotation.y=-Math.PI/2;
+  for(const z of [6,10.8]){
+    const lowerLight=new THREE.PointLight(0xffd5a0,22,8,2);lowerLight.position.set(11.1,-.65,z);scene.add(lowerLight);
+    box(.65,.045,.3,11.1,-.13,z,new THREE.MeshStandardMaterial({color:'#e8d9bb',emissive:'#ffc98e',emissiveIntensity:1.6}));
+  }
+  // The locked gate is flush with the entrance, before the upper landing.
+  for(const z of [2.66,3,3.4,3.8,4.2,4.6,5,5.34])pipe([2.88,.05,z],[2.88,1.07,z],.025,dark);
+  pipe([2.88,1.08,2.6],[2.88,1.08,5.4],.045,trim);pipe([2.88,.35,2.6],[2.88,.35,5.4],.025,dark);
+  box(.09,.15,.12,2.82,.7,5.12,brass);
   const stairSign=plaque('2 ЭТАЖ · ЛЕСТНИЦА →',2.2,.28,2.83,2.96,4);stairSign.rotation.y=-Math.PI/2;
-  const barrierSign=plaque('ПРОХОД ЗАКРЫТ',1.5,.26,4.96,.74,3.8);barrierSign.rotation.y=-Math.PI/2;
+  const barrierSign=plaque('ПРОХОД ЗАКРЫТ',1.5,.26,2.79,.74,3.8);barrierSign.rotation.y=-Math.PI/2;
   const arrowSign=plaque('↓  1 ЭТАЖ',1.3,.28,7,1.15,2.67);
   const landingLight=new THREE.PointLight(0xd2decd,13,6,2);landingLight.position.set(4,2.6,4);scene.add(landingLight);
   const stairLight=new THREE.PointLight(0x94b1bf,15,8,2);stairLight.position.set(7,-.5,4);scene.add(stairLight);
