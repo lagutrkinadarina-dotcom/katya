@@ -30,7 +30,6 @@ export function furnishReceptionDetails(scene,{ground,wood,frame,paper,steel,rou
   }
   rounded(.035,.14,.015,.30,.96,.077,steel,door);pipe([.30,.99,.092],[.18,.99,.092],.009,brass,door);
   for(const y of [.33,1.77])rounded(.025,.09,.028,-.407,y,.077,brass,door);
-  plaque('СЛУЖЕБНОЕ ПОМЕЩЕНИЕ',.65,.09,0,1.84,.085,door);
   // Citizen reception desk in the free section of wall beyond the lockers.
   const area=new THREE.Group();area.position.set(2.79,ground,5.66);area.rotation.y=-Math.PI/2;scene.add(area);area.name='citizen-reception';area.userData.editor={id:'citizen-reception',label:'Приём граждан',solid:true,revision:2};
   rounded(1.36,1.04,.035,0,1.88,0,wood,area);rounded(1.27,.96,.008,0,1.88,.025,cork,area);
@@ -45,9 +44,14 @@ export function furnishReceptionDetails(scene,{ground,wood,frame,paper,steel,rou
   },720,700);panel(schedule,.57,.60,.34,2.02,.035,area);
   const form=canvasMap((ctx,w,h)=>{ctx.fillStyle='#e8dec4';ctx.fillRect(0,0,w,h);ctx.fillStyle='#3b4437';ctx.textAlign='center';ctx.font='bold 48px Arial';ctx.fillText('ЗАЯВЛЕНИЕ',w/2,90);ctx.textAlign='left';ctx.font='30px Arial';ctx.fillText('Начальнику участка № 7',45,174);ctx.fillText('От __________________',45,230);for(let i=0;i<11;i++)ctx.fillRect(45,320+i*45,w-90,2);ctx.fillText('Дата ______ Подпись ______',45,h-70);});
   for(const x of [-.48,-.18]){
-    for(let i=0;i<3;i++)panel(form,.235,.32,x+i*.003,1.57+i*.004,.047+i*.002,area);
-    for(const side of [-1,1])pipe([x+side*.125,1.35,.065],[x+side*.125,1.57,.065],.005,steel,area);
-    pipe([x-.125,1.36,.065],[x+.125,1.36,.065],.005,steel,area);
+    // One visible sheet over a solid paper stack, without overlapping printed planes.
+    rounded(.235,.32,.006,x,1.565,.047,paper,area);
+    panel(form,.235,.32,x,1.565,.051,area);
+    for(const side of [-1,1]){
+      pipe([x+side*.125,1.40,.070],[x+side*.125,1.60,.070],.005,steel,area);
+      pipe([x+side*.125,1.40,.031],[x+side*.125,1.40,.070],.005,steel,area);
+    }
+    pipe([x-.125,1.40,.070],[x+.125,1.40,.070],.005,steel,area);
     plaque(x<-.3?'ОБРАЗЕЦ':'БЛАНКИ',.24,.05,x,1.82,.045,area);
   }
   rounded(1.55,.055,.67,0,.77,.385,wood,area);
