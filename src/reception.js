@@ -1,18 +1,12 @@
 import * as THREE from 'three';
-import {receptionSurface} from './reception-surfaces.js';
+import {surfaceMaterial} from './materials.js';
 import {createOfficer} from './officer.js';
 import {furnishReception} from './reception-interior.js';
 import {createWallStrip,alignFloorTiles} from './architecture.js';
 
 export function createReception(scene,{box,pipe,plaque,plaster,paint,floor,wood,iron,dark}){
   const ground=-3.365;
-  // Local materials keep the upper corridor and its tile grid unchanged.
-  plaster=plaster.clone();plaster.color.set('#999b88');plaster.map=receptionSurface('wall');plaster.bumpMap=plaster.map;plaster.bumpScale=.007;
-  paint=paint.clone();paint.color.set('#334a40');paint.map=plaster.map;paint.roughness=.84;
-  wood=wood.clone();wood.color.set('#988067');wood.roughness=.73;
-  floor=floor.clone();floor.color.set('#c2bba7');floor.map=receptionSurface('tile');floor.bumpMap=floor.map;floor.bumpScale=.012;floor.roughness=.39;
-
-  const frame=new THREE.MeshStandardMaterial({color:'#cbcfc7',roughness:.6});
+  const frame=surfaceMaterial('enamel',{roughness:.62});
 
   // One continuous floor and ceiling follow the lobby and left stair return.
   const outline=[[-2.9,-6.2],[2.9,-6.2],[2.9,1.25],[12.3,1.25],[12.3,5.44],[9.3,5.44],[9.3,2.56],[2.9,2.56],[2.9,6.83],[-2.9,6.83]];

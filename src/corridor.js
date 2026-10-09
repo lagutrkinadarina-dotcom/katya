@@ -2,51 +2,35 @@ import * as THREE from 'three';
 import {createStreetWindow} from './street.js';
 import {createReception} from './reception.js';
 import {createWallStrip,alignFloorTiles} from './architecture.js';
+import {surfaceMaterial,alignWallSurface} from './materials.js';
 
-// All surfaces are generated locally: no downloaded textures or model assets.
+// Both storeys share the same worn materials and world-space floor grid.
 export function createCorridor(scene, renderer) {
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  renderer.toneMappingExposure = 1.25;
+  renderer.toneMappingExposure = 1.1;
   const skyCanvas=document.createElement('canvas');skyCanvas.width=512;skyCanvas.height=256;
   const skyContext=skyCanvas.getContext('2d'),skyGradient=skyContext.createLinearGradient(0,0,0,256);
   skyGradient.addColorStop(0,'#071322');skyGradient.addColorStop(.5,'#203746');skyGradient.addColorStop(1,'#182329');
   skyContext.fillStyle=skyGradient;skyContext.fillRect(0,0,512,256);
   const sky=new THREE.CanvasTexture(skyCanvas);sky.mapping=THREE.EquirectangularReflectionMapping;sky.colorSpace=THREE.SRGBColorSpace;scene.background=sky;
   scene.fog = new THREE.Fog('#182329', 13, 34);
-  const ambient=new THREE.HemisphereLight(0xdce7e4,0x39443e,1.65);ambient.name='stationAmbient';scene.add(ambient);
+  const ambient=new THREE.HemisphereLight(0xe8dfcf,0x45463b,.65);ambient.name='stationAmbient';scene.add(ambient);
   let seed = 41;
   const random = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
-  function texture(kind) {
-    const c = document.createElement('canvas'); c.width = c.height = 512;
-    const ctx = c.getContext('2d');
-    ctx.fillStyle = kind === 'wood' ? '#65513c' : kind === 'floor' ? '#747a72' : '#8c9382';
-    ctx.fillRect(0, 0, 512, 512);
-    for (let i = 0; i < 14000; i++) {
-      ctx.fillStyle = `rgba(${random() > .5 ? '255,255,240' : '20,29,24'},${random() * .08})`;
-      const x = random() * 512, y = random() * 512;
-      ctx.fillRect(x, y, kind === 'wood' ? 1 : 2, kind === 'wood' ? 15 + random() * 75 : 2);
-    }
-    if (kind === 'floor') {
-      ctx.strokeStyle = '#414a44'; ctx.lineWidth = 4; ctx.strokeRect(0, 0, 512, 512);
-      ctx.strokeStyle = '#a7aaa0'; ctx.lineWidth = 1; ctx.strokeRect(5, 5, 502, 502);
-    }
-    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
-    t.wrapS = t.wrapT = THREE.RepeatWrapping;
-    t.repeat.set(kind === 'floor' ? 1 : kind === 'wood' ? 1 : 8, kind === 'floor' ? 1 : kind === 'wood' ? 1 : 2);
-    t.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy()); return t;
-  }
-  const plaster = new THREE.MeshStandardMaterial({map: texture('plaster'),color:'#c0c5b4',roughness:.94});
-  const paint = new THREE.MeshStandardMaterial({color:'#49635b',roughness:.72});
-  const floor = new THREE.MeshStandardMaterial({map:texture('floor'),roughness:.65});
-  const wood = new THREE.MeshStandardMaterial({map:texture('wood'),roughness:.62});
-  const trim = new THREE.MeshStandardMaterial({color:'#726148',roughness:.63});
+  const plaster=surfaceMaterial('plaster',{},renderer);
+  const paint=surfaceMaterial('paint',{},renderer);
+  const floor=surfaceMaterial('floor',{color:'#c6bca5',roughness:.48,metalness:.06,envMapIntensity:.85,normalScale:new THREE.Vector2(.3,.3)},renderer);
+  const wood=surfaceMaterial('wood',{},renderer);
+  const trim=surfaceMaterial('wood',{color:'#c3b594'},renderer);
   const brass = new THREE.MeshStandardMaterial({color:'#b9ac81',metalness:.72,roughness:.3});
-  const iron = new THREE.MeshStandardMaterial({color:'#b7b5a2',metalness:.25,roughness:.7});
-  const dark = new THREE.MeshStandardMaterial({color:'#25322e',roughness:.85});
+  const iron=surfaceMaterial('steel',{color:'#ccc8b9',metalness:.45,roughness:.55},renderer);
+  const dark=surfaceMaterial('steel',{color:'#4d5952',metalness:.35,roughness:.62},renderer);
   function box(w,h,d,x,y,z,mat,parent=scene) {
     const mesh = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), typeof mat === 'string' ? new THREE.MeshStandardMaterial({color:mat,roughness:.8}) : mat);
-    mesh.position.set(x,y,z); mesh.castShadow=true; mesh.receiveShadow=true; parent.add(mesh); return mesh;
+    mesh.position.set(x,y,z); mesh.castShadow=true; mesh.receiveShadow=true; parent.add(mesh);
+    if(mat?.normalMap===plaster.normalMap||mat?.normalMap===paint.normalMap)alignWallSurface(mesh);
+    return mesh;
   }
   function pipe(a,b,r,mat,parent=scene) {
     const start=new THREE.Vector3(...a),end=new THREE.Vector3(...b),dir=end.clone().sub(start);
@@ -62,7 +46,7 @@ export function createCorridor(scene, renderer) {
     const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshStandardMaterial({map:t,roughness:.65}));m.position.set(x,y,z);parent.add(m);return m;
   }
   alignFloorTiles(box(6,.15,24,0,-.07,-5,floor));
-  box(6,.12,24,0,3.36,-5,'#7d8276');
+  box(6,.12,24,0,3.36,-5,plaster);
   for(const x of [-3,3]) {
     if(x<0){box(.15,3.3,24,x,1.65,-5,plaster);box(.19,1.2,24,x,.6,-5,paint);}else{
       for(const [length,z]of [[19.48,-7.26],[1.48,6.26]])box(.19,1.2,length,x,.6,z,paint);
@@ -73,7 +57,7 @@ export function createCorridor(scene, renderer) {
   }
   const streetUpdates=[createStreetWindow(scene,-17,-1,{plaster,paint}),createStreetWindow(scene,7,1,{plaster,paint})];
   // The open entrance overlooks a staircase with a real lower landing and left turn.
-  const concrete=new THREE.MeshStandardMaterial({color:'#777d76',roughness:.92});
+  const concrete=surfaceMaterial('floor',{color:'#a4a293',roughness:.95});
   // One continuous shell joins the corridor to both sides of the stair opening.
   // Separate corridor boxes previously overlapped the stair end caps and flickered.
   createWallStrip(scene,[[3,-17],[3,2.56],[12.3,2.56],[12.3,5.44],[3,5.44],[3,7]],0,[[3.3,plaster]]);
@@ -141,9 +125,9 @@ export function createCorridor(scene, renderer) {
     box(1.55,.1,.53,0,3.21,z,dark);
     const glow=new THREE.MeshStandardMaterial({color:'#ebecd8',emissive:'#e6e8ce',emissiveIntensity:2});
     for(const x of [-.29,.29])box(.1,.035,.42,x,3.14,z,glow);
-    const light=new THREE.PointLight(0xe5ead6,19,10,2);light.position.set(0,2.95,z);scene.add(light);
-    const spot=new THREE.SpotLight(0xe9dfbf,22,12,Math.PI/2.6,.7,1.6);spot.position.set(0,3.04,z);spot.target.position.set(0,0,z);scene.add(spot,spot.target);
-    if(z===3||z===-9){spot.castShadow=true;spot.shadow.mapSize.set(1024,1024);spot.shadow.bias=-.001;}
+    const light=new THREE.PointLight(0xffedcf,12,8,2);light.position.set(0,2.95,z);scene.add(light);
+    const spot=new THREE.SpotLight(0xffebc7,24,8,Math.PI/2.6,.85,2);spot.position.set(0,3.04,z);spot.target.position.set(0,0,z);scene.add(spot,spot.target);
+    if(z===3||z===-9){spot.castShadow=true;spot.shadow.mapSize.set(1024,1024);spot.shadow.bias=-.00015;spot.shadow.normalBias=.025;spot.shadow.camera.near=.15;spot.shadow.camera.far=8;}
     box(6,.08,.1,0,3.19,z-1.1,'#6e786d');
   }
   // Waiting bench and a noticeboard, kept outside the player's walkable strip.
