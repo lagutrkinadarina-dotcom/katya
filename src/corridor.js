@@ -70,7 +70,7 @@ export function createCorridor(scene, renderer) {
     box(.23,.12,24,x,3.18,-5,'#a5aa99');
   }
   const streetUpdates=[createStreetWindow(scene,-17,-1,{plaster,paint}),createStreetWindow(scene,7,1,{plaster,paint})];
-  // The closed entrance overlooks a staircase with a real lower landing and right turn.
+  // The open entrance overlooks a staircase with a real lower landing and right turn.
   const concrete=new THREE.MeshStandardMaterial({color:'#777d76',roughness:.92});
   box(9.5,6.8,.16,7.55,-.1,2.56,plaster);
   box(6,6.8,.16,5.8,-.1,5.44,plaster);
@@ -103,45 +103,12 @@ export function createCorridor(scene, renderer) {
   // The existing full-height stair wall is also the hallway wall; do not duplicate its face.
   box(.2,3.3,.16,2.7,-1.71,5.44,lowerWall);
   box(9.7,.12,1.46,7.45,-.06,6.1,lowerWall);
-  box(.16,3.3,1.46,2.6,-1.71,6.1,lowerWall);
-  box(.12,2.35,.85,2.72,-2.16,6.1,wood);
+
+
   const downstairsSign=plaque('1 ЭТАЖ →',1.3,.26,12.19,-1.05,4.1);downstairsSign.rotation.y=-Math.PI/2;
   const lowerLight=new THREE.PointLight(0xd2decd,10,6,2);lowerLight.position.set(11.3,-.65,6.1);scene.add(lowerLight);
   box(.65,.045,.3,11.1,-.13,6.1,new THREE.MeshStandardMaterial({color:'#e8d9bb',emissive:'#ffc98e',emissiveIntensity:1.6}));
-  // The locked gate is flush with the entrance, before the upper landing.
-  for(const z of [2.66,3,3.4,3.8,4.2,4.6,5,5.34])pipe([2.88,.05,z],[2.88,1.07,z],.025,dark);
-  pipe([2.88,1.08,2.6],[2.88,1.08,5.4],.045,trim);pipe([2.88,.35,2.6],[2.88,.35,5.4],.025,dark);
-  // A rounded padlock and interlocking chain replace the placeholder cube.
-  const lock=new THREE.Group();lock.position.set(2.82,.63,5.1);lock.rotation.y=-Math.PI/2;scene.add(lock);
-  const steel=new THREE.MeshStandardMaterial({color:'#a7adb0',metalness:.88,roughness:.28});
-  const lockBody=new THREE.Shape();
-  lockBody.moveTo(-.065,0);lockBody.lineTo(.065,0);lockBody.quadraticCurveTo(.08,0,.08,.015);
-  lockBody.lineTo(.08,.15);lockBody.quadraticCurveTo(.08,.17,.06,.17);lockBody.lineTo(-.06,.17);
-  lockBody.quadraticCurveTo(-.08,.17,-.08,.15);lockBody.lineTo(-.08,.015);lockBody.quadraticCurveTo(-.08,0,-.065,0);
-  const body=new THREE.Mesh(new THREE.ExtrudeGeometry(lockBody,{depth:.055,bevelEnabled:true,bevelSize:.006,bevelThickness:.006,bevelSegments:3,steps:1,curveSegments:8}),brass);
-  body.castShadow=true;lock.add(body);
-  const shacklePath=new THREE.CatmullRomCurve3([
-    new THREE.Vector3(-.047,.15,.027),new THREE.Vector3(-.047,.22,.027),
-    new THREE.Vector3(-.035,.253,.027),new THREE.Vector3(0,.268,.027),
-    new THREE.Vector3(.035,.253,.027),new THREE.Vector3(.047,.22,.027),new THREE.Vector3(.047,.15,.027)
-  ]);
-  const shackle=new THREE.Mesh(new THREE.TubeGeometry(shacklePath,32,.011,10,false),steel);shackle.castShadow=true;lock.add(shackle);
-  const keyhole=new THREE.Mesh(new THREE.CircleGeometry(.012,16),dark);keyhole.position.set(0,.083,.062);lock.add(keyhole);
-  box(.009,.023,.004,0,.068,.062,dark,lock);
-  // Separate fixing eyes attach to the gate bars; the chain hangs beside the sign.
-  for(const x of [-.1,.24]){
-    box(.065,.065,.018,x,.25,-.047,steel,lock);
-    const eye=new THREE.Mesh(new THREE.TorusGeometry(.022,.006,8,16),steel);eye.position.set(x,.25,-.015);eye.rotation.y=Math.PI/2;lock.add(eye);
-  }
-  const linkGeometry=new THREE.TorusGeometry(.021,.0055,8,16);
-  for(let i=0;i<11;i++){
-    const t=i/10,link=new THREE.Mesh(linkGeometry,steel);
-    link.position.set(-.1+t*.34,.25-Math.sin(t*Math.PI)*.065,-.012);
-    link.scale.set(1.35,1,1);link.rotation.y=i%2?Math.PI/2:0;
-    link.castShadow=true;lock.add(link);
-  }
   const stairSign=plaque('2 ЭТАЖ · ЛЕСТНИЦА →',2.2,.28,2.83,2.96,4);stairSign.rotation.y=-Math.PI/2;
-  const barrierSign=plaque('ПРОХОД ЗАКРЫТ',1.5,.26,2.79,.74,3.8);barrierSign.rotation.y=-Math.PI/2;
   const arrowSign=plaque('↓  1 ЭТАЖ',1.3,.28,7,1.15,2.67);
   const landingLight=new THREE.PointLight(0xd2decd,13,6,2);landingLight.position.set(4,2.6,4);scene.add(landingLight);
   const stairLight=new THREE.PointLight(0xd2decd,12,8,2);stairLight.position.set(7,-.5,4);scene.add(stairLight);
@@ -244,5 +211,40 @@ export function createCorridor(scene, renderer) {
   const red=new THREE.MeshStandardMaterial({color:'#873b2e',roughness:.55});
   pipe([2.8,.32,-15],[2.8,.88,-15],.12,red);box(.1,.12,.14,2.8,.97,-15,dark);
   pipe([2.66,.84,-15],[2.66,1,-15],.025,dark);
-  return {doors,interactables:[...doors,phoneTarget],updateStreet:time=>streetUpdates.forEach(update=>update(time))};
+  // First-floor reception sits below the existing corridor, inside the building.
+  const ground=-3.365;
+  box(5.8,.15,13,0,ground-.075,.3,floor);
+  box(5.8,.12,13,0,-.12,.3,plaster);
+  box(.16,3.2,13,-2.9,ground+1.6,.3,plaster);
+  box(.2,1.2,13,-2.87,ground+.6,.3,paint);
+  box(.16,3.2,11.9,2.9,ground+1.6,-.3,plaster);
+  box(.2,1.2,11.9,2.87,ground+.6,-.3,paint);
+  box(5.8,3.2,.16,0,ground+1.6,-6.2,plaster);
+  box(5.8,3.2,.16,0,ground+1.6,6.83,plaster);
+  for(const x of [-2.78,2.78])box(.08,.07,11.8,x,ground+1.23,-.35,iron);
+  plaque('1 ЭТАЖ · ДЕЖУРНАЯ ЧАСТЬ',2.4,.32,0,ground+2.65,-6.1);
+  plaque('ЛЕСТНИЦА НА 2 ЭТАЖ →',1.8,.26,0,ground+1.8,6.72).rotation.y=Math.PI;
+  for(const z of [-4,1,5]){const light=new THREE.PointLight(0xe6dabd,15,8,2);light.position.set(0,ground+2.8,z);scene.add(light);box(1,.055,.35,0,ground+3,z,iron);}
+  // Reception counter, paperwork, bench and an approachable duty officer.
+  box(2.7,.09,.8,0,ground+.92,-3.8,wood);
+  for(const x of [-1.1,1.1])box(.1,.9,.65,x,ground+.45,-3.8,dark);
+  for(let i=0;i<3;i++)box(.36,.04,.28,-.7+i*.05,ground+.99+i*.045,-3.8,'#b9ac8f');
+  box(.48,.06,.35,.65,ground+1,-3.85,dark);
+  box(.95,.09,.4,-2.3,ground+.46,1.2,wood);
+  for(const z of [.85,1.55])box(.08,.42,.08,-2.3,ground+.21,z,dark);
+  const officer=new THREE.Group();officer.position.set(.1,ground,-4.65);scene.add(officer);
+  const uniform=new THREE.MeshStandardMaterial({color:'#25374a',roughness:.85});
+  const skin=new THREE.MeshStandardMaterial({color:'#bea081',roughness:.9});
+  for(const x of [-.13,.13]){box(.19,.78,.22,x,.4,0,uniform,officer);box(.22,.12,.36,x,.06,.06,dark,officer);}
+  const torso=box(.53,.57,.3,0,1.06,0,uniform,officer);
+  pipe([0,1.3,0],[0,1.47,0],.085,skin,officer);
+  const head=new THREE.Mesh(new THREE.SphereGeometry(.18,20,16),skin);head.scale.set(.9,1.16,.85);head.position.set(0,1.62,0);officer.add(head);
+  box(.34,.075,.3,0,1.81,0,uniform,officer);box(.32,.025,.2,0,1.77,.13,dark,officer);
+  for(const x of [-.063,.063])box(.027,.015,.009,x,1.66,.145,dark,officer);
+  box(.065,.018,.012,0,1.53,.153,dark,officer);
+  for(const side of [-1,1]){pipe([side*.29,1.3,0],[side*.34,.93,.02],.085,uniform,officer);pipe([side*.34,.93,.02],[side*.3,.73,.05],.07,uniform,officer);pipe([side*.3,.76,.05],[side*.3,.66,.05],.07,skin,officer);}
+  box(.075,.11,.016,-.13,1.17,.16,brass,officer);box(.53,.055,.33,0,.8,0,dark,officer);
+  plaque('ДЕЖУРНЫЙ · ЛЕБЕДЕВ',1.2,.19,0,ground+1.08,-3.37);
+  const npcTarget=new THREE.Mesh(new THREE.BoxGeometry(.85,1.95,.65),new THREE.MeshBasicMaterial({visible:false}));npcTarget.position.set(.1,ground+.975,-4.65);npcTarget.userData.type='dutyOfficer';scene.add(npcTarget);
+  return {doors,interactables:[...doors,phoneTarget,npcTarget],updateStreet:time=>streetUpdates.forEach(update=>update(time))};
 }
