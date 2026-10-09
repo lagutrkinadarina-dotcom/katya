@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {createStreetWindow} from './street.js';
+import {createReception} from './reception.js';
 
 // All surfaces are generated locally: no downloaded textures or model assets.
 export function createCorridor(scene, renderer) {
@@ -99,10 +100,10 @@ export function createCorridor(scene, renderer) {
   landingShape.closePath();
   const landingFloor=new THREE.Mesh(new THREE.ShapeGeometry(landingShape),concrete);
   landingFloor.rotation.x=-Math.PI/2;landingFloor.position.y=-3.365;landingFloor.receiveShadow=true;scene.add(landingFloor);
-  box(9.7,3.3,.16,7.45,-1.71,6.83,lowerWall);
+  box(9.48,3.2,.16,7.64,-1.765,6.83,lowerWall);
   // The existing full-height stair wall is also the hallway wall; do not duplicate its face.
   box(.2,3.3,.16,2.7,-1.71,5.44,lowerWall);
-  box(9.7,.12,1.46,7.45,-.06,6.1,lowerWall);
+  box(9.4,.12,1.46,7.6,-.12,6.1,lowerWall);
 
 
   const downstairsSign=plaque('1 ЭТАЖ →',1.3,.26,12.19,-1.05,4.1);downstairsSign.rotation.y=-Math.PI/2;
@@ -211,40 +212,6 @@ export function createCorridor(scene, renderer) {
   const red=new THREE.MeshStandardMaterial({color:'#873b2e',roughness:.55});
   pipe([2.8,.32,-15],[2.8,.88,-15],.12,red);box(.1,.12,.14,2.8,.97,-15,dark);
   pipe([2.66,.84,-15],[2.66,1,-15],.025,dark);
-  // First-floor reception sits below the existing corridor, inside the building.
-  const ground=-3.365;
-  box(5.8,.15,13,0,ground-.075,.3,floor);
-  box(5.8,.12,13,0,-.12,.3,plaster);
-  box(.16,3.2,13,-2.9,ground+1.6,.3,plaster);
-  box(.2,1.2,13,-2.87,ground+.6,.3,paint);
-  box(.16,3.2,11.9,2.9,ground+1.6,-.3,plaster);
-  box(.2,1.2,11.9,2.87,ground+.6,-.3,paint);
-  box(5.8,3.2,.16,0,ground+1.6,-6.2,plaster);
-  box(5.8,3.2,.16,0,ground+1.6,6.83,plaster);
-  for(const x of [-2.78,2.78])box(.08,.07,11.8,x,ground+1.23,-.35,iron);
-  plaque('1 ЭТАЖ · ДЕЖУРНАЯ ЧАСТЬ',2.4,.32,0,ground+2.65,-6.1);
-  plaque('ЛЕСТНИЦА НА 2 ЭТАЖ →',1.8,.26,0,ground+1.8,6.72).rotation.y=Math.PI;
-  for(const z of [-4,1,5]){const light=new THREE.PointLight(0xe6dabd,15,8,2);light.position.set(0,ground+2.8,z);scene.add(light);box(1,.055,.35,0,ground+3,z,iron);}
-  // Reception counter, paperwork, bench and an approachable duty officer.
-  box(2.7,.09,.8,0,ground+.92,-3.8,wood);
-  for(const x of [-1.1,1.1])box(.1,.9,.65,x,ground+.45,-3.8,dark);
-  for(let i=0;i<3;i++)box(.36,.04,.28,-.7+i*.05,ground+.99+i*.045,-3.8,'#b9ac8f');
-  box(.48,.06,.35,.65,ground+1,-3.85,dark);
-  box(.95,.09,.4,-2.3,ground+.46,1.2,wood);
-  for(const z of [.85,1.55])box(.08,.42,.08,-2.3,ground+.21,z,dark);
-  const officer=new THREE.Group();officer.position.set(.1,ground,-4.65);scene.add(officer);
-  const uniform=new THREE.MeshStandardMaterial({color:'#25374a',roughness:.85});
-  const skin=new THREE.MeshStandardMaterial({color:'#bea081',roughness:.9});
-  for(const x of [-.13,.13]){box(.19,.78,.22,x,.4,0,uniform,officer);box(.22,.12,.36,x,.06,.06,dark,officer);}
-  const torso=box(.53,.57,.3,0,1.06,0,uniform,officer);
-  pipe([0,1.3,0],[0,1.47,0],.085,skin,officer);
-  const head=new THREE.Mesh(new THREE.SphereGeometry(.18,20,16),skin);head.scale.set(.9,1.16,.85);head.position.set(0,1.62,0);officer.add(head);
-  box(.34,.075,.3,0,1.81,0,uniform,officer);box(.32,.025,.2,0,1.77,.13,dark,officer);
-  for(const x of [-.063,.063])box(.027,.015,.009,x,1.66,.145,dark,officer);
-  box(.065,.018,.012,0,1.53,.153,dark,officer);
-  for(const side of [-1,1]){pipe([side*.29,1.3,0],[side*.34,.93,.02],.085,uniform,officer);pipe([side*.34,.93,.02],[side*.3,.73,.05],.07,uniform,officer);pipe([side*.3,.76,.05],[side*.3,.66,.05],.07,skin,officer);}
-  box(.075,.11,.016,-.13,1.17,.16,brass,officer);box(.53,.055,.33,0,.8,0,dark,officer);
-  plaque('ДЕЖУРНЫЙ · ЛЕБЕДЕВ',1.2,.19,0,ground+1.08,-3.37);
-  const npcTarget=new THREE.Mesh(new THREE.BoxGeometry(.85,1.95,.65),new THREE.MeshBasicMaterial({visible:false}));npcTarget.position.set(.1,ground+.975,-4.65);npcTarget.userData.type='dutyOfficer';scene.add(npcTarget);
+  const npcTarget=createReception(scene,{box,pipe,plaque,plaster,paint,floor,wood,iron,dark});
   return {doors,interactables:[...doors,phoneTarget,npcTarget],updateStreet:time=>streetUpdates.forEach(update=>update(time))};
 }
