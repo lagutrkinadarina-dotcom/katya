@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import {drawNotice} from './notice-art.js';
+import {createHoldingCell} from './holding-cell.js';
+import {drawNotice,noticePhotosReady} from './notice-art.js';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 
 // Modelled furnishings stay inside the lobby shell; the staircase is left untouched.
@@ -41,8 +42,8 @@ export function furnishReception(scene,{ground,wood,frame,dark,pipe,plaque}){
   const noticeTitle=plaque('ИНФОРМАЦИЯ',1.92,.16,0,.71,.037,notices);
   const noticeTargets=[];
   for(let i=0;i<6;i++){
-    const map=canvasMap((ctx,w,h)=>drawNotice(ctx,w,h,i),1024,1280);map.anisotropy=8;
-    const note=panel(map,.55,.49,-.62+(i%3)*.62,.275-Math.floor(i/3)*.54,.055+i*.0007,notices);note.rotation.z=[-.035,.018,-.023,.027,-.014,.038][i];note.userData={type:'notice',noticeIndex:i};noticeTargets.push(note);
+    const map=canvasMap((ctx,w,h)=>drawNotice(ctx,w,h,i),1024,1280);map.anisotropy=8;noticePhotosReady.then(()=>{drawNotice(map.image.getContext('2d'),1024,1280,i);map.needsUpdate=true;}).catch(()=>{});
+    const note=panel(map,.55,.49,-.62+(i%3)*.62,.275-Math.floor(i/3)*.54,.055+i*.0007,notices);note.rotation.z=[-.035,.018,-.023,.027,-.014,.038][i];note.material.emissive.set('#cfac64');note.material.emissiveIntensity=0;note.userData={type:'notice',noticeIndex:i};noticeTargets.push(note);
     mesh(new THREE.SphereGeometry(.009,10,8),red,note.position.x,note.position.y+.23,.07,notices);
   }
   // Organic leaves have bent midribs, tapered edges and individually oriented stems.
@@ -175,7 +176,8 @@ export function furnishReception(scene,{ground,wood,frame,dark,pipe,plaque}){
   for(let i=0;i<24;i++)rounded(.63,.005,.016,0,.009,-.56+i*.048,dark,matGroup);
   // CCTV camera, red status light and adjustable mounting arm in the rear corner.
   const camera=new THREE.Group();camera.position.set(-2.48,ground+2.61,-3.28);camera.rotation.set(.20,.75,0);scene.add(camera);editable(camera,'security-camera','Камера наблюдения',false);
-  pipe([0,-.15,-.15],[0,-.08,0],.018,steel,camera);
+  pipe([0,-.15,-.15],[0,-.025,0],.018,steel,camera);
+  cylinder(.032,.032,.022,0,-.048,0,steel,camera);
   rounded(.17,.105,.30,0,0,0,frame,camera);rounded(.19,.018,.34,0,.062,.015,frame,camera);
   rounded(.135,.085,.015,0,0,.158,steel,camera);
   const lens=cylinder(.029,.029,.02,-.025,0,.178,dark,camera);lens.rotation.x=Math.PI/2;
@@ -210,7 +212,15 @@ export function furnishReception(scene,{ground,wood,frame,dark,pipe,plaque}){
     page.material.emissive.set('#c5bfa8');page.material.emissiveMap=map;page.material.emissiveIntensity=.08;
     for(const x of [-w*.26,w*.26])mesh(new THREE.TorusGeometry(.012,.002,6,16),steel,x,h*.49,.004,group);
   }
-  calendar(-1.15,ground+1.94,-6.07);
+  // Framed awards replace the calendar behind the duty officer.
+  for(const [i,x,y,title] of [[0,-1.32,ground+2.05,'ПОЧЁТНАЯ ГРАМОТА'],[1,-.84,ground+1.66,'БЛАГОДАРНОСТЬ']]){
+    const award=canvasMap((ctx,w,h)=>{
+      ctx.fillStyle='#dfd4b8';ctx.fillRect(0,0,w,h);ctx.strokeStyle='#96784a';ctx.lineWidth=12;ctx.strokeRect(36,36,w-72,h-72);ctx.lineWidth=3;ctx.strokeRect(57,57,w-114,h-114);
+      ctx.fillStyle='#8e4837';ctx.textAlign='center';ctx.font='bold 47px Georgia';ctx.fillText(title,w/2,180,w-135);ctx.fillStyle='#343e32';ctx.font='bold 34px Georgia';ctx.fillText('УЧАСТОК № 7',w/2,300);
+      ctx.font='30px Georgia';const lines=i?['За помощь жителям района','и преданность службе.','За внимание к людям','в трудную минуту.']:['За добросовестную службу,','профессионализм и вклад','в обеспечение безопасности','нашего города.'];lines.forEach((line,j)=>ctx.fillText(line,w/2,450+j*65,w-130));ctx.fillText(i?'Май 2025':'Декабрь 2024',w/2,840);
+      ctx.strokeStyle='#8d473b';ctx.lineWidth=5;ctx.beginPath();ctx.arc(540,855,56,0,7);ctx.stroke();ctx.font='24px Georgia';ctx.fillText('МВД',540,865);ctx.strokeStyle='#393f33';ctx.beginPath();ctx.moveTo(150,850);ctx.bezierCurveTo(220,800,210,920,350,833);ctx.stroke();
+    });award.anisotropy=8;rounded(.38,.49,.026,x,y,-6.071,wood);panel(award,.345,.455,x,y,-6.052);
+  }
   const wallPanel=new THREE.Group();wallPanel.position.set(-2.79,ground+1.98,-1.37);wallPanel.rotation.y=Math.PI/2;scene.add(wallPanel);editable(wallPanel,'electrical-panel','Электрощиток',false);
   rounded(.24,.46,.065,0,0,0,agedMetal,wallPanel);rounded(.19,.37,.006,0,0,.037,steel,wallPanel);
   rounded(.04,.015,.012,.065,0,.045,frame,wallPanel);
@@ -220,5 +230,6 @@ export function furnishReception(scene,{ground,wood,frame,dark,pipe,plaque}){
   for(const [x,z,count]of [[-1.15,-4.26,6],[-1.39,-3.35,4],[-.37,-3.33,3]])for(let i=0;i<count;i++){
     rounded(.29,.017,.24,x+(i%2)*.009,ground+1.03+i*.022,z,i%2?paper:wood);
   }
-  return {noticeTargets,update(time){const on=Math.floor(time*1.25)%2===0;led.emissiveIntensity=on?2.4:0;led.color.set(on?'#e93827':'#421611');}};
+  const holdingCell=createHoldingCell(scene,{ground,wood,plaque});
+  return {noticeTargets,update(time){holdingCell.update(time);const on=Math.floor(time*1.25)%2===0;led.emissiveIntensity=on?2.4:0;led.color.set(on?'#e93827':'#421611');}};
 }

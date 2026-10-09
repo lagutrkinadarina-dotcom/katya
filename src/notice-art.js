@@ -1,3 +1,12 @@
+import photoAtlasUrl from './assets/notice-photos.png';
+const photoAtlas=new Image();
+export const noticePhotosReady=new Promise((resolve,reject)=>{photoAtlas.onload=resolve;photoAtlas.onerror=reject;});
+photoAtlas.src=photoAtlasUrl;
+export function drawNoticePhoto(ctx,index,x,y,w,h){
+  if(!photoAtlas.complete||!photoAtlas.naturalWidth)return false;
+  const cellW=photoAtlas.naturalWidth/3,cellH=photoAtlas.naturalHeight/2;
+  ctx.drawImage(photoAtlas,(index%3)*cellW,Math.floor(index/3)*cellH,cellW,cellH,x,y,w,h);return true;
+}
 // Fictional local notices, with distinct illustrated portraits and large readable copy.
 export const noticeDocuments=[
   {title:'ПРОПАЛ РЕБЁНОК',name:'МИША СОКОЛОВ • 9 ЛЕТ',kind:'child',lines:['Ушёл из школы 8 октября.','Последний раз замечен у парка.','Синяя куртка, красный рюкзак.','Если видели Мишу — сообщите','дежурному. Не оставайтесь','равнодушными.'],footer:'ПОМОГИТЕ НАЙТИ • 102'},
@@ -41,7 +50,7 @@ function illustration(ctx,kind){
   let seed=kind.length*731;for(let i=0;i<2200;i++){seed=(seed*1664525+1013904223)>>>0;const x=seed%824;seed=(seed*1664525+1013904223)>>>0;ctx.fillStyle=i%2?'#e8dfc014':'#10201b18';ctx.fillRect(x,seed%380,2,2);}
   ctx.restore();
 }
-function photo(ctx,kind,x,y,w,h){ctx.save();ctx.translate(x,y);ctx.scale(w/824,h/380);ctx.translate(-100,-250);illustration(ctx,kind);ctx.restore();}
+function photo(ctx,kind,x,y,w,h){const index=noticeDocuments.findIndex(n=>n.kind===kind);if(drawNoticePhoto(ctx,index,x,y,w,h))return;ctx.save();ctx.translate(x,y);ctx.scale(w/824,h/380);ctx.translate(-100,-250);illustration(ctx,kind);ctx.restore();}
 function copy(ctx,lines,x,y,width,size=43,gap=64){ctx.textAlign='left';ctx.font=`${size}px Arial`;ctx.fillStyle='#28342e';lines.forEach((line,i)=>ctx.fillText(line,x,y+i*gap,width));}
 export function drawNotice(ctx,w,h,index){
   const n=noticeDocuments[index],papers=['#eee4cd','#d9ddcf','#ede4ba','#e4d3ba','#e5dfcf','#d1d8cd'];
@@ -71,3 +80,12 @@ export function drawNotice(ctx,w,h,index){
   ctx.strokeStyle='#887e6040';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(17,0);ctx.lineTo(24,h);ctx.stroke();ctx.fillStyle='#8b76501b';for(let i=0;i<60;i++){const x=i%2?8:w-15;ctx.fillRect(x,(i*79+index*31)%h,5+(i%5),7);}
   ctx.strokeStyle='#806f4930';ctx.beginPath();ctx.moveTo(w-40,0);ctx.lineTo(w-22,38);ctx.lineTo(w,42);ctx.stroke();
 }
+
+export const noticeDetails=[
+ ['Последним Мишу видел продавец у северного входа в парк. Мальчик спрашивал дорогу к автобусной остановке.', 'В красном рюкзаке была тетрадь с рисунками поездов. Он может искать дорогу к старому вокзалу.', 'Если встретите ребёнка, останьтесь рядом и позвоните 102. Не увозите его самостоятельно.'],
+ ['Орлов подрабатывал в мастерской и знал, где хранятся инструменты. После закрытия дверь была открыта ключом.', 'Сосед заметил человека с длинной сумкой возле двора. Лица он не рассмотрел.', 'Следователю нужны сведения о перемещениях Орлова. Ориентировка не заменяет решение суда.'],
+ ['Жители Лесной сообщают, что стая собирается возле заброшенного гаража после наступления темноты.', 'Особенно опасен узкий проход между гаражами: там трудно отойти в сторону.', 'Не бегите и не делайте резких движений. Медленно отступайте к подъезду; при угрозе звоните 112.'],
+ ['Анна обычно возвращается с рынка одним маршрутом. На остановке её узнали, но в привычный автобус она не села.', 'В сумке мог лежать адрес родственницы. Женщина плохо ориентируется в незнакомых кварталах.', 'Не пугайте её вопросами. Предложите присесть в безопасном месте и сообщите дежурному.'],
+ ['Громов готовил материал о договорных боях. Редакция ждала от него последнюю часть расследования вечером после турнира.', 'Следствию важны не только события в раздевалке, но и люди у служебного входа клуба между 21:30 и 22:15.', 'Фотографии зрителей и записи телефонов могут помочь восстановить последовательность событий. Сохраните оригиналы; не публикуйте материалы до разговора со следователем.'],
+ ['Камера склада записывает без звука. Время на ней может отставать на несколько минут — это ещё проверяют.', 'Человек несколько раз подходил к двери, затем исчез из кадра. Светлая сумка осталась в его руке.', 'Если узнали походку или одежду, сообщите дежурному. По одному размытому кадру нельзя установить вину человека.']
+];
