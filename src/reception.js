@@ -98,16 +98,38 @@ export function createReception(scene,{box,pipe,plaque,plaster,paint,floor,wood,
   box(2.8,.08,.65,0,ground+.98,deskZ,wood);
   for(const x of [-1.22,1.22])for(const z of [deskZ-.24,deskZ+.24])box(.07,.94,.07,x,ground+.47,z,dark);
   box(2.55,.82,.05,0,ground+.52,deskZ+.30,wood);
-  box(.2,.035,.16,1,ground+1.04,deskZ-.12,dark);box(.035,.16,.035,1,ground+1.13,deskZ-.12,dark);
-  box(.36,.25,.055,1,ground+1.30,deskZ-.12,dark);box(.29,.18,.006,1,ground+1.30,deskZ-.083,'#607477');
+  // Complete workstation: the screen faces the officer, with a detailed rear shell.
+  const computer=new THREE.Group();computer.position.set(.45,ground+1.02,deskZ+.09);computer.rotation.y=-2.38;scene.add(computer);
+  const casing=new THREE.MeshStandardMaterial({color:'#252b30',roughness:.48});
+  const keysMaterial=new THREE.MeshStandardMaterial({color:'#a9b0ac',roughness:.65});
+  box(.34,.025,.20,0,.013,0,casing,computer);box(.055,.16,.045,0,.10,0,casing,computer);
+  box(.51,.34,.045,0,.30,0,casing,computer);
+  const screenCanvas=document.createElement('canvas');screenCanvas.width=768;screenCanvas.height=480;
+  const ctx=screenCanvas.getContext('2d');ctx.fillStyle='#152c39';ctx.fillRect(0,0,768,480);
+  ctx.fillStyle='#2f5362';ctx.fillRect(0,0,768,62);ctx.fillStyle='#d6e6dd';ctx.font='24px Arial';ctx.fillText('ДЕЖУРНАЯ ЧАСТЬ / ЖУРНАЛ',28,40);
+  ctx.fillStyle='#1d3945';ctx.fillRect(20,84,150,365);ctx.fillStyle='#b3c9c5';ctx.font='20px Arial';
+  ['Сводка','Обращения','Патрули','Архив'].forEach((text,i)=>ctx.fillText(text,34,120+i*46));
+  for(let i=0;i<6;i++){ctx.fillStyle=i%2?'#264652':'#213d48';ctx.fillRect(194,91+i*54,550,43);ctx.fillStyle='#91b1b5';ctx.fillRect(212,105+i*54,220+i%3*40,6);ctx.fillStyle='#66a88a';ctx.fillRect(610,103+i*54,104,14);}
+  const screenMap=new THREE.CanvasTexture(screenCanvas);screenMap.colorSpace=THREE.SRGBColorSpace;
+  const screen=new THREE.Mesh(new THREE.PlaneGeometry(.455,.282),new THREE.MeshStandardMaterial({map:screenMap,emissive:'#9bbfcd',emissiveMap:screenMap,emissiveIntensity:.45,roughness:.35}));screen.position.set(0,.30,.0235);computer.add(screen);
+  for(let i=0;i<9;i++)box(.025,.003,.002,-.16+i*.04,.37,-.0235,dark,computer);
+  box(.055,.025,.003,0,.29,-.024,iron,computer);box(.01,.003,.003,.207,.143,.024,'#73b595',computer);
+  const keyboard=new THREE.Group();keyboard.position.set(-.24,ground+1.039,deskZ-.13);keyboard.rotation.y=.25;scene.add(keyboard);
+  box(.43,.025,.15,0,0,0,casing,keyboard);
+  for(let row=0;row<4;row++)for(let col=0;col<11;col++)box(.029,.009,.024,-.185+col*.037,.017,-.052+row*.03,keysMaterial,keyboard);
+  box(.15,.009,.022,-.03,.018,.053,keysMaterial,keyboard);
+  box(.21,.008,.20,.11,ground+1.026,deskZ-.13,dark);
+  const mouse=new THREE.Mesh(new THREE.SphereGeometry(1,24,16),casing);mouse.scale.set(.032,.023,.05);mouse.position.set(.11,ground+1.051,deskZ-.13);scene.add(mouse);
+  box(.004,.008,.012,.11,ground+1.074,deskZ-.142,iron);
+  pipe([.11,ground+1.031,deskZ-.18],[.24,ground+1.031,deskZ+.10],.003,dark);
   for(let i=0;i<3;i++)box(.3,.024,.35,-1+i*.018,ground+1.032+i*.025,deskZ+.01,'#c5bda3');
   const board=box(.88,.85,.03,2.76,ground+1.8,-4.7,wood);board.rotation.y=Math.PI/2;
   // Forms inside the booth and a waiting bench outside it.
   for(let i=0;i<3;i++)box(.018,.36,.22,2.735,ground+1.9-i*.16,-4.7,'#d5d0bd');
   box(.4,.09,1.8,-2.58,ground+.46,.8,wood);box(.06,.45,1.8,-2.76,ground+.72,.8,wood);
   for(const z of [.15,1.45])pipe([-2.58,ground+.43,z],[-2.58,ground+.03,z],.035,dark);
-  const officer=createOfficer();officer.position.set(-.35,ground,-5.25);scene.add(officer);
+  const officer=createOfficer();officer.position.set(-.35,ground,-4.75);officer.rotation.y=.25;scene.add(officer);
   // Interaction belongs to the reception window, so the player can speak through the glass.
   const target=new THREE.Mesh(new THREE.BoxGeometry(3.4,1.46,.06),new THREE.MeshBasicMaterial({visible:false}));target.position.set(0,ground+1.72,front+.06);target.userData.type='dutyOfficer';scene.add(target);
-  return {npcTarget:target,passageDoor,phoneTarget};
+  return {npcTarget:target,passageDoor,phoneTarget,updateOfficer:time=>{officer.userData.update(time);mouse.position.x=.11+Math.sin(time*.6)*.003;}};
 }

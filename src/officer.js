@@ -2,10 +2,11 @@ import * as THREE from 'three';
 
 // A local, smoothly sculpted model, with an anatomical face and a tailored uniform.
 export function createOfficer(){
-  const root=new THREE.Group();
+  const root=new THREE.Group(),head=new THREE.Group(),eyes=[],arms=[];
+  head.position.y=1.43;root.add(head);let activeParent=root;
   const mat=(color,roughness=.8,metalness=0)=>new THREE.MeshStandardMaterial({color,roughness,metalness});
   const skin=mat('#bd9475'),cheek=mat('#b88a70'),navy=mat('#27384a'),seam=mat('#34485b'),black=mat('#202529'),shirt=mat('#b4c6ca'),gold=mat('#bda46a',.38,.65),lip=mat('#876457'),white=mat('#ddd8c9'),iris=mat('#53635b');
-  function mesh(geometry,material,x,y,z,sx=1,sy=1,sz=1){const m=new THREE.Mesh(geometry,material);m.position.set(x,y,z);m.scale.set(sx,sy,sz);m.castShadow=true;m.receiveShadow=true;root.add(m);return m;}
+  function mesh(geometry,material,x,y,z,sx=1,sy=1,sz=1){const m=new THREE.Mesh(geometry,material);m.position.set(x,y,z);m.scale.set(sx,sy,sz);m.castShadow=true;m.receiveShadow=true;if(y>=1.43){m.position.y-=1.43;head.add(m);}else activeParent.add(m);return m;}
   const sphere=new THREE.SphereGeometry(1,32,24);
   const oval=(material,x,y,z,sx,sy,sz)=>mesh(sphere,material,x,y,z,sx,sy,sz);
   function shape(points,material,y,depth=1){const g=new THREE.LatheGeometry(points.map(([r,h])=>new THREE.Vector2(r,h)),48);return mesh(g,material,0,y,0,1,1,depth);}
@@ -29,14 +30,16 @@ export function createOfficer(){
   for(const side of [-1,1]){
     oval(cheek,side*.138,1.62,.005,.027,.048,.023);
     oval(skin,side*.08,1.579,.052,.026,.036,.022);
-    oval(white,side*.059,1.653,.109,.022,.009,.008);
-    oval(iris,side*.059,1.653,.119,.007,.008,.004);
-    oval(black,side*.059,1.653,.123,.003,.004,.002);
+    eyes.push(oval(white,side*.059,1.653,.109,.022,.009,.008));
+    eyes.push(oval(iris,side*.059,1.653,.119,.007,.008,.004));
+    eyes.push(oval(black,side*.059,1.653,.123,.003,.004,.002));
     const brow=oval(black,side*.062,1.682,.11,.027,.004,.006);brow.rotation.z=-side*.09;
     oval(skin,side*.06,1.64,.107,.026,.004,.007);
-    sleeve([[side*.195,1.29,0],[side*.26,1.22,0],[side*.28,1.05,.012],[side*.26,.94,.085],[side*.24,.858,.135]],[.09,.083,.071,.061,.048],navy);
-    oval(skin,side*.24,.823,.143,.047,.065,.027);
-    for(let i=0;i<4;i++)oval(skin,side*.24+(i-1.5)*.018,.805,.153,.009,.035,.013);
+    const arm=new THREE.Group();root.add(arm);arms.push(arm);activeParent=arm;
+    sleeve([[side*.195,1.29,0],[side*.27,1.18,.07],[side*.29,1.08,.23],[side*.24,1.065,.39],[side*.20,1.07,.52]],[.09,.083,.069,.058,.043],navy);
+    oval(skin,side*.20,1.06,.55,.045,.025,.055);
+    for(let i=0;i<4;i++)oval(skin,side*.20+(i-1.5)*.018,1.047,.592,.008,.012,.03);
+    activeParent=root;
     const shoulder=oval(seam,side*.2,1.319,.015,.086,.012,.033);shoulder.rotation.z=side*.12;
     oval(gold,side*.2,1.336,.017,.015,.003,.013);
     oval(gold,side*.115,1.178,.146,.006,.006,.003);
@@ -56,6 +59,15 @@ export function createOfficer(){
   shape([[0,0],[.14,0],[.154,.028],[.163,.057],[.13,.079],[0,.087]],navy,1.735,.9);
   shape([[.141,0],[.143,.035]],black,1.736,.86);
   oval(black,0,1.747,.105,.158,.014,.106);oval(gold,0,1.79,.145,.02,.024,.006);
+  const eyeScale=eyes.map(eye=>eye.scale.y);
+  root.userData.update=time=>{
+    head.rotation.set(.12+Math.sin(time*.7)*.018,.45+Math.sin(time*.45)*.035,Math.sin(time*.6)*.01);
+    // Brief eyelid closure, breathing and small alternating typing motions.
+    const phase=time%4.7,blink=phase<.16?Math.max(.06,Math.abs(phase-.08)/.08):1;
+    eyes.forEach((eye,i)=>eye.scale.y=eyeScale[i]*blink);
+    arms.forEach((arm,i)=>arm.position.y=Math.sin(time*7+i*2)*.003);
+    root.scale.y=1+Math.sin(time*1.3)*.0015;
+  };
   root.userData.headHeight=1.65;
   return root;
 }
