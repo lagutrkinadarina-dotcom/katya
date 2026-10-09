@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {createCoffeeMachine} from './coffee-machine.js';
 import {furnishReceptionDetails} from './reception-details.js';
 import {createHoldingCell} from './holding-cell.js';
 import {drawNotice,noticePhotosReady} from './notice-art.js';
@@ -145,7 +146,7 @@ export function furnishReception(scene,{ground,wood,frame,dark,pipe,plaque}){
   for(let i=0;i<5;i++)mesh(new THREE.DodecahedronGeometry(.06,0),paper,-2.48+Math.sin(i*2)*.08,ground+.32+(i%2)*.035,2.12+Math.cos(i*2)*.06,binGroup);
   // Photo layout: cooler at the near left wall, archive table before the stair door.
   const cooler=new THREE.Group();cooler.position.set(-2.48,ground,2.78);cooler.rotation.y=Math.PI/2;scene.add(cooler);editable(cooler,'cooler','Кулер',true);
-  const coolerBody=material('#adae9f',.56,.12),water=new THREE.MeshPhysicalMaterial({color:'#244657',transparent:true,opacity:.62,roughness:.18,metalness:.04});
+  const coolerBody=material('#adae9f',.56,.12),water=new THREE.MeshPhysicalMaterial({color:'#356a7b',transparent:true,opacity:.22,roughness:.12,metalness:.04,depthWrite:false});
   rounded(.43,.96,.43,0,.48,0,coolerBody,cooler);
   rounded(.32,.26,.025,0,.73,.224,steel,cooler);rounded(.32,.04,.13,0,.58,.26,steel,cooler);
   for(const x of [-.085,.085]){rounded(.03,.05,.025,x,.77,.249,frame,cooler);rounded(.045,.012,.025,x,.792,.259,x<0?red:material('#315475'),cooler);}
@@ -154,9 +155,20 @@ export function furnishReception(scene,{ground,wood,frame,dark,pipe,plaque}){
   const bottleProfile=[[0,0],[.08,0],[.11,.04],[.145,.09],[.145,.38],[.13,.42],[.07,.47],[.045,.48],[.045,.52]];
   // Inverted water bottle seats its neck in the dispenser socket.
   const bottle=new THREE.Group();bottle.position.set(0,1.55,0);bottle.rotation.x=Math.PI;cooler.add(bottle);
-  mesh(new THREE.LatheGeometry(bottleProfile.map(([r,y])=>new THREE.Vector2(r,y)),40),water,0,0,0,bottle);
+  const bottleShell=mesh(new THREE.LatheGeometry(bottleProfile.map(([r,y])=>new THREE.Vector2(r,y)),40),water,0,0,0,bottle);bottleShell.renderOrder=4;bottleShell.castShadow=false;
   for(const y of [.14,.24,.34])mesh(new THREE.TorusGeometry(.147,.007,8,40),water,0,y,0,bottle).rotation.x=Math.PI/2;
   cylinder(.05,.05,.025,0,.52,0,steel,bottle);
+  // Liquid is in the upright cooler coordinates, so the inverted bottle fills from its neck.
+  const waterGroup=new THREE.Group();cooler.add(waterGroup);
+  const liquidMaterial=new THREE.MeshPhysicalMaterial({color:'#3b8898',transparent:true,opacity:.46,roughness:.16,depthWrite:false,emissive:'#1a4148',emissiveIntensity:.12});
+  const liquidProfile=[[0,1.048],[.038,1.048],[.062,1.081],[.108,1.125],[.135,1.176],[.137,1.405]];
+  const liquid=mesh(new THREE.LatheGeometry(liquidProfile.map(([r,y])=>new THREE.Vector2(r,y)),32),liquidMaterial,0,0,0,waterGroup);liquid.castShadow=false;liquid.renderOrder=2;liquid.name='cooler-liquid';
+  const surface=mesh(new THREE.CircleGeometry(.137,40),liquidMaterial,0,1.405,0,waterGroup);surface.rotation.x=-Math.PI/2;surface.renderOrder=2;surface.castShadow=false;
+  const bubbles=[];const bubbleMaterial=new THREE.MeshStandardMaterial({color:'#c9e9e5',transparent:true,opacity:.70,roughness:.18,emissive:'#72b7b9',emissiveIntensity:.25,depthWrite:false});
+  for(let i=0;i<9;i++){const bubble=mesh(new THREE.SphereGeometry(.005+(i%3)*.002,12,8),bubbleMaterial,0,1.2,0,waterGroup);bubble.castShadow=false;bubble.renderOrder=3;bubble.name='cooler-bubble';bubbles.push(bubble);}
+  const rippleMaterial=new THREE.MeshBasicMaterial({color:'#b5e1df',transparent:true,opacity:.25,depthWrite:false});
+  const ripple=mesh(new THREE.TorusGeometry(.125,.0012,4,32),rippleMaterial,0,1.407,0,waterGroup);ripple.rotation.x=Math.PI/2;ripple.renderOrder=3;ripple.castShadow=false;
+  const updateWater=time=>{surface.position.y=1.405+Math.sin(time*2.1)*.0012;const wave=(time*.65)%1;ripple.scale.setScalar(.2+wave*.8);rippleMaterial.opacity=(1-wave)*.3;ripple.position.y=surface.position.y+.0015;bubbles.forEach((bubble,i)=>{const phase=(time*.25+i*.113)%1;const radius=.018+(i%3)*.017;bubble.position.set(Math.cos(i*2.4+time*.7)*radius,1.17+phase*.229,Math.sin(i*2.4+time*.6)*radius);bubble.scale.setScalar(Math.sin(phase*Math.PI)*(.7+phase*.5));});};
   const table=new THREE.Group();table.position.set(2.48,ground,-.90);scene.add(table);editable(table,'archive-table','Стол с коробками',true);
   rounded(.55,.055,1.18,0,.64,0,wood,table);
   for(const x of [-.21,.21])for(const z of [-.48,.48])rounded(.035,.60,.035,x,.31,z,steel,table);
@@ -183,35 +195,6 @@ export function furnishReception(scene,{ground,wood,frame,dark,pipe,plaque}){
   rounded(.135,.085,.015,0,0,.158,steel,camera);
   const lens=cylinder(.029,.029,.02,-.025,0,.178,dark,camera);lens.rotation.x=Math.PI/2;
   const led=new THREE.MeshStandardMaterial({color:'#bb231c',emissive:'#ee2318',emissiveIntensity:1.6});const recordingLed=mesh(new THREE.SphereGeometry(.006,12,8),led,.047,.025,.171,camera);recordingLed.name='recording-led';
-  // Wall calendar behind the officer, electrical panel and public forms.
-  const makeCalendarMap=(torn=false)=>canvasMap((ctx,w,h)=>{
-    ctx.fillStyle='#e2dbc5';ctx.fillRect(0,0,w,h);ctx.fillStyle='#34413a';ctx.fillRect(0,0,w,140);
-    ctx.fillStyle='#f2ebd3';ctx.textAlign='center';ctx.font='bold 78px Arial';ctx.fillText(torn?'СЕНТЯБРЬ':'ОКТЯБРЬ',w/2,103);
-    ctx.fillStyle='#30392f';ctx.font='bold 48px Arial';ctx.fillText('2026',w/2,210);
-    const days=['ПН','ВТ','СР','ЧТ','ПТ','СБ','ВС'];ctx.font='bold 30px Arial';days.forEach((day,i)=>ctx.fillText(day,75+i*103,294));
-    for(let day=1;day<=(torn?30:31);day++){const cell=day+(torn?0:2),x=75+(cell%7)*103,y=400+Math.floor(cell/7)*109;ctx.fillStyle=(cell%7)>4?'#944739':'#202b24';ctx.font='bold 58px Arial';ctx.fillText(String(day),x,y);
-      if(!torn&&(day===9||day===22)){ctx.strokeStyle='#9a3028';ctx.lineWidth=6;ctx.beginPath();ctx.ellipse(x,y-20,41,44,-.13,0,Math.PI*2);ctx.stroke();}}
-    // Uneven torn edge and two leftover paper layers under the current page.
-    ctx.fillStyle='#b5ab93';ctx.beginPath();ctx.moveTo(0,h);for(let x=0;x<=w;x+=30)ctx.lineTo(x,h-17+(x%90)*.15);ctx.lineTo(w,h);ctx.fill();
-  },1024,1280);
-  const calendarMap=makeCalendarMap(),tornCalendarMap=makeCalendarMap(true);calendarMap.anisotropy=8;tornCalendarMap.anisotropy=8;
-  function calendar(x,y,z,rotation=0,w=.34,h=.47,torn=false){
-    const group=new THREE.Group();group.position.set(x,y,z);group.rotation.y=rotation;scene.add(group);
-    let page;const map=torn?tornCalendarMap:calendarMap;
-    if(torn){
-      // Only the top of the sheet remains: the jagged silhouette exposes the wall.
-      const shape=new THREE.Shape();shape.moveTo(-w/2,h/2);shape.lineTo(w/2,h/2);
-      for(let i=12;i>=0;i--)shape.lineTo(-w/2+w*i/12,h*.02+Math.sin(i*2.3)*h*.07+(i%2)*h*.025);
-      shape.closePath();const geometry=new THREE.ShapeGeometry(shape);const positions=geometry.attributes.position;const uv=geometry.attributes.uv;
-      for(let i=0;i<positions.count;i++)uv.setXY(i,positions.getX(i)/w+.5,positions.getY(i)/h+.5);
-      page=mesh(geometry,new THREE.MeshStandardMaterial({map,roughness:.9,side:THREE.DoubleSide}),0,0,.002,group);
-    }else{
-      for(let i=0;i<2;i++)rounded(w,h,.001,0,-.003-i*.003,-.003-i*.002,paper,group);
-      page=panel(calendarMap,w,h,0,0,.002,group);
-    }
-    page.material.emissive.set('#c5bfa8');page.material.emissiveMap=map;page.material.emissiveIntensity=.08;
-    for(const x of [-w*.26,w*.26])mesh(new THREE.TorusGeometry(.012,.002,6,16),steel,x,h*.49,.004,group);
-  }
   // Framed awards replace the calendar behind the duty officer.
   for(const [i,x,y,title] of [[0,-1.32,ground+2.05,'ПОЧЁТНАЯ ГРАМОТА'],[1,-.84,ground+1.66,'БЛАГОДАРНОСТЬ']]){
     const award=canvasMap((ctx,w,h)=>{
@@ -224,13 +207,12 @@ export function furnishReception(scene,{ground,wood,frame,dark,pipe,plaque}){
   const wallPanel=new THREE.Group();wallPanel.position.set(-2.79,ground+1.98,-1.37);wallPanel.rotation.y=Math.PI/2;scene.add(wallPanel);editable(wallPanel,'electrical-panel','Электрощиток',false);
   rounded(.24,.46,.065,0,0,0,agedMetal,wallPanel);rounded(.19,.37,.006,0,0,.037,steel,wallPanel);
   rounded(.04,.015,.012,.065,0,.045,frame,wallPanel);
-  calendar(2.80,ground+1.82,-2.9,-Math.PI/2,.30,.39,true);
-  calendar(2.80,ground+1.82,-2.4,-Math.PI/2,.30,.39);
+  createCoffeeMachine(scene,{ground,rounded,mesh,panel,canvasMap,pipe});
   // Document piles across the reception counter, clear of the save telephone.
   for(const [x,z,count]of [[-1.15,-4.26,6],[-1.39,-3.35,4],[-.37,-3.33,3]])for(let i=0;i<count;i++){
     rounded(.29,.017,.24,x+(i%2)*.009,ground+1.03+i*.022,z,i%2?paper:wood);
   }
   furnishReceptionDetails(scene,{ground,wood,frame,paper,steel,rounded,mesh,pipe,panel,canvasMap,plaque});
   const holdingCell=createHoldingCell(scene,{ground,wood,plaque});
-  return {noticeTargets,update(time){holdingCell.update(time);const on=Math.floor(time*1.25)%2===0;led.emissiveIntensity=on?2.4:0;led.color.set(on?'#e93827':'#421611');}};
+  return {noticeTargets,update(time){updateWater(time);holdingCell.update(time);const on=Math.floor(time*1.25)%2===0;led.emissiveIntensity=on?2.4:0;led.color.set(on?'#e93827':'#421611');}};
 }
