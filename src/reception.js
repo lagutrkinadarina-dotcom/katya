@@ -90,7 +90,7 @@ export function createReception(scene,{box,pipe,plaque,plaster,paint,floor,wood,
   for(let i=0;i<=160;i++){const t=i/160,a=t*Math.PI*32;cordPoints.push(new THREE.Vector3(.205+Math.cos(a)*.012,.025+t*.13+Math.sin(a)*.012,.13-t*.25));}
   phoneGroup.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(cordPoints),180,.004,6,false),ivory));
   const phoneTarget=new THREE.Mesh(new THREE.BoxGeometry(.46,.26,.5),new THREE.MeshBasicMaterial({visible:false}));
-  phoneTarget.position.set(.95,ground+1.13,front+.18);phoneTarget.userData.type='savePhone';scene.add(phoneTarget);
+  phoneTarget.position.set(.95,ground+1.13,front+.18);phoneTarget.userData.type='savePhone';scene.add(phoneTarget);phoneGroup.attach(phoneTarget);phoneGroup.userData.editor={id:'save-phone',label:'Телефон сохранения'};
   box(.11,.06,.09,-.9,ground+1.05,front+.27,dark);pipe([-.9,ground+1.08,front+.27],[-.9,ground+1.18,front+.22],.009,dark);
   // The working desktop meets the back edge of the public sill at z=-3.76,
   // at the same height, with no detached table or overlapping top faces.
@@ -99,6 +99,7 @@ export function createReception(scene,{box,pipe,plaque,plaster,paint,floor,wood,
   for(const x of [-1.22,1.22])for(const z of [deskZ-.24,deskZ+.24])box(.07,.94,.07,x,ground+.47,z,dark);
   box(2.55,.82,.05,0,ground+.52,deskZ+.30,wood);
   // Complete workstation: the screen faces the officer, with a detailed rear shell.
+  const workstationStart=scene.children.length;
   const computer=new THREE.Group();computer.position.set(.45,ground+1.02,deskZ+.09);computer.rotation.y=-2.38;scene.add(computer);
   const casing=new THREE.MeshStandardMaterial({color:'#252b30',roughness:.48});
   const keysMaterial=new THREE.MeshStandardMaterial({color:'#a9b0ac',roughness:.65});
@@ -122,6 +123,8 @@ export function createReception(scene,{box,pipe,plaque,plaster,paint,floor,wood,
   const mouse=new THREE.Mesh(new THREE.SphereGeometry(1,24,16),casing);mouse.scale.set(.032,.023,.05);mouse.position.set(.11,ground+1.051,deskZ-.13);scene.add(mouse);
   box(.004,.008,.012,.11,ground+1.074,deskZ-.142,iron);
   pipe([.11,ground+1.031,deskZ-.18],[.24,ground+1.031,deskZ+.10],.003,dark);
+  const workstation=new THREE.Group();workstation.position.set(.1,ground+1.02,deskZ);scene.add(workstation);workstation.userData.editor={id:'workstation',label:'Компьютер, клавиатура и мышь'};
+  for(const object of scene.children.slice(workstationStart,-1))workstation.attach(object);
   for(let i=0;i<3;i++)box(.3,.024,.35,-1+i*.018,ground+1.032+i*.025,deskZ+.01,'#c5bda3');
   const board=box(.88,.85,.03,2.76,ground+1.8,-4.7,wood);board.rotation.y=Math.PI/2;
   // Forms inside the booth and a waiting bench outside it.
@@ -130,5 +133,5 @@ export function createReception(scene,{box,pipe,plaque,plaster,paint,floor,wood,
   const officer=createOfficer();officer.position.set(-.35,ground,-4.75);officer.rotation.y=.25;scene.add(officer);
   // Interaction belongs to the reception window, so the player can speak through the glass.
   const target=new THREE.Mesh(new THREE.BoxGeometry(3.4,1.46,.06),new THREE.MeshBasicMaterial({visible:false}));target.position.set(0,ground+1.72,front+.06);target.userData.type='dutyOfficer';scene.add(target);
-  return {npcTarget:target,passageDoor,phoneTarget,updateOfficer:time=>{officer.userData.update(time);mouse.position.x=.11+Math.sin(time*.6)*.003;}};
+  return {npcTarget:target,passageDoor,phoneTarget,updateOfficer:time=>{officer.userData.update(time);}};
 }

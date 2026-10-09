@@ -7,12 +7,7 @@ export function canWalk(x,z,eyeY,doorOpen=false){
   if(inside(x,z,9.5,11.95,1.52,5.02)||inside(x,z,2.3,11.95,1.52,2.25))return true;
   if(!inside(x,z,-2.35,2.5,-3.06,6.5))return false;
   if(x>2.3&&z>2.25&&z<2.98)return false;
-  // Leave the centre, reception counter and stair doorway clear of furnishings.
-  if(inside(x,z,-2.8,-2.10,-.36,2.52))return false;
-  if(inside(x,z,-2.8,-1.94,-3.06,-2.03))return false;
-  if(inside(x,z,2.05,2.8,2.68,4.20))return false;
-  if(inside(x,z,-2.8,-1.99,2.29,3.28))return false;
-  if(inside(x,z,1.97,2.8,-1.71,.56))return false;
+  // Furniture collision bounds follow the editor objects in main.js.
   return true;
 }
 const stairHeight=x=>-3.365*Math.max(0,Math.min(1,(x-5.05)/4.45));

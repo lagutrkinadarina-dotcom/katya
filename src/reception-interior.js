@@ -4,6 +4,7 @@ import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js'
 // Modelled furnishings stay inside the lobby shell; the staircase is left untouched.
 export function furnishReception(scene,{ground,wood,frame,dark,pipe,plaque}){
   const material=(color,roughness=.8,metalness=0)=>new THREE.MeshStandardMaterial({color,roughness,metalness});
+  const editable=(object,id,label,solid=false)=>{object.userData.editor={id,label,solid};return object;};
   const steel=material('#343c39',.55,.45),agedMetal=material('#646e60',.7,.3),paper=material('#c8bfa6'),red=material('#863b2d',.5,.3);
   function mesh(geometry,mat,x,y,z,parent=scene){const m=new THREE.Mesh(geometry,mat);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m;}
   function rounded(w,h,d,x,y,z,mat,parent=scene,r=.012){return mesh(new RoundedBoxGeometry(w,h,d,2,Math.min(r,w/4,h/4,d/4)),mat,x,y,z,parent);}
@@ -13,7 +14,7 @@ export function furnishReception(scene,{ground,wood,frame,dark,pipe,plaque}){
   const warm=new THREE.MeshStandardMaterial({color:'#eee3c4',emissive:'#ffe6ac',emissiveIntensity:1.15,roughness:.35});
   // Two fluorescent tubes, end caps, reflectors and mounting brackets per fixture.
   for(const z of [-1.6,2.5,5.2,-5.05]){
-    const fixture=new THREE.Group();fixture.position.set(0,ground+2.97,z);scene.add(fixture);
+    const fixture=new THREE.Group();fixture.position.set(0,ground+2.97,z);scene.add(fixture);editable(fixture,'lamp-'+z,'Потолочная лампа '+z);
     rounded(1.42,.075,.33,0,0,0,frame,fixture);
     rounded(1.34,.014,.29,0,-.043,0,steel,fixture);
     for(const offset of [-.095,.095]){
@@ -21,7 +22,7 @@ export function furnishReception(scene,{ground,wood,frame,dark,pipe,plaque}){
       for(const x of [-.63,.63])rounded(.045,.055,.065,x,-.056,offset,frame,fixture);
     }
     for(const x of [-.48,.48])rounded(.08,.04,.12,x,.05,0,steel,fixture);
-    const light=new THREE.PointLight(0xffe9be,z<-4?7:9,z<-4?4.3:6,2);light.position.set(0,ground+2.72,z);scene.add(light);
+    const light=new THREE.PointLight(0xffe9be,z<-4?7:9,z<-4?4.3:6,2);light.position.set(0,-.25,0);fixture.add(light);
   }
   // Ceiling conduit follows the walls, with elbow sections rather than floating strips.
   for(const x of [-2.72,2.72]){
@@ -30,7 +31,7 @@ export function furnishReception(scene,{ground,wood,frame,dark,pipe,plaque}){
   }
   pipe([-2.72,ground+2.86,-3.5],[2.72,ground+2.86,-3.5],.022,steel);
   // Slatted waiting bench with bent steel supports, wood end grain and screws.
-  const bench=new THREE.Group();bench.position.set(-2.56,ground,.8);scene.add(bench);
+  const bench=new THREE.Group();bench.position.set(-2.56,ground,.8);scene.add(bench);editable(bench,'bench','Скамья',true);
   for(const x of [-.15,0,.15])rounded(.135,.045,1.8,x,.46,0,wood,bench);
   for(const y of [.74,.93]){const slat=rounded(.05,.17,1.8,-.23,y,0,wood,bench);slat.rotation.z=-.09;}
   for(const z of [-.7,.7]){
@@ -39,7 +40,7 @@ export function furnishReception(scene,{ground,wood,frame,dark,pipe,plaque}){
     for(const x of [-.15,.15]){const bolt=cylinder(.007,.007,.006,x,.487,z,agedMetal,bench);bolt.castShadow=false;}
   }
   // Cork notice board with individually pinned, slightly uneven papers.
-  const notices=new THREE.Group();notices.position.set(-2.78,ground+1.91,.65);notices.rotation.y=Math.PI/2;scene.add(notices);
+  const notices=new THREE.Group();notices.position.set(-2.78,ground+1.91,.65);notices.rotation.y=Math.PI/2;scene.add(notices);editable(notices,'notices','Доска объявлений',false);
   rounded(2.05,1.25,.065,0,0,0,wood,notices);
   rounded(1.94,1.14,.018,0,0,.04,material('#74634a'),notices);
   const noticeTitle=plaque('ИНФОРМАЦИЯ',1.92,.16,0,.71,.037,notices);
@@ -57,7 +58,7 @@ export function furnishReception(scene,{ground,wood,frame,dark,pipe,plaque}){
   // Organic leaves have bent midribs, tapered edges and individually oriented stems.
   const foliage=[material('#334331'),material('#495538'),material('#596143')],soil=material('#292c23'),pot=material('#554b3b');
   function plant(x,z,size=1){
-    const group=new THREE.Group();group.position.set(x,ground,z);group.scale.setScalar(size);scene.add(group);
+    const group=new THREE.Group();group.position.set(x,ground,z);group.scale.setScalar(size);scene.add(group);editable(group,'plant-'+x+'-'+z,'Растение',true);
     const profile=[[.13,0],[.15,.025],[.19,.30],[.20,.34],[.18,.35],[.165,.30],[.12,.045]];
     mesh(new THREE.LatheGeometry(profile.map(([r,y])=>new THREE.Vector2(r,y)),32),pot,0,0,0,group);
     cylinder(.17,.17,.012,0,.316,0,soil,group);
@@ -74,12 +75,28 @@ export function furnishReception(scene,{ground,wood,frame,dark,pipe,plaque}){
     }
   }
   plant(-2.45,-2.66);
-  // Ribbed radiator near the plant, with pipe elbows and a valve.
-  for(let i=0;i<12;i++)rounded(.105,.57,.12,-2.70,ground+.43,-2.55+i*.067,frame);
-  pipe([-2.64,ground+.68,-2.62],[-2.64,ground+.68,-1.7],.02,agedMetal);
-  pipe([-2.64,ground+.16,-2.62],[-2.64,ground+.16,-1.7],.02,agedMetal);
+  // Cast-iron radiator: separated hollow sections, collectors, brackets and thermostat.
+  const radiator=new THREE.Group();radiator.position.set(-2.67,ground,-2.13);scene.add(radiator);editable(radiator,'radiator','Батарея',true);
+  const enamel=material('#b8baaa',.52,.12),fittings=material('#827e66',.42,.55);
+  for(let i=0;i<12;i++){
+    const z=(i-5.5)*.075;
+    for(const x of [-.052,.052])rounded(.026,.44,.056,x,.405,z,enamel,radiator);
+    for(const y of [.175,.635])rounded(.144,.064,.06,0,y,z,enamel,radiator);
+    rounded(.012,.40,.022,.073,.405,z,enamel,radiator);
+  }
+  for(const y of [.175,.635]){
+    pipe([0,y,-.46],[0,y,.46],.023,enamel,radiator);
+    for(const z of [-.47,.47]){const nut=cylinder(.033,.033,.035,0,y,z,fittings,radiator);nut.rotation.x=Math.PI/2;}
+  }
+  for(const z of [-.28,.28]){rounded(.13,.023,.045,-.064,.245,z,steel,radiator);rounded(.015,.11,.045,-.125,.275,z,steel,radiator);}
+  pipe([0,.635,.48],[0,.635,.61],.019,fittings,radiator);
+  const thermostat=cylinder(.035,.035,.075,0,.635,.665,frame,radiator);thermostat.rotation.x=Math.PI/2;
+  for(let i=0;i<16;i++){const angle=i*Math.PI/8;pipe([Math.cos(angle)*.036,.635+Math.sin(angle)*.036,.63],[Math.cos(angle)*.036,.635+Math.sin(angle)*.036,.70],.0025,agedMetal,radiator);}
+  pipe([0,.175,.48],[0,.175,.61],.017,enamel,radiator);
+  pipe([0,.175,.61],[0,.035,.61],.017,enamel,radiator);
+  pipe([0,.035,.61],[0,.035,1.10],.017,enamel,radiator);
   // Tall steel locker: recessed doors, louvres, hinges, legs and latch.
-  const locker=new THREE.Group();locker.position.set(2.53,ground,3.60);locker.rotation.y=-Math.PI/2;scene.add(locker);
+  const locker=new THREE.Group();locker.position.set(2.53,ground,3.60);locker.rotation.y=-Math.PI/2;scene.add(locker);editable(locker,'locker','Шкаф',true);
   rounded(.70,2.13,.42,0,1,0,agedMetal,locker);
   for(const x of [-.17,.17]){
     rounded(.326,2.02,.022,x,1.125,.224,steel,locker);
@@ -91,7 +108,7 @@ export function furnishReception(scene,{ground,wood,frame,dark,pipe,plaque}){
   }
   for(const x of [-.26,.26])for(const z of [-.15,.15])rounded(.05,.07,.05,x,.035,z,steel,locker);
   // Extinguisher, pressure gauge and flexible hose near the stair entrance.
-  const extinguisher=new THREE.Group();extinguisher.position.set(2.63,ground+.90,.15);scene.add(extinguisher);
+  const extinguisher=new THREE.Group();extinguisher.position.set(2.63,ground+.90,.15);scene.add(extinguisher);editable(extinguisher,'extinguisher','Огнетушитель',false);
   cylinder(.085,.085,.36,0,.20,0,red,extinguisher);
   mesh(new THREE.SphereGeometry(.086,24,16),red,0,.38,0,extinguisher).scale.y=.55;
   cylinder(.028,.03,.065,0,.44,0,steel,extinguisher);
@@ -101,7 +118,7 @@ export function furnishReception(scene,{ground,wood,frame,dark,pipe,plaque}){
   rounded(.11,.16,.004,-.018,.23,.085,paper,extinguisher);
   // Evacuation plan and booth clock are readable canvas faces on modelled frames.
   const plan=canvasMap((ctx,w,h)=>{ctx.fillStyle='#cbc6b1';ctx.fillRect(0,0,w,h);ctx.fillStyle='#333e32';ctx.font='bold 48px Arial';ctx.fillText('ПЛАН ЭВАКУАЦИИ',75,90);ctx.strokeStyle='#515e4d';ctx.lineWidth=10;ctx.strokeRect(120,190,520,650);for(let i=0;i<4;i++){ctx.beginPath();ctx.moveTo(120,320+i*125);ctx.lineTo(640,320+i*125);ctx.stroke();}ctx.beginPath();ctx.moveTo(360,190);ctx.lineTo(360,840);ctx.stroke();ctx.strokeStyle='#82453a';ctx.lineWidth=12;ctx.beginPath();ctx.moveTo(220,760);ctx.lineTo(460,760);ctx.lineTo(460,260);ctx.stroke();ctx.fillStyle='#386747';ctx.fillRect(420,198,80,45);});
-  const planGroup=new THREE.Group();planGroup.position.set(2.80,ground+1.84,3.13);planGroup.rotation.y=-Math.PI/2;scene.add(planGroup);
+  const planGroup=new THREE.Group();planGroup.position.set(2.80,ground+1.84,3.13);planGroup.rotation.y=-Math.PI/2;scene.add(planGroup);editable(planGroup,'evacuation-plan','План эвакуации',false);
   rounded(.60,.83,.035,0,0,0,wood,planGroup);panel(plan,.55,.78,0,0,.02,planGroup);
   const clockMap=canvasMap((ctx,w,h)=>{ctx.fillStyle='#c7c6b0';ctx.fillRect(0,0,w,h);ctx.translate(w/2,h/2);ctx.strokeStyle='#323a33';ctx.lineWidth=6;for(let i=0;i<12;i++){ctx.save();ctx.rotate(i*Math.PI/6);ctx.beginPath();ctx.moveTo(0,-w*.39);ctx.lineTo(0,-w*.34);ctx.stroke();ctx.restore();}for(const [angle,length,width]of [[-.1,.23,12],[4.92,.34,7]]){ctx.save();ctx.rotate(angle);ctx.lineWidth=width;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(0,-w*length);ctx.stroke();ctx.restore();}},512,512);
   const clock=mesh(new THREE.CylinderGeometry(.24,.24,.04,48),steel,.64,ground+2.05,-6.09);clock.rotation.x=Math.PI/2;
@@ -114,17 +131,18 @@ export function furnishReception(scene,{ground,wood,frame,dark,pipe,plaque}){
   mesh(new THREE.SphereGeometry(.023,16,12),warm,.065,.323,.015,lamp);
   const deskLight=new THREE.PointLight(0xffd498,1.8,1.8,2);deskLight.position.set(-1.065,ground+1.34,-4.075);scene.add(deskLight);
   // Rear archive shelves and folders bring depth to the booth without covering the NPC.
-  const shelves=new THREE.Group();shelves.position.set(1.99,ground,-5.78);scene.add(shelves);
+  const shelves=new THREE.Group();shelves.position.set(1.99,ground,-5.78);scene.add(shelves);editable(shelves,'archive-shelves','Архивные полки',false);
   for(const x of [-.48,.48])rounded(.04,1.98,.37,x,1,0,steel,shelves);
   for(const y of [.20,.73,1.26,1.79]){
     rounded(1,.025,.4,0,y,0,agedMetal,shelves);
     for(let i=0;i<6;i++){const folder=rounded(.10,.32,.26,-.36+i*.135,y+.18,-.02,i%2?paper:wood,shelves);folder.rotation.z=(i%3-1)*.025;rounded(.048,.08,.005,-.36+i*.135,y+.20,.113,paper,shelves);}
   }
   // Low wastebasket, rolled rim and crumpled paperwork by the waiting bench.
-  const bin=mesh(new THREE.LatheGeometry([[.12,0],[.14,.02],[.16,.37],[.17,.38],[.16,.40],[.145,.37],[.11,.04]].map(([r,y])=>new THREE.Vector2(r,y)),32),steel,-2.48,ground,2.12);
-  for(let i=0;i<5;i++)mesh(new THREE.DodecahedronGeometry(.06,0),paper,-2.48+Math.sin(i*2)*.08,ground+.32+(i%2)*.035,2.12+Math.cos(i*2)*.06);
+  const binGroup=new THREE.Group();scene.add(binGroup);editable(binGroup,'bin','Урна',true);
+  const bin=mesh(new THREE.LatheGeometry([[.12,0],[.14,.02],[.16,.37],[.17,.38],[.16,.40],[.145,.37],[.11,.04]].map(([r,y])=>new THREE.Vector2(r,y)),32),steel,-2.48,ground,2.12,binGroup);
+  for(let i=0;i<5;i++)mesh(new THREE.DodecahedronGeometry(.06,0),paper,-2.48+Math.sin(i*2)*.08,ground+.32+(i%2)*.035,2.12+Math.cos(i*2)*.06,binGroup);
   // Photo layout: cooler at the near left wall, archive table before the stair door.
-  const cooler=new THREE.Group();cooler.position.set(-2.48,ground,2.78);cooler.rotation.y=Math.PI/2;scene.add(cooler);
+  const cooler=new THREE.Group();cooler.position.set(-2.48,ground,2.78);cooler.rotation.y=Math.PI/2;scene.add(cooler);editable(cooler,'cooler','Кулер',true);
   const coolerBody=material('#adae9f',.56,.12),water=new THREE.MeshPhysicalMaterial({color:'#244657',transparent:true,opacity:.62,roughness:.18,metalness:.04});
   rounded(.43,.96,.43,0,.48,0,coolerBody,cooler);
   rounded(.32,.26,.025,0,.73,.224,steel,cooler);rounded(.32,.04,.13,0,.58,.26,steel,cooler);
@@ -135,12 +153,12 @@ export function furnishReception(scene,{ground,wood,frame,dark,pipe,plaque}){
   mesh(new THREE.LatheGeometry(bottleProfile.map(([r,y])=>new THREE.Vector2(r,y)),40),water,0,1.03,0,cooler);
   for(const y of [1.17,1.27,1.37])mesh(new THREE.TorusGeometry(.147,.007,8,40),water,0,y,0,cooler).rotation.x=Math.PI/2;
   cylinder(.05,.05,.025,0,1.56,0,steel,cooler);
-  const table=new THREE.Group();table.position.set(2.48,ground,-.90);scene.add(table);
+  const table=new THREE.Group();table.position.set(2.48,ground,-.90);scene.add(table);editable(table,'archive-table','Стол с коробками',true);
   rounded(.55,.055,1.18,0,.64,0,wood,table);
   for(const x of [-.21,.21])for(const z of [-.48,.48])rounded(.035,.60,.035,x,.31,z,steel,table);
   const cardboard=material('#887453'),tape=material('#a79771');
   function archiveBox(x,y,z,w=.30,h=.25,d=.30,parent=scene){
-    const group=new THREE.Group();group.position.set(x,y,z);parent.add(group);
+    const group=new THREE.Group();group.position.set(x,y,z);parent.add(group);if(parent===scene)editable(group,'box-'+x+'-'+y+'-'+z,'Архивная коробка',true);
     rounded(w,h,d,0,h/2,0,cardboard,group);rounded(w+.012,.025,d+.012,0,h+.006,0,cardboard,group);
     rounded(.05,.003,d+.01,0,h+.021,0,tape,group);rounded(.082,.022,.004,0,h*.65,d/2+.003,steel,group);
     rounded(.094,.067,.005,0,h*.25,d/2+.004,paper,group);return group;
@@ -154,7 +172,7 @@ export function furnishReception(scene,{ground,wood,frame,dark,pipe,plaque}){
   rounded(.68,.012,1.2,0,0,0,steel,matGroup);
   for(let i=0;i<24;i++)rounded(.63,.005,.016,0,.009,-.56+i*.048,dark,matGroup);
   // CCTV camera, red status light and adjustable mounting arm in the rear corner.
-  const camera=new THREE.Group();camera.position.set(-2.48,ground+2.61,-3.28);camera.rotation.set(.20,.75,0);scene.add(camera);
+  const camera=new THREE.Group();camera.position.set(-2.48,ground+2.61,-3.28);camera.rotation.set(.20,.75,0);scene.add(camera);editable(camera,'security-camera','Камера наблюдения',false);
   pipe([0,-.15,-.15],[0,-.08,0],.018,steel,camera);
   rounded(.17,.105,.30,0,0,0,frame,camera);rounded(.19,.018,.34,0,.062,.015,frame,camera);
   rounded(.135,.085,.015,0,0,.158,steel,camera);
@@ -164,7 +182,7 @@ export function furnishReception(scene,{ground,wood,frame,dark,pipe,plaque}){
   // Wall calendar behind the officer, electrical panel and public forms.
   const calendarMap=canvasMap((ctx,w,h)=>{ctx.fillStyle='#c1bca7';ctx.fillRect(0,0,w,h);ctx.fillStyle='#384139';ctx.fillRect(30,30,w-60,240);ctx.fillStyle='#d0cab5';ctx.font='bold 48px Arial';ctx.fillText('ОКТЯБРЬ',80,340);ctx.font='32px Arial';for(let i=0;i<31;i++)ctx.fillText(String(i+1),55+i%7*98,420+Math.floor(i/7)*100);});
   panel(calendarMap,.34,.47,-1.15,ground+1.94,-6.07);
-  const wallPanel=new THREE.Group();wallPanel.position.set(-2.79,ground+1.98,-1.37);wallPanel.rotation.y=Math.PI/2;scene.add(wallPanel);
+  const wallPanel=new THREE.Group();wallPanel.position.set(-2.79,ground+1.98,-1.37);wallPanel.rotation.y=Math.PI/2;scene.add(wallPanel);editable(wallPanel,'electrical-panel','Электрощиток',false);
   rounded(.24,.46,.065,0,0,0,agedMetal,wallPanel);rounded(.19,.37,.006,0,0,.037,steel,wallPanel);
   rounded(.04,.015,.012,.065,0,.045,frame,wallPanel);
   for(const z of [-2.9,-2.4]){const forms=panel(calendarMap,.30,.39,2.80,ground+1.82,z);forms.rotation.y=-Math.PI/2;}

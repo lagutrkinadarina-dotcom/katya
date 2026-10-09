@@ -1,7 +1,7 @@
 const SETTINGS_KEY='night-shift-settings-v1';
 const defaults={volume:65,sensitivity:1};
 function loadSettings(){try{const s=JSON.parse(localStorage.getItem(SETTINGS_KEY));return {volume:Number.isFinite(s?.volume)?Math.max(0,Math.min(100,s.volume)):65,sensitivity:Number.isFinite(s?.sensitivity)?Math.max(.5,Math.min(2,s.sensitivity)):1};}catch{return {...defaults};}}
-export function createMenus({panel,clear,readSave,removeSave,startNew,resume,apply,stopSound}){
+export function createMenus({panel,clear,readSave,removeSave,startNew,resume,apply,stopSound,edit}){
   const $=s=>document.querySelector(s);
   let screen='main',parent='main',playing=false,exited=false;
   const preferences=loadSettings();apply(preferences);
@@ -19,7 +19,7 @@ export function createMenus({panel,clear,readSave,removeSave,startNew,resume,app
     $('#confirm-new').onclick=()=>{try{removeSave();activate();startNew();}catch{$('#new-error').textContent='Не удалось удалить сохранение. Новая игра не начата.';}};
     $('#cancel-new').focus();
   }
-  function pause(){screen='pause';show('<div class="eyebrow">НОЧНАЯ СМЕНА</div><h2>Пауза</h2><button class="choice" id="resume-game">Вернуться в игру</button><button class="choice" id="pause-settings">Настройки</button><button class="choice" id="to-main">Главное меню</button><p>Прогресс сохраняется через телефон. Выход в меню не создаёт сохранение.</p>');$('#resume-game').onclick=()=>{screen='game';clear();};$('#pause-settings').onclick=()=>settings('pause');$('#to-main').onclick=main;}
+  function pause(){screen='pause';show('<div class="eyebrow">НОЧНАЯ СМЕНА</div><h2>Пауза</h2><button class="choice" id="resume-game">Вернуться в игру</button><button class="choice" id="edit-interior">Редактор предметов · F2</button><button class="choice" id="pause-settings">Настройки</button><button class="choice" id="to-main">Главное меню</button><p>Прогресс сохраняется через телефон. Выход в меню не создаёт сохранение.</p>');$('#resume-game').onclick=()=>{screen='game';clear();};$('#edit-interior').onclick=()=>{screen='game';clear();edit();};$('#pause-settings').onclick=()=>settings('pause');$('#to-main').onclick=main;}
   function settings(from){parent=from;screen='settings';show(`<div class="eyebrow">НОЧНАЯ СМЕНА / ПАРАМЕТРЫ</div><h2>Настройки</h2><label class="setting">Громкость <output id="volume-value">${preferences.volume}%</output><input id="volume" type="range" min="0" max="100" value="${preferences.volume}"></label><label class="setting">Чувствительность мыши <output id="sensitivity-value">${preferences.sensitivity.toFixed(1)}</output><input id="sensitivity" type="range" min="0.5" max="2" step="0.1" value="${preferences.sensitivity}"></label><div class="menu-note" id="setting-status" role="status">Изменения применяются сразу и сохраняются в браузере.</div><div class="menu-buttons"><button class="choice" id="reset-settings">По умолчанию</button><button class="primary" id="back-menu">Назад</button></div>`);
     function change(key,value){preferences[key]=value;apply(preferences);$('#'+key+'-value').textContent=key==='volume'?value+'%':value.toFixed(1);try{localStorage.setItem(SETTINGS_KEY,JSON.stringify(preferences));$('#setting-status').textContent='Настройки сохранены.';}catch{$('#setting-status').textContent='Применено. Браузер не разрешает сохранять настройки.';}}
     for(const key of ['volume','sensitivity'])$('#'+key).oninput=e=>change(key,Number(e.target.value));
