@@ -1,0 +1,26 @@
+import * as THREE from 'three';
+
+// Shared mitered footprints keep adjoining storeys flush at bends.
+export function createWallStrip(scene,points,baseY,bands){
+  const offsets=points.map(([x,z],i)=>{
+    const prev=points[Math.max(0,i-1)],next=points[Math.min(points.length-1,i+1)];
+    const before=new THREE.Vector2(x-prev[0],z-prev[1]),after=new THREE.Vector2(next[0]-x,next[1]-z);
+    if(before.lengthSq()===0)before.copy(after);if(after.lengthSq()===0)after.copy(before);
+    before.normalize();after.normalize();
+    const n1=new THREE.Vector2(-before.y,before.x),n2=new THREE.Vector2(-after.y,after.x),direction=n1.clone().add(n2).normalize();
+    const offset=direction.multiplyScalar(.08/Math.max(.2,n1.dot(direction)));
+    return [[x+offset.x,z+offset.y],[x-offset.x,z-offset.y]];
+  });
+  const boundary=[...offsets.map(pair=>pair[0]),...offsets.map(pair=>pair[1]).reverse()],footprint=new THREE.Shape();
+  boundary.forEach(([x,z],i)=>i?footprint.lineTo(x,-z):footprint.moveTo(x,-z));footprint.closePath();
+  const walls=[];let y=baseY;
+  for(const [height,material]of bands){
+    const geometry=new THREE.ExtrudeGeometry(footprint,{depth:height,steps:1,bevelEnabled:false});
+    // Adjacent bands/storeys use the same world-height texture phase at the seam.
+    const position=geometry.attributes.position,normal=geometry.attributes.normal,uv=geometry.attributes.uv;
+    for(let i=0;i<position.count;i++)if(Math.abs(normal.getZ(i))<.5)uv.setY(i,1-position.getZ(i)-y);
+    const wall=new THREE.Mesh(geometry,material);
+    wall.rotation.x=-Math.PI/2;wall.position.y=y;wall.castShadow=true;wall.receiveShadow=true;scene.add(wall);walls.push(wall);y+=height;
+  }
+  return walls;
+}

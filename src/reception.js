@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {createOfficer} from './officer.js';
+import {createWallStrip} from './architecture.js';
 
 export function createReception(scene,{box,pipe,plaque,plaster,paint,floor,wood,iron,dark}){
   const ground=-3.365;
@@ -8,17 +9,18 @@ export function createReception(scene,{box,pipe,plaque,plaster,paint,floor,wood,
   // One continuous floor and ceiling follow the lobby and left stair return.
   const outline=[[-2.9,-6.2],[2.9,-6.2],[2.9,1.25],[12.3,1.25],[12.3,5.44],[9.3,5.44],[9.3,2.56],[2.9,2.56],[2.9,6.83],[-2.9,6.83]];
   const shape=new THREE.Shape();outline.forEach(([x,z],i)=>i?shape.lineTo(x,-z):shape.moveTo(x,-z));shape.closePath();
-  const geometry=new THREE.ShapeGeometry(shape);
-  for(const [y,material]of [[ground,floor],[-.18,plaster]]){
-    const surface=new THREE.Mesh(geometry,new THREE.MeshStandardMaterial({map:material.map,color:material.color,roughness:material.roughness,side:THREE.DoubleSide}));surface.rotation.x=-Math.PI/2;surface.position.y=y;surface.receiveShadow=true;scene.add(surface);
-  }
+  const floorSurface=new THREE.Mesh(new THREE.ShapeGeometry(shape),floor);
+  floorSurface.rotation.x=-Math.PI/2;floorSurface.position.y=ground;floorSurface.receiveShadow=true;scene.add(floorSurface);
+  // Keep the landing inside the open, full-height stair shaft. The lower ceiling
+  // belongs only to the lobby/return hall, so it cannot jut across the stair opening.
+  const ceilingOutline=[[-2.9,-6.2],[2.9,-6.2],[2.9,1.25],[12.3,1.25],[12.3,2.64],[2.9,2.64],[2.9,6.83],[-2.9,6.83]],ceilingShape=new THREE.Shape();
+  ceilingOutline.forEach(([x,z],i)=>i?ceilingShape.lineTo(x,-z):ceilingShape.moveTo(x,-z));ceilingShape.closePath();
+  // The solid slab's top at 0 closes the former gap below the upper wall.
+  const ceiling=new THREE.Mesh(new THREE.ExtrudeGeometry(ceilingShape,{depth:.18,steps:1,bevelEnabled:false}),plaster);
+  ceiling.rotation.x=-Math.PI/2;ceiling.position.y=-.18;ceiling.castShadow=true;ceiling.receiveShadow=true;scene.add(ceiling);
   // Mitered wall strips share one footprint at every bend. Box end caps cannot leave
   // the former narrow columns or overlapping faces at the lobby/passage corners.
-  function wallStrip(points){
-    const offsets=points.map(([x,z],i)=>{const prev=points[Math.max(0,i-1)],next=points[Math.min(points.length-1,i+1)];const before=new THREE.Vector2(x-prev[0],z-prev[1]),after=new THREE.Vector2(next[0]-x,next[1]-z);if(before.lengthSq()===0)before.copy(after);if(after.lengthSq()===0)after.copy(before);before.normalize();after.normalize();const n1=new THREE.Vector2(-before.y,before.x),n2=new THREE.Vector2(-after.y,after.x),m=n1.clone().add(n2).normalize().multiplyScalar(.08/Math.max(.2,n1.dot(n1.clone().add(n2).normalize())));return [[x+m.x,z+m.y],[x-m.x,z-m.y]];});
-    const boundary=[...offsets.map(pair=>pair[0]),...offsets.map(pair=>pair[1]).reverse()],footprint=new THREE.Shape();boundary.forEach(([x,z],i)=>i?footprint.lineTo(x,-z):footprint.moveTo(x,-z));footprint.closePath();
-    for(const [base,height,material]of [[0,1.2,paint],[1.2,2.165,plaster]]){const wall=new THREE.Mesh(new THREE.ExtrudeGeometry(footprint,{depth:height,steps:1,bevelEnabled:false}),material);wall.rotation.x=-Math.PI/2;wall.position.y=ground+base;wall.castShadow=true;wall.receiveShadow=true;scene.add(wall);}
-  }
+  const wallStrip=points=>createWallStrip(scene,points,ground,[[1.2,paint],[2.165,plaster]]);
   wallStrip([[9.3,2.56],[2.9,2.56],[2.9,6.83],[-2.9,6.83],[-2.9,-6.2],[2.9,-6.2],[2.9,1.25],[12.3,1.25],[12.3,5.44],[2.98,5.44]]);
   const routeSign=plaque('ЛЕСТНИЦА · 2 ЭТАЖ →',1.8,.26,2.805,ground+1.85,.15);routeSign.rotation.y=-Math.PI/2;
   // The access door belongs to the existing stair passage, facing the reception lobby.

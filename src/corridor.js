@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {createStreetWindow} from './street.js';
 import {createReception} from './reception.js';
+import {createWallStrip} from './architecture.js';
 
 // All surfaces are generated locally: no downloaded textures or model assets.
 export function createCorridor(scene, renderer) {
@@ -71,12 +72,11 @@ export function createCorridor(scene, renderer) {
     box(.23,.12,24,x,3.18,-5,'#a5aa99');
   }
   const streetUpdates=[createStreetWindow(scene,-17,-1,{plaster,paint}),createStreetWindow(scene,7,1,{plaster,paint})];
-  // The open entrance overlooks a staircase with a real lower landing and right turn.
+  // The open entrance overlooks a staircase with a real lower landing and left turn.
   const concrete=new THREE.MeshStandardMaterial({color:'#777d76',roughness:.92});
-  box(9.4,3.3,.16,7.6,1.65,2.56,plaster);
-  box(9.4,3.3,.16,7.6,1.65,5.44,plaster);
-  box(.16,3.3,2.88,12.3,1.65,4,plaster);
-  box(9.5,.12,2.9,7.55,3.3,4,plaster);
+  // Match the lower shell's mitered east/south corners instead of stacking box end caps.
+  createWallStrip(scene,[[2.9,2.56],[12.3,2.56],[12.3,5.44],[2.98,5.44]],0,[[3.3,plaster]]);
+  box(9.48,.12,3.04,7.64,3.3,4,plaster);
   box(2.2,.16,2.8,4,-.08,4,floor);
   for(let i=0;i<16;i++){
     const x=5.2+i*.29,y=-.21-i*.21;
