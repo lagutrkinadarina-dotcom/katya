@@ -31,11 +31,14 @@ export function furnishReception(scene,{ground,wood,frame,dark,pipe,plaque}){
   // Slatted waiting bench with bent steel supports, wood end grain and screws.
   const bench=new THREE.Group();bench.position.set(-2.56,ground,.8);scene.add(bench);editable(bench,'bench','Скамья',true);
   for(const x of [-.15,0,.15])rounded(.135,.045,1.8,x,.46,0,wood,bench);
-  for(const y of [.74,.93]){const slat=rounded(.05,.17,1.8,-.23,y,0,wood,bench);slat.rotation.z=-.09;}
-  for(const z of [-.7,.7]){
-    pipe([-.18,.04,z],[-.18,.46,z],.022,steel,bench);pipe([.17,.04,z],[.17,.46,z],.022,steel,bench);
-    pipe([-.18,.43,z],[.17,.43,z],.026,steel,bench);pipe([-.18,.43,z],[-.23,1.03,z],.021,steel,bench);
-    for(const x of [-.15,.15]){const bolt=cylinder(.007,.007,.006,x,.487,z,agedMetal,bench);bolt.castShadow=false;}
+  // Backrest boards are attached to a continuous rear frame, not pierced by posts.
+  for(const y of [.76,.96])rounded(.045,.17,1.8,-.205,y,0,wood,bench);
+  for(const z of [-.70,.70]){
+    for(const x of [-.17,.17])pipe([x,.006,z],[x,.43,z],.018,steel,bench);
+    pipe([-.23,.43,z],[.19,.43,z],.021,steel,bench);
+    pipe([-.25,.43,z],[-.25,1.06,z],.018,steel,bench);
+    for(const y of [.76,.96])pipe([-.25,y,z],[-.231,y,z],.010,steel,bench);
+    for(const x of [-.15,0,.15]){const bolt=cylinder(.004,.004,.004,x,.4835,z,agedMetal,bench);bolt.castShadow=false;}
   }
   // Cork notice board with individually pinned, slightly uneven papers.
   const notices=new THREE.Group();notices.position.set(-2.78,ground+1.91,.65);notices.rotation.y=Math.PI/2;scene.add(notices);editable(notices,'notices','Доска объявлений',false);
@@ -133,6 +136,16 @@ export function furnishReception(scene,{ground,wood,frame,dark,pipe,plaque}){
   const shade=mesh(new THREE.LatheGeometry([[.09,0],[.09,.012],[.062,.063],[.03,.082]].map(([r,y])=>new THREE.Vector2(r,y)),32),steel,.065,.31,.015,lamp);shade.material=steel.clone();shade.material.side=THREE.DoubleSide;
   mesh(new THREE.SphereGeometry(.023,16,12),warm,.065,.323,.015,lamp);
   const deskLight=new THREE.PointLight(0xffd498,1.8,1.8,2);deskLight.position.set(-1.065,ground+1.34,-4.075);scene.add(deskLight);
+  // Fresh coffee on the booth desk, clear of the lamp, paperwork and typing hands.
+  const cup=new THREE.Group();cup.position.set(-.76,ground+1.02,-4.22);scene.add(cup);cup.name='duty-coffee';cup.userData.editor={id:'duty-coffee',label:'Кофе дежурного'};
+  const ceramic=material('#d1c7ac',.46),coffee=material('#3b261c',.25);
+  const cupProfile=[[.029,0],[.033,.004],[.041,.087],[.041,.094],[.036,.094],[.035,.085],[.027,.013],[0,.013]];
+  mesh(new THREE.LatheGeometry(cupProfile.map(([r,y])=>new THREE.Vector2(r,y)),32),ceramic,0,0,0,cup);
+  const cupHandle=mesh(new THREE.TorusGeometry(.024,.006,8,24),ceramic,-.042,.048,0,cup);cupHandle.rotation.y=Math.PI/2;
+  const coffeeSurface=mesh(new THREE.CircleGeometry(.035,32),coffee,0,.083,0,cup);coffeeSurface.rotation.x=-Math.PI/2;
+  const steamGroup=new THREE.Group();steamGroup.position.y=.085;cup.add(steamGroup);
+  const steam=[];for(let i=0;i<12;i++){const vaporMaterial=new THREE.MeshBasicMaterial({color:'#dfe3d7',transparent:true,opacity:0,depthWrite:false});const puff=mesh(new THREE.SphereGeometry(1,8,6),vaporMaterial,0,0,0,steamGroup);puff.scale.set(.005,.008,.005);puff.castShadow=false;puff.renderOrder=5;puff.name='coffee-steam';steam.push(puff);}
+  const updateSteam=time=>steam.forEach((puff,i)=>{const phase=(time*.25+i/12)%1;puff.position.set(Math.sin(time*.65+i)*(.003+phase*.018),phase*.24,Math.cos(time*.5+i)*(.003+phase*.012));const radius=.005+phase*.013;puff.scale.set(radius,radius*1.7,radius);puff.material.opacity=Math.sin(phase*Math.PI)*.15;});
   // Rear archive shelves and folders bring depth to the booth without covering the NPC.
   const shelves=new THREE.Group();shelves.position.set(1.99,ground,-5.78);scene.add(shelves);editable(shelves,'archive-shelves','Архивные полки',false);
   for(const x of [-.48,.48])rounded(.04,1.98,.37,x,1,0,steel,shelves);
@@ -214,5 +227,5 @@ export function furnishReception(scene,{ground,wood,frame,dark,pipe,plaque}){
   }
   furnishReceptionDetails(scene,{ground,wood,frame,paper,steel,rounded,mesh,pipe,panel,canvasMap,plaque});
   const holdingCell=createHoldingCell(scene,{ground,wood,plaque});
-  return {noticeTargets,update(time){updateWater(time);holdingCell.update(time);const on=Math.floor(time*1.25)%2===0;led.emissiveIntensity=on?2.4:0;led.color.set(on?'#e93827':'#421611');}};
+  return {noticeTargets,update(time){updateSteam(time);updateWater(time);holdingCell.update(time);const on=Math.floor(time*1.25)%2===0;led.emissiveIntensity=on?2.4:0;led.color.set(on?'#e93827':'#421611');}};
 }

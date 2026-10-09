@@ -7,11 +7,11 @@ export function createCoffeeMachine(scene,{ground,rounded,mesh,panel,canvasMap,p
   rounded(.73,1.89,.57,0,.96,0,body,root);
   for(const x of [-.352,.352])rounded(.025,1.84,.035,x,.97,.302,metal,root);
   rounded(.51,1.23,.035,-.076,1.22,.302,black,root);
-  const drinkLabels=['ЭСПРЕССО','АМЕРИКАНО','КАПУЧИНО','ЛАТТЕ','ШОКОЛАД','ЧАЙ'];
+  const drinkLabels=['ЭСПРЕССО','РИСТРЕТТО','АМЕРИКАНО','ЛУНГО','КАПУЧИНО','ФЛЭТ УАЙТ','ЛАТТЕ','МАКИАТО','ШОКОЛАД','МОККА','ЧАЙ','КАКАО'];
   for(let row=0;row<6;row++)for(let col=0;col<2;col++){
     const x=-.196+col*.245,y=1.71-row*.187;
     rounded(.188,.145,.012,x,y,.327,paper,root);
-    const label=canvasMap((ctx,w,h)=>{ctx.fillStyle=col?'#c9b383':'#d9cbb0';ctx.fillRect(0,0,w,h);ctx.fillStyle='#4d4133';ctx.fillRect(24,36,52,43);ctx.strokeStyle='#4d4133';ctx.lineWidth=6;ctx.strokeRect(74,43,16,22);ctx.fillStyle='#263b31';ctx.font='bold 20px Arial';ctx.textAlign='center';ctx.fillText(drinkLabels[row],w/2,109,w-12);},220,130);
+    const label=canvasMap((ctx,w,h)=>{ctx.fillStyle=col?'#c9b383':'#d9cbb0';ctx.fillRect(0,0,w,h);ctx.fillStyle='#4d4133';ctx.fillRect(24,36,52,43);ctx.strokeStyle='#4d4133';ctx.lineWidth=6;ctx.strokeRect(74,43,16,22);ctx.fillStyle='#263b31';ctx.font='bold 20px Arial';ctx.textAlign='center';ctx.fillText(drinkLabels[row*2+col],w/2,109,w-12);},220,130);
     panel(label,.178,.135,x,y,.336,root);
   }
   const light=new THREE.MeshStandardMaterial({color:'#d5e9d7',emissive:'#bcdbc9',emissiveIntensity:.7});
