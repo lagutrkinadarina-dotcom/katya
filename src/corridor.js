@@ -89,21 +89,20 @@ export function createCorridor(scene, renderer) {
     pipe([5.05,1,z],[9.6,-2.36,z],.04,trim);
   }
   box(3,.15,2.8,10.8,-3.44,4,concrete);
-  box(2.2,.15,7.7,11.2,-3.44,9.2,floor);
-  for(const x of [10.1,12.3]){
-    box(.16,3.3,7.7,x,-1.71,9.2,plaster);
-    box(.2,1.1,7.7,x,-2.8,9.2,paint);
-    box(.23,.07,7.7,x,-2.22,9.2,trim);
-  }
-  box(2.3,3.3,.16,11.2,-1.71,13.1,plaster);
-  box(2.3,.1,7.7,11.2,-.02,9.2,plaster);
-  box(1.1,2.35,.12,11.2,-2.16,13,wood);
-  box(.12,.1,.05,11.58,-2.15,12.9,brass);
-  const downstairsSign=plaque('1 ЭТАЖ · ДЕЖУРНАЯ ЧАСТЬ →',2.1,.23,12.19,-1.05,4.05);downstairsSign.rotation.y=-Math.PI/2;
-  for(const z of [6,10.8]){
-    const lowerLight=new THREE.PointLight(0xffd5a0,22,8,2);lowerLight.position.set(11.1,-.65,z);scene.add(lowerLight);
-    box(.65,.045,.3,11.1,-.13,z,new THREE.MeshStandardMaterial({color:'#e8d9bb',emissive:'#ffc98e',emissiveIntensity:1.6}));
-  }
+  // Keep the lower passage wholly behind the window wall (z < 7).
+  // A short right turn joins a hallway running back into the building.
+  const lowerWall=new THREE.MeshStandardMaterial({color:'#858d7d',roughness:.92});
+  box(2.2,.15,1.3,11.2,-3.44,6.1,concrete);
+  box(7.5,.15,1.3,6.35,-3.44,6.1,concrete);
+  box(.16,3.3,1.3,12.3,-1.71,6.1,lowerWall);
+  box(9.7,3.3,.16,7.45,-1.71,6.83,lowerWall);
+  box(6.2,3.3,.16,5.7,-1.71,5.37,lowerWall);
+  box(9.7,.1,1.46,7.45,-.02,6.1,lowerWall);
+  box(.16,3.3,1.46,2.6,-1.71,6.1,lowerWall);
+  box(.12,2.35,.85,2.72,-2.16,6.1,wood);
+  const downstairsSign=plaque('1 ЭТАЖ →',1.3,.26,12.19,-1.05,4.1);downstairsSign.rotation.y=-Math.PI/2;
+  const lowerLight=new THREE.PointLight(0xffd5a0,14,6,2);lowerLight.position.set(11.3,-.65,6.1);scene.add(lowerLight);
+  box(.65,.045,.3,11.1,-.13,6.1,new THREE.MeshStandardMaterial({color:'#e8d9bb',emissive:'#ffc98e',emissiveIntensity:1.6}));
   // The locked gate is flush with the entrance, before the upper landing.
   for(const z of [2.66,3,3.4,3.8,4.2,4.6,5,5.34])pipe([2.88,.05,z],[2.88,1.07,z],.025,dark);
   pipe([2.88,1.08,2.6],[2.88,1.08,5.4],.045,trim);pipe([2.88,.35,2.6],[2.88,.35,5.4],.025,dark);
