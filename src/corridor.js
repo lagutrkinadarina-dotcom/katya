@@ -195,5 +195,5 @@ export function createCorridor(scene, renderer) {
   pipe([2.8,.32,-15],[2.8,.88,-15],.12,red);box(.1,.12,.14,2.8,.97,-15,dark);
   pipe([2.66,.84,-15],[2.66,1,-15],.025,dark);
   const {npcTarget,passageDoor}=createReception(scene,{box,pipe,plaque,plaster,paint,floor,wood,iron,dark});
-  return {doors,passageDoor,interactables:[...doors,phoneTarget,npcTarget,passageDoor],updateStreet:time=>streetUpdates.forEach(update=>update(time))};
+  return {doors,passageDoor,interactables:[...doors,phoneTarget,npcTarget,passageDoor,passageDoor.userData.target],updateStreet:time=>streetUpdates.forEach(update=>update(time))};
 }
