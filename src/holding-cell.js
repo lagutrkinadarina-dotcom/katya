@@ -25,7 +25,6 @@ export function createHoldingCell(scene,{ground,wood,plaque}){
   for(const y of [.07,2.23])rod([front+.012,ground+y,4.02],[front+.012,ground+y,4.69],.025);
   for(const y of [.4,1.85])box(.045,.085,.05,front+.018,ground+y,4.02);
   box(.042,.13,.095,front+.025,ground+1.08,4.69);rod([front+.053,ground+1.08,4.66],[front+.053,ground+1.08,4.74],.01);
-  const sign=plaque('КПЗ · ВРЕМЕННОЕ СОДЕРЖАНИЕ',1.82,.16,front+.04,ground+2.61,4.96,root);sign.rotation.y=Math.PI/2;
   // Two wooden benches and rounded, seated civilian models.
   box(.36,.065,1.72,-2.48,ground+.46,5.02,wood);
   box(.035,.27,1.72,-2.69,ground+.72,5.02,wood);
