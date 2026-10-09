@@ -1,11 +1,18 @@
 import * as THREE from 'three';
 import {createOfficer} from './officer.js';
+import {furnishReception} from './reception-interior.js';
 import {createWallStrip,alignFloorTiles} from './architecture.js';
 
 export function createReception(scene,{box,pipe,plaque,plaster,paint,floor,wood,iron,dark}){
   const ground=-3.365;
+  // Local materials keep the upper corridor and its tile grid unchanged.
+  plaster=plaster.clone();plaster.color.set('#9da18b');
+  paint=paint.clone();paint.color.set('#354c43');paint.roughness=.84;
+  wood=wood.clone();wood.color.set('#988067');wood.roughness=.73;
+  floor=floor.clone();floor.color.set('#b5b09e');floor.roughness=.49;
+
   const frame=new THREE.MeshStandardMaterial({color:'#cbcfc7',roughness:.6});
-  const glow=new THREE.MeshStandardMaterial({color:'#e5e6d4',emissive:'#dce9da',emissiveIntensity:.65});
+
   // One continuous floor and ceiling follow the lobby and left stair return.
   const outline=[[-2.9,-6.2],[2.9,-6.2],[2.9,1.25],[12.3,1.25],[12.3,5.44],[9.3,5.44],[9.3,2.56],[2.9,2.56],[2.9,6.83],[-2.9,6.83]];
   const shape=new THREE.Shape();outline.forEach(([x,z],i)=>i?shape.lineTo(x,-z):shape.moveTo(x,-z));shape.closePath();
@@ -50,14 +57,7 @@ export function createReception(scene,{box,pipe,plaque,plaster,paint,floor,wood,
   }
   box(.026,2.36,.05,0,1.205,.01,exitMetal,exit);
   plaque('ВЫХОД',1.42,.28,0,2.75,.08,exit);
-  // Warm waiting area, neutral light behind the glass. Light sources are visible fixtures.
-  for(const z of [1,5]){
-    box(1.15,.06,.42,0,ground+3.08,z,frame);box(1,.012,.31,0,ground+3.04,z,glow);
-    const light=new THREE.PointLight(0xe4dfcf,9,6,2);light.position.set(0,ground+2.8,z);scene.add(light);
-  }
-  const boothLight=new THREE.PointLight(0xd7e4df,12,4.5,2);boothLight.position.set(.2,ground+2.65,-4.8);scene.add(boothLight);
-  box(1.2,.06,.4,0,ground+3.08,-4.8,frame);box(1.05,.012,.3,0,ground+3.04,-4.8,glow);
-  const faceLight=new THREE.SpotLight(0xf5e5cc,9,4,Math.PI/3,.8,2);faceLight.position.set(-.9,ground+2.45,-3.8);faceLight.target.position.set(.25,ground+1.5,-4.65);scene.add(faceLight,faceLight.target);
+  const faceLight=new THREE.SpotLight(0xf5e5cc,4,4,Math.PI/3,.8,2);faceLight.position.set(-.9,ground+2.45,-3.8);faceLight.target.position.set(.25,ground+1.5,-4.65);scene.add(faceLight,faceLight.target);
   // Full wall around a real reception opening, with the same plaster as the lobby.
   const front=-3.65;
   box(1.15,3.2,.18,-2.325,ground+1.6,front,plaster);
@@ -126,8 +126,7 @@ export function createReception(scene,{box,pipe,plaque,plaster,paint,floor,wood,
   const board=box(.88,.85,.03,2.76,ground+1.8,-4.7,wood);board.rotation.y=Math.PI/2;
   // Forms inside the booth and a waiting bench outside it.
   for(let i=0;i<3;i++)box(.018,.36,.22,2.735,ground+1.9-i*.16,-4.7,'#d5d0bd');
-  box(.4,.09,1.8,-2.58,ground+.46,.8,wood);box(.06,.45,1.8,-2.76,ground+.72,.8,wood);
-  for(const z of [.15,1.45])pipe([-2.58,ground+.43,z],[-2.58,ground+.03,z],.035,dark);
+  furnishReception(scene,{ground,wood,frame,dark,pipe});
   const officer=createOfficer();officer.position.set(-.35,ground,-4.75);officer.rotation.y=.25;scene.add(officer);
   // Interaction belongs to the reception window, so the player can speak through the glass.
   const target=new THREE.Mesh(new THREE.BoxGeometry(3.4,1.46,.06),new THREE.MeshBasicMaterial({visible:false}));target.position.set(0,ground+1.72,front+.06);target.userData.type='dutyOfficer';scene.add(target);
