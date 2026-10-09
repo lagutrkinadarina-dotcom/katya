@@ -2,7 +2,7 @@
 const inside=(x,z,a,b,c,d)=>x>=a&&x<=b&&z>=c&&z<=d;
 export function canWalk(x,z,eyeY,doorOpen=false){
   if(inside(x,z,2.3,9.5,2.98,5.02))return Math.abs(eyeY-(stairHeight(x)+1.65))<.35;
-  if(eyeY>.9)return inside(x,z,-2.35,2.35,-16.5,6.5)&&!(Math.abs(x)<1.43&&z<-15.03);
+  if(eyeY>.9)return inside(x,z,-2.35,2.35,-16.5,6.5);
   if(!doorOpen&&inside(x,z,2.5,3.24,1.52,2.25))return false;
   if(inside(x,z,9.5,11.95,1.52,5.02)||inside(x,z,2.3,11.95,1.52,2.25))return true;
   if(!inside(x,z,-2.35,2.5,-3.06,6.5))return false;

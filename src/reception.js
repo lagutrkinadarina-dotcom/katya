@@ -78,15 +78,29 @@ export function createReception(scene,{box,pipe,plaque,plaster,paint,floor,wood,
   box(3.65,.08,.58,0,ground+.98,front+.18,wood);
   plaque('ДЕЖУРНАЯ ЧАСТЬ',3.3,.34,0,ground+2.76,front+.105);
   plaque('ДЕЖУРНЫЙ · ЛЕБЕДЕВ',1.2,.16,0,ground+.74,front+.103);
-  // Document tray, intercom and paperwork on the public sill.
-  box(.6,.1,.31,.95,ground+1.07,front+.19,frame);box(.5,.016,.24,.95,ground+1.13,front+.19,'#bcb69f');
+  // Save telephone replaces the tray on the public counter.
+  const phoneGroup=new THREE.Group();phoneGroup.position.set(.95,ground+1.0625,front+.18);scene.add(phoneGroup);
+  const ivory=new THREE.MeshStandardMaterial({color:'#f1eee3',roughness:.4});
+  box(.42,.085,.48,0,0,0,ivory,phoneGroup);
+  box(.34,.04,.16,0,.08,-.12,ivory,phoneGroup);
+  for(const x of [-.16,.16])box(.09,.095,.16,x,.105,-.12,ivory,phoneGroup);
+  box(.36,.055,.07,0,.147,-.12,ivory,phoneGroup);
+  for(let row=0;row<4;row++)for(let col=0;col<3;col++)box(.06,.018,.042,(col-1)*.085,.058,.015+row*.052,iron,phoneGroup);
+  const cordPoints=[];
+  for(let i=0;i<=160;i++){const t=i/160,a=t*Math.PI*32;cordPoints.push(new THREE.Vector3(.205+Math.cos(a)*.012,.025+t*.13+Math.sin(a)*.012,.13-t*.25));}
+  phoneGroup.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(cordPoints),180,.004,6,false),ivory));
+  const phoneTarget=new THREE.Mesh(new THREE.BoxGeometry(.46,.26,.5),new THREE.MeshBasicMaterial({visible:false}));
+  phoneTarget.position.set(.95,ground+1.13,front+.18);phoneTarget.userData.type='savePhone';scene.add(phoneTarget);
   box(.11,.06,.09,-.9,ground+1.05,front+.27,dark);pipe([-.9,ground+1.08,front+.27],[-.9,ground+1.18,front+.22],.009,dark);
-  box(2.8,.08,.65,0,ground+.8,-4.45,wood);
-  for(const x of [-1.22,1.22])for(const z of [-4.69,-4.21])box(.07,.76,.07,x,ground+.38,z,dark);
-  box(2.55,.64,.05,0,ground+.43,-4.15,wood);
-  box(.2,.035,.16,1,ground+.86,-4.57,dark);box(.035,.16,.035,1,ground+.95,-4.57,dark);
-  box(.36,.25,.055,1,ground+1.12,-4.57,dark);box(.29,.18,.006,1,ground+1.12,-4.533,'#607477');
-  for(let i=0;i<3;i++)box(.3,.024,.35,-1+i*.018,ground+.852+i*.025,-4.44,'#c5bda3');
+  // The working desktop meets the back edge of the public sill at z=-3.76,
+  // at the same height, with no detached table or overlapping top faces.
+  const deskZ=-4.085;
+  box(2.8,.08,.65,0,ground+.98,deskZ,wood);
+  for(const x of [-1.22,1.22])for(const z of [deskZ-.24,deskZ+.24])box(.07,.94,.07,x,ground+.47,z,dark);
+  box(2.55,.82,.05,0,ground+.52,deskZ+.30,wood);
+  box(.2,.035,.16,1,ground+1.04,deskZ-.12,dark);box(.035,.16,.035,1,ground+1.13,deskZ-.12,dark);
+  box(.36,.25,.055,1,ground+1.30,deskZ-.12,dark);box(.29,.18,.006,1,ground+1.30,deskZ-.083,'#607477');
+  for(let i=0;i<3;i++)box(.3,.024,.35,-1+i*.018,ground+1.032+i*.025,deskZ+.01,'#c5bda3');
   const board=box(.88,.85,.03,2.76,ground+1.8,-4.7,wood);board.rotation.y=Math.PI/2;
   // Forms inside the booth and a waiting bench outside it.
   for(let i=0;i<3;i++)box(.018,.36,.22,2.735,ground+1.9-i*.16,-4.7,'#d5d0bd');
@@ -95,5 +109,5 @@ export function createReception(scene,{box,pipe,plaque,plaster,paint,floor,wood,
   const officer=createOfficer();officer.position.set(-.35,ground,-5.25);scene.add(officer);
   // Interaction belongs to the reception window, so the player can speak through the glass.
   const target=new THREE.Mesh(new THREE.BoxGeometry(3.4,1.46,.06),new THREE.MeshBasicMaterial({visible:false}));target.position.set(0,ground+1.72,front+.06);target.userData.type='dutyOfficer';scene.add(target);
-  return {npcTarget:target,passageDoor};
+  return {npcTarget:target,passageDoor,phoneTarget};
 }
