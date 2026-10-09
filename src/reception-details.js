@@ -3,15 +3,13 @@ import * as THREE from 'three';
 export function furnishReceptionDetails(scene,{ground,wood,frame,paper,steel,rounded,mesh,pipe,panel,canvasMap,plaque}){
   const brass=new THREE.MeshStandardMaterial({color:'#a38a4e',roughness:.44,metalness:.7});
   const cork=new THREE.MeshStandardMaterial({color:'#65563d',roughness:.95});
-  // Numbered hooks and individual metal keys on the booth's right wall.
+  // Individual hooks and metal keys on the booth's right wall.
   const keys=new THREE.Group();keys.position.set(2.79,ground+1.85,-4.75);keys.rotation.y=-Math.PI/2;scene.add(keys);keys.name='key-board';
   rounded(.67,.87,.035,0,0,0,wood,keys);rounded(.61,.81,.009,0,0,.025,cork,keys);
   for(const x of [-.33,.33])rounded(.025,.89,.055,x,0,.02,steel,keys);
   for(const y of [-.43,.43])rounded(.67,.025,.055,0,y,.02,steel,keys);
   for(let row=0;row<3;row++)for(let col=0;col<5;col++){
     const x=-.245+col*.122,y=.30-row*.26;
-    const label=canvasMap((ctx,w,h)=>{ctx.fillStyle='#ded3ac';ctx.fillRect(0,0,w,h);ctx.fillStyle='#2c352d';ctx.textAlign='center';ctx.font='bold 90px Arial';ctx.fillText(String(101+row*5+col),w/2,109);},256,144);
-    panel(label,.077,.043,x,y,.032,keys);
     pipe([x,y-.04,.033],[x,y-.04,.06],.005,brass,keys);
     mesh(new THREE.TorusGeometry(.013,.003,6,14),brass,x,y-.068,.067,keys);
     mesh(new THREE.TorusGeometry(.011,.0035,6,12),brass,x,y-.095,.069,keys);
@@ -20,19 +18,21 @@ export function furnishReceptionDetails(scene,{ground,wood,frame,paper,steel,rou
   }
   // A closed staff door on the left wall behind the counter.
   const door=new THREE.Group();door.position.set(-2.805,ground,-5.02);door.rotation.y=Math.PI/2;scene.add(door);door.name='duty-staff-door';
-  rounded(.83,1.98,.055,0,1.0,0,wood,door);
-  for(const x of [-.44,.44])rounded(.075,2.10,.09,x,1.05,.005,frame,door);
-  rounded(.96,.075,.09,0,2.10,.005,frame,door);
-  for(const y of [.51,1.43]){
-    rounded(.66,.62,.012,0,y,.034,wood,door);
-    for(const x of [-.33,.33])rounded(.02,.66,.018,x,y,.043,frame,door);
-    for(const dy of [-.32,.32])rounded(.66,.02,.018,0,y+dy,.043,frame,door);
+  // Continuous dark jamb backing prevents the painted wall showing through joints.
+  rounded(.91,2.13,.10,0,1.065,-.005,steel,door);
+  rounded(.82,2.075,.055,0,1.045,.03,wood,door);
+  for(const x of [-.45,.45])rounded(.075,2.15,.10,x,1.075,.04,frame,door);
+  rounded(.975,.075,.10,0,2.1125,.04,frame,door);
+  for(const y of [.51,1.40]){
+    rounded(.64,.61,.012,0,y,.065,wood,door);
+    for(const x of [-.32,.32])rounded(.018,.64,.012,x,y,.077,frame,door);
+    for(const dy of [-.315,.315])rounded(.64,.018,.012,0,y+dy,.077,frame,door);
   }
-  rounded(.035,.14,.015,.30,.96,.045,steel,door);pipe([.30,.99,.06],[.18,.99,.06],.009,brass,door);
-  for(const y of [.33,1.77])rounded(.025,.09,.04,-.402,y,.037,brass,door);
-  plaque('СЛУЖЕБНОЕ ПОМЕЩЕНИЕ',.65,.09,0,1.81,.045,door);
+  rounded(.035,.14,.015,.30,.96,.077,steel,door);pipe([.30,.99,.092],[.18,.99,.092],.009,brass,door);
+  for(const y of [.33,1.77])rounded(.025,.09,.028,-.407,y,.077,brass,door);
+  plaque('СЛУЖЕБНОЕ ПОМЕЩЕНИЕ',.65,.09,0,1.84,.085,door);
   // Citizen reception desk in the free section of wall beyond the lockers.
-  const area=new THREE.Group();area.position.set(2.79,ground,5.66);area.rotation.y=-Math.PI/2;scene.add(area);area.name='citizen-reception';area.userData.editor={id:'citizen-reception',label:'Приём граждан',solid:true};
+  const area=new THREE.Group();area.position.set(2.79,ground,5.66);area.rotation.y=-Math.PI/2;scene.add(area);area.name='citizen-reception';area.userData.editor={id:'citizen-reception',label:'Приём граждан',solid:true,revision:2};
   rounded(1.36,1.04,.035,0,1.88,0,wood,area);rounded(1.27,.96,.008,0,1.88,.025,cork,area);
   plaque('ПРИЁМ ГРАЖДАН',1.36,.14,0,2.49,.03,area);
   const instructions=canvasMap((ctx,w,h)=>{
@@ -50,8 +50,8 @@ export function furnishReceptionDetails(scene,{ground,wood,frame,paper,steel,rou
     pipe([x-.125,1.36,.065],[x+.125,1.36,.065],.005,steel,area);
     plaque(x<-.3?'ОБРАЗЕЦ':'БЛАНКИ',.24,.05,x,1.82,.045,area);
   }
-  rounded(1.28,.055,.48,0,.77,.34,wood,area);
-  for(const x of [-.55,.55])for(const z of [.17,.51])pipe([x,.006,z],[x,.74,z],.018,steel,area);
+  rounded(1.55,.055,.67,0,.77,.385,wood,area);
+  for(const x of [-.67,.67])for(const z of [.14,.63])pipe([x,.006,z],[x,.74,z],.018,steel,area);
   for(let i=0;i<5;i++)rounded(.29,.007,.21,-.42,.805+i*.009,.32,paper,area);
   const lyingForm=panel(form,.31,.23,-.08,.805,.35,area);lyingForm.rotation.x=-Math.PI/2;
   rounded(.32,.30,.26,.34,.955,.30,cork,area);rounded(.34,.023,.28,.34,1.112,.30,cork,area);
@@ -59,14 +59,4 @@ export function furnishReceptionDetails(scene,{ground,wood,frame,paper,steel,rou
   const boxLabel=canvasMap((ctx,w,h)=>{ctx.fillStyle='#dfd0ac';ctx.fillRect(0,0,w,h);ctx.textAlign='center';ctx.fillStyle='#333c31';ctx.font='bold 38px Arial';ctx.fillText('ДЛЯ',w/2,53);ctx.fillText('ЗАЯВЛЕНИЙ',w/2,105);},400,140);panel(boxLabel,.26,.09,.34,.96,.434,area);
   mesh(new THREE.CylinderGeometry(.038,.033,.08,18),steel,-.01,.84,.15,area);
   for(let i=0;i<3;i++)pipe([-.01+i*.013,.85,.15],[.01+i*.011,.97,.15],.003,steel,area);
-  // Metal-framed upholstered chairs, one at each end of the desk.
-  const seatMaterial=new THREE.MeshStandardMaterial({color:'#55584c',roughness:.95});
-  for(const x of [-.49,.49]){
-    rounded(.36,.045,.34,x,.45,.88,seatMaterial,area);
-    const back=rounded(.36,.33,.04,x,.71,1.035,seatMaterial,area);back.rotation.x=-.10;
-    for(const side of [-1,1]){
-      pipe([x+side*.15,.006,.74],[x+side*.15,.45,.74],.012,steel,area);pipe([x+side*.15,.006,1.01],[x+side*.15,.82,1.01],.012,steel,area);
-      pipe([x+side*.15,.44,.74],[x+side*.15,.44,1.01],.012,steel,area);
-    }
-  }
 }
