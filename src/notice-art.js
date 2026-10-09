@@ -1,14 +1,14 @@
 // Fictional local notices, with distinct illustrated portraits and large readable copy.
-const notices=[
+export const noticeDocuments=[
   {title:'ПРОПАЛ РЕБЁНОК',name:'МИША СОКОЛОВ • 9 ЛЕТ',kind:'child',lines:['Ушёл из школы 8 октября.','Последний раз замечен у парка.','Синяя куртка, красный рюкзак.','Если видели Мишу — сообщите','дежурному. Не оставайтесь','равнодушными.'],footer:'ПОМОГИТЕ НАЙТИ • 102'},
   {title:'РАЗЫСКИВАЕТСЯ МУЖЧИНА',name:'ВИКТОР ОРЛОВ • 38 ЛЕТ',kind:'man',lines:['Разыскивается по делу о краже','в мастерской на Заводской, 12.','Рост 180 см. Шрам над бровью.','Носит тёмную кожаную куртку.','Самостоятельно не задерживать.','Сообщите приметы дежурному.'],footer:'ОРИЕНТИРОВКА № 041'},
-  {title:'ОСТОРОЖНО!',name:'НАПАДЕНИЯ БЕЗДОМНЫХ СОБАК',kind:'dog',lines:['Стая замечена у старого гаража','на улице Лесной. Есть пострадавшие.','Не подходите и не кормите собак.','Детей провожайте до школы.','При нападении ищите укрытие.','Сообщите место встречи в участок.'],footer:'ЭКСТРЕННАЯ ПОМОЩЬ • 112'},
+  {title:'ОСТОРОЖНО!',name:'НАПАДЕНИЯ БЕЗДОМНЫХ СОБАК',kind:'street',lines:['Стая замечена у старого гаража','на улице Лесной. Есть пострадавшие.','Не подходите и не кормите собак.','Детей провожайте до школы.','При нападении ищите укрытие.','Сообщите место встречи в участок.'],footer:'ЭКСТРЕННАЯ ПОМОЩЬ • 112'},
   {title:'ПРОПАЛА ЖЕНЩИНА',name:'АННА БЕЛОВА • 67 ЛЕТ',kind:'woman',lines:['6 октября не вернулась с рынка.','Седые волосы, зелёное пальто,','небольшая сумка в клетку.','Может нуждаться в помощи.','Видели Анну на остановке?','Пожалуйста, обратитесь в участок.'],footer:'ВАЖНА ЛЮБАЯ ИНФОРМАЦИЯ • 102'},
-  {title:'НУЖНЫ СВИДЕТЕЛИ',name:'ПРОИСШЕСТВИЕ У МОСТА',kind:'bridge',lines:['7 октября, примерно в 23:40,','у речного моста слышали крик.','С места уехал белый фургон.','Если вы были рядом или у вас','есть запись видеорегистратора,','передайте её следователю.'],footer:'МАТЕРИАЛЫ ДЕЛА № 041'},
-  {title:'ПРИЁМ ГРАЖДАН',name:'УЧАСТОК № 7',kind:'station',lines:['Дежурная часть работает 24 часа.','Заявления принимаем ежедневно.','При себе желательно иметь паспорт.','Потеряли документы или вещи?','Расскажите дежурному о случившемся.','Он подскажет, к кому обратиться.'],footer:'ПОМНИТЕ: ВЫ МОЖЕТЕ ПОМОЧЬ'}
+  {title:'НУЖНЫ СВИДЕТЕЛИ',name:'УБИЙСТВО ИЛЬИ ГРОМОВА',kind:'crime',lines:['Журналист убит в клубе «Ринг».','Время: между 22:00 и 22:10.','Вы были на турнире или рядом?','Передайте записи и наблюдения','следователю в участке № 7.','Даже малая деталь может помочь.'],footer:'ДЕЛО «ПОСЛЕДНИЙ РАУНД» • 041'},
+  {title:'ОРИЕНТИРОВКА',name:'НЕИЗВЕСТНЫЙ У СКЛАДА',kind:'cctv',lines:['Кадр камеры у склада № 3.','Мужчина замечен ночью 6 октября.','Тёмная куртка, светлая сумка.','Вы узнали человека на записи?','Сообщите дежурному участка № 7.','Не пытайтесь задержать его сами.'],footer:'КАМЕРА 03 • 06.10.2026 • 01:17'}
 ];
 function illustration(ctx,kind){
-  ctx.save();ctx.translate(100,250);ctx.fillStyle='#9aa697';ctx.fillRect(0,0,824,380);
+  ctx.save();ctx.translate(100,250);ctx.beginPath();ctx.rect(0,0,824,380);ctx.clip();ctx.fillStyle='#9aa697';ctx.fillRect(0,0,824,380);
   ctx.fillStyle='#7b8b82';for(let i=0;i<8;i++)ctx.fillRect(i*112,60+i%3*35,65,320);
   if(['child','man','woman'].includes(kind)){
     const child=kind==='child',woman=kind==='woman';
@@ -22,19 +22,52 @@ function illustration(ctx,kind){
     if(child){ctx.fillStyle='#99443c';ctx.fillRect(244,304,37,76);ctx.fillRect(542,304,37,76);}
     if(kind==='man'){ctx.strokeStyle='#c59b83';ctx.beginPath();ctx.moveTo(434,131);ctx.lineTo(462,142);ctx.stroke();}
     if(woman){ctx.strokeStyle='#4e4c44';ctx.lineWidth=5;ctx.strokeRect(350,149,58,35);ctx.strokeRect(421,149,58,35);ctx.beginPath();ctx.moveTo(408,162);ctx.lineTo(421,162);ctx.stroke();}
-  }else if(kind==='dog'){
-    ctx.fillStyle='#665444';ctx.beginPath();ctx.ellipse(423,235,177,88,0,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.ellipse(270,150,69,67,-.3,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.moveTo(214,139);ctx.lineTo(222,37);ctx.lineTo(269,107);ctx.fill();ctx.beginPath();ctx.moveTo(275,111);ctx.lineTo(313,42);ctx.lineTo(324,146);ctx.fill();ctx.fillStyle='#453b32';ctx.fillRect(309,266,27,96);ctx.fillRect(516,266,27,96);ctx.beginPath();ctx.ellipse(209,184,57,28,-.2,0,Math.PI*2);ctx.fill();ctx.fillStyle='#e2caa2';ctx.beginPath();ctx.arc(253,145,7,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#665444';ctx.lineWidth=28;ctx.beginPath();ctx.moveTo(566,217);ctx.quadraticCurveTo(660,140,622,103);ctx.stroke();
   }else{
-    ctx.fillStyle='#475b62';ctx.fillRect(0,0,824,380);ctx.fillStyle='#c8bea1';
-    if(kind==='bridge'){ctx.fillRect(40,165,744,25);for(let i=0;i<7;i++)ctx.fillRect(60+i*108,110,12,180);ctx.fillRect(40,110,744,10);ctx.fillStyle='#deddd0';ctx.fillRect(448,121,133,53);ctx.fillStyle='#242d32';ctx.beginPath();ctx.arc(472,178,14,0,7);ctx.arc(551,178,14,0,7);ctx.fill();}
-    else{ctx.fillRect(170,50,480,330);ctx.fillStyle='#2e403e';ctx.fillRect(320,193,175,187);ctx.fillRect(195,96,115,79);ctx.fillRect(515,96,115,79);ctx.fillStyle='#e5dec6';ctx.font='bold 35px Arial';ctx.textAlign='center';ctx.fillText('УЧАСТОК № 7',412,85);}
+    const cctv=kind==='cctv',crime=kind==='crime';
+    ctx.fillStyle=cctv?'#667568':crime?'#454c50':'#a4aca2';ctx.fillRect(0,0,824,380);
+    ctx.fillStyle=cctv?'#34483d':'#747b71';ctx.beginPath();ctx.moveTo(290,110);ctx.lineTo(500,110);ctx.lineTo(824,380);ctx.lineTo(0,380);ctx.fill();
+    for(let i=0;i<4;i++){const x=i<2?i*120:570+(i-2)*135;ctx.fillStyle=i%2?'#646c61':'#858777';ctx.fillRect(x,30+i%2*25,110,240);ctx.fillStyle='#353f3c';for(let row=0;row<3;row++)for(let col=0;col<2;col++)ctx.fillRect(x+15+col*45,60+row*58,24,36);}
+    if(crime){
+      ctx.fillStyle='#c9bb94';ctx.fillRect(269,83,285,128);ctx.fillStyle='#293b39';ctx.fillRect(345,132,100,79);ctx.fillStyle='#dfd4ae';ctx.font='bold 32px Arial';ctx.textAlign='center';ctx.fillText('КЛУБ «РИНГ»',412,120);
+      ctx.strokeStyle='#d1b645';ctx.lineWidth=28;ctx.beginPath();ctx.moveTo(45,280);ctx.lineTo(774,225);ctx.stroke();ctx.fillStyle='#2f3331';ctx.font='bold 25px Arial';ctx.save();ctx.translate(180,278);ctx.rotate(-.07);ctx.fillText('ПОЛИЦИЯ • НЕ ПЕРЕСЕКАТЬ',230,0);ctx.restore();
+      ctx.fillStyle='#e5d5a2';ctx.beginPath();ctx.moveTo(481,352);ctx.lineTo(505,303);ctx.lineTo(529,352);ctx.fill();ctx.fillStyle='#303930';ctx.fillText('1',505,340);
+    }else if(cctv){
+      ctx.fillStyle='#1c2c26';ctx.beginPath();ctx.arc(413,172,23,0,Math.PI*2);ctx.fill();ctx.fillRect(388,194,50,88);ctx.fillRect(389,270,17,65);ctx.fillRect(420,270,17,65);ctx.fillStyle='#b9beb0';ctx.fillRect(447,237,43,56);
+      ctx.strokeStyle='#c5d0bb';ctx.lineWidth=3;ctx.strokeRect(365,137,134,216);ctx.font='22px monospace';ctx.textAlign='left';ctx.fillStyle='#d0dbc5';ctx.fillText('CAM 03   06.10.2026  01:17:24',22,30);ctx.fillText('REC',700,350);ctx.fillStyle='#a74137';ctx.beginPath();ctx.arc(684,342,6,0,7);ctx.fill();
+      ctx.fillStyle='#111c1720';for(let y=0;y<380;y+=5)ctx.fillRect(0,y,824,2);
+    }else{ctx.fillStyle='#b6bdb0';ctx.beginPath();ctx.moveTo(412,170);ctx.lineTo(390,380);ctx.lineTo(415,380);ctx.fill();ctx.fillStyle='#534d40';ctx.fillRect(680,155,10,173);ctx.fillStyle='#d8d0ae';ctx.fillRect(625,135,130,61);ctx.fillStyle='#323e35';ctx.font='bold 23px Arial';ctx.textAlign='center';ctx.fillText('УЛ. ЛЕСНАЯ',690,174);}
   }
+  // Grain and faded corners make these look like printed low-poly photographs.
+  let seed=kind.length*731;for(let i=0;i<2200;i++){seed=(seed*1664525+1013904223)>>>0;const x=seed%824;seed=(seed*1664525+1013904223)>>>0;ctx.fillStyle=i%2?'#e8dfc014':'#10201b18';ctx.fillRect(x,seed%380,2,2);}
   ctx.restore();
 }
+function photo(ctx,kind,x,y,w,h){ctx.save();ctx.translate(x,y);ctx.scale(w/824,h/380);ctx.translate(-100,-250);illustration(ctx,kind);ctx.restore();}
+function copy(ctx,lines,x,y,width,size=43,gap=64){ctx.textAlign='left';ctx.font=`${size}px Arial`;ctx.fillStyle='#28342e';lines.forEach((line,i)=>ctx.fillText(line,x,y+i*gap,width));}
 export function drawNotice(ctx,w,h,index){
-  const n=notices[index];ctx.fillStyle=index%2?'#e2dbc6':'#eee6d1';ctx.fillRect(0,0,w,h);
-  ctx.textAlign='center';ctx.fillStyle='#793b30';ctx.font='bold 53px Arial';ctx.fillText(n.title,w/2,90,w-70);
-  ctx.fillStyle='#29382f';ctx.font='bold 34px Arial';ctx.fillText(n.name,w/2,160,w-70);illustration(ctx,n.kind);
-  ctx.textAlign='left';ctx.font='35px Arial';n.lines.forEach((line,i)=>ctx.fillText(line,65,710+i*65,w-130));
-  ctx.fillStyle='#793b30';ctx.fillRect(42,1140,w-84,78);ctx.fillStyle='#f5edda';ctx.textAlign='center';ctx.font='bold 31px Arial';ctx.fillText(n.footer,w/2,1192,w-120);
+  const n=noticeDocuments[index],papers=['#eee4cd','#d9ddcf','#ede4ba','#e4d3ba','#e5dfcf','#d1d8cd'];
+  ctx.fillStyle=papers[index];ctx.fillRect(0,0,w,h);ctx.textAlign='center';
+  const title=(y,size=67)=>{ctx.fillStyle=index===2?'#343c2e':'#793b30';ctx.font=`bold ${size}px Arial`;ctx.fillText(n.title,w/2,y,w-75);};
+  const subtitle=y=>{ctx.fillStyle='#29382f';ctx.font='bold 43px Arial';ctx.fillText(n.name,w/2,y,w-75);};
+  if(index===0){
+    title(100);subtitle(175);photo(ctx,n.kind,290,225,444,370);ctx.strokeStyle='#8c4435';ctx.lineWidth=7;ctx.strokeRect(280,215,464,390);copy(ctx,n.lines,65,695,w-130,45,64);
+  }else if(index===1){
+    ctx.strokeStyle='#843f34';ctx.lineWidth=10;ctx.strokeRect(25,25,w-50,h-50);title(102,61);subtitle(182);photo(ctx,n.kind,75,238,490,403);
+    ctx.textAlign='left';ctx.fillStyle='#763c32';ctx.font='bold 39px Arial';['РОСТ','180 см','ОСОБАЯ','ПРИМЕТА:','ШРАМ'].forEach((line,i)=>ctx.fillText(line,622,285+i*67));copy(ctx,n.lines,65,724,w-130,43,62);
+  }else if(index===2){
+    ctx.fillStyle='#a19242';ctx.fillRect(0,0,w,146);title(107,83);subtitle(211);photo(ctx,n.kind,55,259,914,305);copy(ctx,n.lines,65,674,w-130,44,68);
+    ctx.strokeStyle='#625f3c';ctx.lineWidth=3;ctx.strokeRect(43,599,w-86,483);
+  }else if(index===3){
+    title(112,65);photo(ctx,n.kind,290,184,444,365);subtitle(628);copy(ctx,n.lines,65,721,w-130,44,62);
+    ctx.strokeStyle='#8c775f';ctx.lineWidth=3;ctx.strokeRect(52,45,w-104,1044);
+  }else if(index===4){
+    ctx.fillStyle='#293b39';ctx.fillRect(0,0,w,143);ctx.fillStyle='#f5edda';ctx.font='bold 72px Arial';ctx.fillText(n.title,w/2,103,w-60);subtitle(218);photo(ctx,n.kind,47,264,930,364);copy(ctx,n.lines,65,728,w-130,44,61);
+    ctx.fillStyle='#793b30';ctx.textAlign='right';ctx.font='bold 29px monospace';ctx.fillText('УЧАСТОК № 7 / ДЕЛО 041',w-64,1101);
+  }else{
+    ctx.textAlign='left';ctx.fillStyle='#293b39';ctx.font='bold 63px Arial';ctx.fillText(n.title,55,102,w-100);ctx.font='bold 37px Arial';ctx.fillText(n.name,55,174,w-100);photo(ctx,n.kind,50,231,924,421);copy(ctx,n.lines,65,741,w-130,43,60);
+    ctx.strokeStyle='#475c4c';ctx.lineWidth=4;ctx.strokeRect(35,217,w-70,451);
+  }
+  ctx.fillStyle=index===2?'#5b613b':'#793b30';ctx.fillRect(42,1140,w-84,78);ctx.fillStyle='#f5edda';ctx.textAlign='center';ctx.font='bold 31px Arial';ctx.fillText(n.footer,w/2,1192,w-120);
+  // Deterministic wear: edge stains, creases and tiny marks, away from the text.
+  ctx.strokeStyle='#887e6040';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(17,0);ctx.lineTo(24,h);ctx.stroke();ctx.fillStyle='#8b76501b';for(let i=0;i<60;i++){const x=i%2?8:w-15;ctx.fillRect(x,(i*79+index*31)%h,5+(i%5),7);}
+  ctx.strokeStyle='#806f4930';ctx.beginPath();ctx.moveTo(w-40,0);ctx.lineTo(w-22,38);ctx.lineTo(w,42);ctx.stroke();
 }

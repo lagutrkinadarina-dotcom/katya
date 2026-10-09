@@ -123,12 +123,6 @@ export function createReception(scene,{box,pipe,plaque,plaster,paint,floor,wood,
   const mouse=new THREE.Group();mouse.position.set(.11,ground+1.034,deskZ-.13);mouse.rotation.y=.25;scene.add(mouse);
   const shell=new THREE.Mesh(new THREE.SphereGeometry(1,32,20),casing);shell.scale.set(.032,.025,.047);shell.position.y=.015;mouse.add(shell);
   const wheel=box(.007,.006,.016,0,.039,.018,iron,mouse);
-  mouse.updateMatrixWorld(true);computer.updateMatrixWorld(true);
-  const cableStart=mouse.localToWorld(new THREE.Vector3(0,.007,.050));
-  const cableEnd=computer.localToWorld(new THREE.Vector3(.18,.165,-.026));
-  box(.027,.014,.013,.18,.165,-.026,dark,computer);
-  const cablePoints=[cableStart,new THREE.Vector3(.16,ground+1.027,deskZ-.27),new THREE.Vector3(.30,ground+1.027,deskZ-.21),new THREE.Vector3(.35,ground+1.027,deskZ+.05),new THREE.Vector3(cableEnd.x,ground+1.05,cableEnd.z),cableEnd];
-  const cable=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(cablePoints),64,.003,8,false),dark);scene.add(cable);
   const workstation=new THREE.Group();workstation.position.set(.1,ground+1.02,deskZ);scene.add(workstation);workstation.userData.editor={id:'workstation',label:'Компьютер, клавиатура и мышь'};
   for(const object of scene.children.slice(workstationStart,-1))workstation.attach(object);
   const board=box(.88,.85,.03,2.76,ground+1.8,-4.7,wood);board.rotation.y=Math.PI/2;
@@ -138,5 +132,5 @@ export function createReception(scene,{box,pipe,plaque,plaster,paint,floor,wood,
   const officer=createOfficer();officer.position.set(-.35,ground,-4.75);officer.rotation.y=.25;scene.add(officer);
   // Interaction belongs to the reception window, so the player can speak through the glass.
   const target=new THREE.Mesh(new THREE.BoxGeometry(3.4,1.46,.06),new THREE.MeshBasicMaterial({visible:false}));target.position.set(0,ground+1.72,front+.06);target.userData.type='dutyOfficer';scene.add(target);
-  return {npcTarget:target,passageDoor,phoneTarget,updateOfficer:time=>{officer.userData.update(time);interior.update(time);}};
+  return {npcTarget:target,passageDoor,phoneTarget,noticeTargets:interior.noticeTargets,updateOfficer:time=>{officer.userData.update(time);interior.update(time);}};
 }

@@ -39,9 +39,10 @@ export function furnishReception(scene,{ground,wood,frame,dark,pipe,plaque}){
   rounded(2.05,1.25,.065,0,0,0,wood,notices);
   rounded(1.94,1.14,.018,0,0,.04,material('#74634a'),notices);
   const noticeTitle=plaque('ИНФОРМАЦИЯ',1.92,.16,0,.71,.037,notices);
+  const noticeTargets=[];
   for(let i=0;i<6;i++){
     const map=canvasMap((ctx,w,h)=>drawNotice(ctx,w,h,i),1024,1280);map.anisotropy=8;
-    const note=panel(map,.55,.49,-.62+(i%3)*.62,.275-Math.floor(i/3)*.54,.055+i*.0007,notices);note.rotation.z=(i%3-1)*.015;
+    const note=panel(map,.55,.49,-.62+(i%3)*.62,.275-Math.floor(i/3)*.54,.055+i*.0007,notices);note.rotation.z=[-.035,.018,-.023,.027,-.014,.038][i];note.userData={type:'notice',noticeIndex:i};noticeTargets.push(note);
     mesh(new THREE.SphereGeometry(.009,10,8),red,note.position.x,note.position.y+.23,.07,notices);
   }
   // Organic leaves have bent midribs, tapered edges and individually oriented stems.
@@ -219,5 +220,5 @@ export function furnishReception(scene,{ground,wood,frame,dark,pipe,plaque}){
   for(const [x,z,count]of [[-1.15,-4.26,6],[-1.39,-3.35,4],[-.37,-3.33,3]])for(let i=0;i<count;i++){
     rounded(.29,.017,.24,x+(i%2)*.009,ground+1.03+i*.022,z,i%2?paper:wood);
   }
-  return {update(time){const on=Math.floor(time*1.25)%2===0;led.emissiveIntensity=on?2.4:0;led.color.set(on?'#e93827':'#421611');}};
+  return {noticeTargets,update(time){const on=Math.floor(time*1.25)%2===0;led.emissiveIntensity=on?2.4:0;led.color.set(on?'#e93827':'#421611');}};
 }
