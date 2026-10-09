@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {createStreetWindow} from './street.js';
 import {createReception} from './reception.js';
-import {createWallStrip} from './architecture.js';
+import {createWallStrip,alignFloorTiles} from './architecture.js';
 
 // All surfaces are generated locally: no downloaded textures or model assets.
 export function createCorridor(scene, renderer) {
@@ -33,7 +33,7 @@ export function createCorridor(scene, renderer) {
     }
     const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
     t.wrapS = t.wrapT = THREE.RepeatWrapping;
-    t.repeat.set(kind === 'floor' ? 6 : kind === 'wood' ? 1 : 8, kind === 'floor' ? 24 : kind === 'wood' ? 1 : 2);
+    t.repeat.set(kind === 'floor' ? 1 : kind === 'wood' ? 1 : 8, kind === 'floor' ? 1 : kind === 'wood' ? 1 : 2);
     t.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy()); return t;
   }
   const plaster = new THREE.MeshStandardMaterial({map: texture('plaster'),color:'#c0c5b4',roughness:.94});
@@ -61,7 +61,7 @@ export function createCorridor(scene, renderer) {
     const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;
     const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshStandardMaterial({map:t,roughness:.65}));m.position.set(x,y,z);parent.add(m);return m;
   }
-  box(6,.15,24,0,-.08,-5,floor);
+  alignFloorTiles(box(6,.15,24,0,-.07,-5,floor));
   box(6,.12,24,0,3.36,-5,'#7d8276');
   for(const x of [-3,3]) {
     if(x<0){box(.15,3.3,24,x,1.65,-5,plaster);box(.19,1.2,24,x,.6,-5,paint);}else{
@@ -77,7 +77,7 @@ export function createCorridor(scene, renderer) {
   // Match the lower shell's mitered east/south corners instead of stacking box end caps.
   createWallStrip(scene,[[2.9,2.56],[12.3,2.56],[12.3,5.44],[2.98,5.44]],0,[[3.3,plaster]]);
   box(9.48,.12,3.04,7.64,3.3,4,plaster);
-  box(2.2,.16,2.8,4,-.08,4,floor);
+  alignFloorTiles(box(2.2,.16,2.8,4,-.075,4,floor));
   for(let i=0;i<16;i++){
     const x=5.2+i*.29,y=-.21-i*.21;
     box(.3,.21,2.4,x,y-.105,4,concrete);box(.045,.025,2.4,x-.125,y+.012,4,brass);

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {createOfficer} from './officer.js';
-import {createWallStrip} from './architecture.js';
+import {createWallStrip,alignFloorTiles} from './architecture.js';
 
 export function createReception(scene,{box,pipe,plaque,plaster,paint,floor,wood,iron,dark}){
   const ground=-3.365;
@@ -10,14 +10,14 @@ export function createReception(scene,{box,pipe,plaque,plaster,paint,floor,wood,
   const outline=[[-2.9,-6.2],[2.9,-6.2],[2.9,1.25],[12.3,1.25],[12.3,5.44],[9.3,5.44],[9.3,2.56],[2.9,2.56],[2.9,6.83],[-2.9,6.83]];
   const shape=new THREE.Shape();outline.forEach(([x,z],i)=>i?shape.lineTo(x,-z):shape.moveTo(x,-z));shape.closePath();
   const floorSurface=new THREE.Mesh(new THREE.ShapeGeometry(shape),floor);
-  floorSurface.rotation.x=-Math.PI/2;floorSurface.position.y=ground;floorSurface.receiveShadow=true;scene.add(floorSurface);
+  floorSurface.rotation.x=-Math.PI/2;floorSurface.position.y=ground;floorSurface.receiveShadow=true;alignFloorTiles(floorSurface);scene.add(floorSurface);
   // Keep the landing inside the open, full-height stair shaft. The lower ceiling
   // belongs only to the lobby/return hall, so it cannot jut across the stair opening.
   const ceilingOutline=[[-2.9,-6.2],[2.9,-6.2],[2.9,1.25],[12.3,1.25],[12.3,2.64],[2.9,2.64],[2.9,6.83],[-2.9,6.83]],ceilingShape=new THREE.Shape();
   ceilingOutline.forEach(([x,z],i)=>i?ceilingShape.lineTo(x,-z):ceilingShape.moveTo(x,-z));ceilingShape.closePath();
-  // The solid slab's top at 0 closes the former gap below the upper wall.
+  // Keep the ceiling below the upper floor slab (bottom -0.145), never over its tiles.
   const ceiling=new THREE.Mesh(new THREE.ExtrudeGeometry(ceilingShape,{depth:.18,steps:1,bevelEnabled:false}),plaster);
-  ceiling.rotation.x=-Math.PI/2;ceiling.position.y=-.18;ceiling.castShadow=true;ceiling.receiveShadow=true;scene.add(ceiling);
+  ceiling.rotation.x=-Math.PI/2;ceiling.position.y=-.335;ceiling.castShadow=true;ceiling.receiveShadow=true;scene.add(ceiling);
   // Mitered wall strips share one footprint at every bend. Box end caps cannot leave
   // the former narrow columns or overlapping faces at the lobby/passage corners.
   const wallStrip=points=>createWallStrip(scene,points,ground,[[1.2,paint],[2.165,plaster]]);

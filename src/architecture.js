@@ -24,3 +24,15 @@ export function createWallStrip(scene,points,baseY,bands){
   }
   return walls;
 }
+
+// One metre per tile, with a shared world-space grid across separate floor meshes.
+export function alignFloorTiles(mesh){
+  mesh.updateMatrixWorld(true);
+  const position=mesh.geometry.attributes.position,uv=mesh.geometry.attributes.uv,point=new THREE.Vector3();
+  for(let i=0;i<position.count;i++){
+    point.fromBufferAttribute(position,i).applyMatrix4(mesh.matrixWorld);
+    uv.setXY(i,point.x,point.z);
+  }
+  uv.needsUpdate=true;
+  return mesh;
+}
