@@ -125,9 +125,6 @@ export function createReception(scene,{box,pipe,plaque,plaster,paint,floor,wood,
   const wheel=box(.007,.006,.016,0,.039,.018,iron,mouse);
   const workstation=new THREE.Group();workstation.position.set(.1,ground+1.02,deskZ);scene.add(workstation);workstation.userData.editor={id:'workstation',label:'Компьютер, клавиатура и мышь'};
   for(const object of scene.children.slice(workstationStart,-1))workstation.attach(object);
-  const board=box(.88,.85,.03,2.76,ground+1.8,-4.7,wood);board.rotation.y=Math.PI/2;
-  // Forms inside the booth and a waiting bench outside it.
-  for(let i=0;i<3;i++)box(.018,.36,.22,2.735,ground+1.9-i*.16,-4.7,'#d5d0bd');
   const interior=furnishReception(scene,{ground,wood,frame,dark,pipe,plaque});
   const officer=createOfficer();officer.position.set(-.35,ground,-4.75);officer.rotation.y=.25;scene.add(officer);
   // Interaction belongs to the reception window, so the player can speak through the glass.

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {furnishReceptionDetails} from './reception-details.js';
 import {createHoldingCell} from './holding-cell.js';
 import {drawNotice,noticePhotosReady} from './notice-art.js';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
@@ -182,7 +183,6 @@ export function furnishReception(scene,{ground,wood,frame,dark,pipe,plaque}){
   rounded(.135,.085,.015,0,0,.158,steel,camera);
   const lens=cylinder(.029,.029,.02,-.025,0,.178,dark,camera);lens.rotation.x=Math.PI/2;
   const led=new THREE.MeshStandardMaterial({color:'#bb231c',emissive:'#ee2318',emissiveIntensity:1.6});const recordingLed=mesh(new THREE.SphereGeometry(.006,12,8),led,.047,.025,.171,camera);recordingLed.name='recording-led';
-  rounded(.14,.32,.10,2.70,ground+2.57,-3.22,steel);
   // Wall calendar behind the officer, electrical panel and public forms.
   const makeCalendarMap=(torn=false)=>canvasMap((ctx,w,h)=>{
     ctx.fillStyle='#e2dbc5';ctx.fillRect(0,0,w,h);ctx.fillStyle='#34413a';ctx.fillRect(0,0,w,140);
@@ -230,6 +230,7 @@ export function furnishReception(scene,{ground,wood,frame,dark,pipe,plaque}){
   for(const [x,z,count]of [[-1.15,-4.26,6],[-1.39,-3.35,4],[-.37,-3.33,3]])for(let i=0;i<count;i++){
     rounded(.29,.017,.24,x+(i%2)*.009,ground+1.03+i*.022,z,i%2?paper:wood);
   }
+  furnishReceptionDetails(scene,{ground,wood,frame,paper,steel,rounded,mesh,pipe,panel,canvasMap,plaque});
   const holdingCell=createHoldingCell(scene,{ground,wood,plaque});
   return {noticeTargets,update(time){holdingCell.update(time);const on=Math.floor(time*1.25)%2===0;led.emissiveIntensity=on?2.4:0;led.color.set(on?'#e93827':'#421611');}};
 }
