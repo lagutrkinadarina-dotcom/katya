@@ -28,7 +28,7 @@ export function createEditor({scene,camera,canvas,release,onExit}){
   const transform=new TransformControls(camera,canvas);transform.enabled=false;transform.setSize(.8);const gizmo=transform.getHelper();gizmo.visible=false;scene.add(gizmo);
   const outline=new THREE.BoxHelper(undefined,0xd8bf78);outline.visible=false;scene.add(outline);
   const history=[];let dragStart=null;
-  const snapshot=object=>({id:object.userData.editor.id,position:object.position.toArray(),rotation:[object.rotation.x,object.rotation.y,object.rotation.z]});
+  const snapshot=object=>({id:object.userData.editor.id,revision:object.userData.editor.revision||1,position:object.position.toArray(),rotation:[object.rotation.x,object.rotation.y,object.rotation.z]});
   function restore(object,data){object.position.fromArray(data.position);object.rotation.set(...data.rotation);object.updateMatrixWorld(true);}
   function status(message){$('editor-status').textContent=message;}
   function changed(){dirty=true;status('Есть несохранённые изменения.');fields();}
@@ -61,7 +61,7 @@ export function createEditor({scene,camera,canvas,release,onExit}){
       if(!entry||typeof entry.id!=='string'||!['position','rotation'].every(key=>Array.isArray(entry[key])&&entry[key].length===3&&entry[key].every(value=>Number.isFinite(value)&&Math.abs(value)<=100)))throw Error('Некорректные координаты в файле.');
       return [items.find(object=>object.userData.editor.id===entry.id),entry];
     });
-    for(const [object,entry]of valid)if(object)restore(object,entry);
+    for(const [object,entry]of valid)if(object&&(entry.revision||1)===(object.userData.editor.revision||1))restore(object,entry);
   }
   try{const stored=localStorage.getItem(STORAGE);if(stored)apply(JSON.parse(stored));}catch{status('Сохранённую расстановку не удалось загрузить.');}
   $('editor-save').onclick=()=>{try{localStorage.setItem(STORAGE,JSON.stringify(layout()));dirty=false;status('Расстановка сохранена в этом браузере.');}catch{status('Браузер не разрешил сохранение. Скачайте JSON.');}};
