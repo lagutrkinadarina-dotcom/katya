@@ -155,7 +155,9 @@ def pose(kind):
         for finger in ['index','middle','ring','pinky']:
             ns=names(finger)
             if finger=='index':target[ns[1]].y-=.012
-            ds=[(.10,.98,-.15),(-.70,.55,-.45),(-.75,.50,-.42)] if finger=='index' else [(0,.79,-.61),(0,.20,-.98),(0,-.60,-.80)]
+            # Keep the index flexion in one plane with gradual joint angles;
+            # lateral folding at the PIP joint pinches the source skin into a spike.
+            ds=[(-.30,.94,-.24),(-.30,.82,-.48),(-.30,.63,-.72)] if finger=='index' else [(0,.79,-.61),(0,.20,-.98),(0,-.60,-.80)]
             if finger=='middle':ds[2]=(0,.20,-.98)
             elif finger=='ring':ds[2]=(0,-.30,-.95)
             for previous,current,d in zip(ns[1:],ns[2:],ds):
@@ -176,7 +178,10 @@ def pose(kind):
         b.matrix=Matrix.Translation(xyz(target[b.name]))@(A@rotation@b.bone.matrix_local.to_3x3()).to_4x4()
     bpy.context.view_layer.update()
     bpy.context.view_layer.objects.active=skin
-    for modifier in list(skin.modifiers):bpy.ops.object.modifier_apply(modifier=modifier.name)
+    for modifier in list(skin.modifiers):
+        # Dual-quaternion skinning retains knuckle volume when the fingers bend.
+        if kind=='payment' and modifier.type=='ARMATURE':modifier.use_deform_preserve_volume=True
+        bpy.ops.object.modifier_apply(modifier=modifier.name)
     skin.parent=None;bpy.data.objects.remove(arm,do_unlink=True)
     if kind=='payment':
         for vertex in skin.data.vertices:
