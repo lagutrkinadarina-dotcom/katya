@@ -105,34 +105,48 @@ def face(rig,woman,skins):
     panel('lower-lip',[(-.027,1.681),(.027,1.681),(.015,1.673),(-.012,1.673)],-.095,lips,rig,'head')
     panel('mouth-line',[(-.031,1.686),(-.015,1.681),(.015,1.681),(.031,1.686),(.015,1.678),(-.015,1.678)],-.098,dark,rig,'head')
 
-def hair_and_hat(rig,woman):
-    if woman:
-        hair=[material('auburn-hair','8D3520'),material('hair-light','AC482A'),material('hair-shadow','66291C')]
-        loft('auburn-scalp',[(0,.015,1.838,.112,.106),(0,.016,1.906,.118,.108),(0,.018,1.962,.071,.081),(0,.018,1.976,.020,.025)],hair,rig,'head')
-        # Back and side curtain is open at the front; there is no hair shell over the face.
-        import math
-        verts=[]
-        for z,rx,ry in [(1.91,.122,.113),(1.79,.135,.124),(1.60,.149,.133),(1.37,.184,.139)]:
-            for i in range(9):
-                angle=math.pi*i/8;verts.append((rx*math.cos(angle),.012+ry*math.sin(angle)-.026*abs(math.cos(angle)),z))
-        faces=[]
+def hairstyle(rig,woman):
+    """One closed hair surface: no overlapping scalp cap or floating hairline plates."""
+    import math
+    mats=[material('auburn-hair' if woman else 'short-hair','8D3520' if woman else '674C3E'),
+          material('hair-highlight','9D4027' if woman else '775846'),
+          material('hair-shadow','7A2F1E' if woman else '573F33')]
+    count=20;verts=[];weights={'head':{},'spine':{}};faces=[]
+    # Outer and inner surfaces share an enclosed rim. Front hairline stays above
+    # the eyes, side locks stop above the collar, back hair continues behind it.
+    for inner in [False,True]:
+        for ring in range(4):
+            for i in range(count):
+                angle=math.tau*i/count;c=math.cos(angle);a=abs(math.sin(angle))
+                if ring==0:
+                    if woman:
+                        z=1.861-.17*a**2-.43*max(0,-c)**1.6
+                        rx=.116+.030*max(0,-c);ry=.110+.050*max(0,-c)
+                    else:
+                        z=1.834-.080*a**2-.060*max(0,-c)
+                        rx=.119;ry=.111
+                elif ring==1:z=1.902;rx=.120 if woman else .117;ry=.111
+                elif ring==2:z=1.943 if woman else 1.930;rx=.083;ry=.080
+                else:z=1.964 if woman else 1.946;rx=.016;ry=.021
+                if inner:rx-=.005;ry-=.005;z-=.004
+                x=rx*math.sin(angle);y=.014-ry*c
+                j=len(verts);verts.append((x,y,z))
+                h=1 if z>1.61 else max(.20,min(1,(z-1.36)/.25))
+                weights['head'][j]=h;weights['spine'][j]=1-h
+        base=(4*count if inner else 0)
         for r in range(3):
-            for i in range(8):
-                a=r*9+i;faces.extend([(a,a+1,a+10),(a,a+10,a+9)])
-        weights={'head':{},'spine':{}}
-        for r,h in enumerate([1,1,.85,.2]):
-            for i in range(r*9,(r+1)*9):weights['head'][i]=h;weights['spine'][i]=1-h
-        mesh('long-auburn-hair',verts,faces,hair,rig,weights)
-        for side in [-1,1]:
-            panel('hairline-'+str(side),[(side*.006,1.912),(side*.076,1.902),(side*.110,1.863),(side*.119,1.760),(side*.104,1.819),(side*.091,1.860),(side*.047,1.879),(side*.006,1.881)],-.105,hair[side==1],rig,'head')
-    else:
-        hair=material('short-hair','674C3E')
-        loft('short-hair',[(0,.012,1.845,.114,.106),(0,.012,1.891,.104,.097),(0,.015,1.918,.070,.074)],[hair],rig,'head')
-        cream=[material('hat-cream','D5CFAB'),material('hat-highlight','E6DDBB'),material('hat-shadow','A7A487')]
-        loft('hat-brim',[(0,.014,1.905,.172,.154),(0,.014,1.923,.192,.170),(0,.014,1.944,.166,.149)],cream,rig,'head')
-        loft('hat-crown',[(0,.014,1.930,.125,.114),(0,.014,2.015,.113,.103),(0,.014,2.067,.071,.074),(0,.014,2.078,.028,.034)],cream,rig,'head')
-        band=material('hat-band','BAB596')
-        loft('hat-band',[(0,.014,1.941,.127,.116),(0,.014,1.959,.126,.115)],[band],rig,'head')
+            for i in range(count):
+                a=base+r*count+i;b=base+r*count+(i+1)%count
+                tri=[(a,b,b+count),(a,b+count,a+count)]
+                faces.extend([tuple(reversed(t)) for t in tri] if inner else tri)
+        faces.append(tuple(base+3*count+i for i in (range(count) if not inner else reversed(range(count)))))
+    for i in range(count):
+        j=(i+1)%count;faces.append((i,4*count+i,4*count+j,j))
+    hair=mesh('continuous-auburn-hair' if woman else 'short-combed-hair',verts,faces,mats,rig,weights)
+    for p in hair.data.polygons:
+        p.material_index=1 if p.center.x<-.045 else (2 if p.center.y>.09 else 0)
+    # Volume follows the head; only the long lower back transitions toward spine.
+    assert len(hair.data.vertices)==160
 
 def plaid(obj,rig,roots):
     """UV-mapped woven plaid stays continuous over large cloth polygons."""
@@ -248,7 +262,7 @@ def build(kind):
         disc('shirt-button-'+str(i),-.076 if woman else 0,-.146 if woman else -.130,z,.006,.006,silver,rig,'spine',8)
     if woman:
         for side in [-1,1]:disc('pocket-button-'+str(side),side*.133,-.149,1.278,.006,.006,silver,rig,'spine',8)
-    face(rig,woman,skins);hair_and_hat(rig,woman)
+    face(rig,woman,skins);hairstyle(rig,woman)
     # Record only actual eyeball vertices so blinking cannot distort face or hair.
     eye_positions=[tuple(v.co) for obj in rig.children if obj.type=='MESH' and obj.get('blink_eye') for v in obj.data.vertices]
     joined=helper.join_rig(rig,roots);joined.name='detainee-'+kind+'-skin';joined.data.name=joined.name
