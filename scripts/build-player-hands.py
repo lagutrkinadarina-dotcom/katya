@@ -78,11 +78,11 @@ def pose(kind):
         # Index and thumb meet on opposite sides of the note; the remaining fingers curl.
         for finger in ['index','middle','ring','pinky']:
             ns=names(finger)
-            ds=[(-.58,.64,-.50),(-.65,-.21,.73),(-.50,-.56,.66)] if finger=='index' else [(0,.88,-.48),(0,.20,-.98),(0,-.60,-.80)]
+            ds=[(-.58,.64,-.50),(-.85,-.48,.20),(-.95,-.24,.17)] if finger=='index' else [(0,.88,-.48),(0,.20,-.98),(0,-.60,-.80)]
             for previous,current,d in zip(ns[1:],ns[2:],ds):
                 target[current]=target[previous]+Vector(d).normalized()*(rest[current]-rest[previous]).length
-        ns=names('thumb');target[ns[0]]=Vector((.048,.022,.005))
-        for previous,current,d in zip(ns,ns[1:],[(-.60,.78,-.15),(-.47,.85,-.22),(-.65,.68,-.32)]):
+        ns=names('thumb');target[ns[0]]=Vector((.048,.022,-.010))
+        for previous,current,d in zip(ns,ns[1:],[(-.60,.78,-.35),(-.47,.85,.10),(-.65,.68,.15)]):
             target[current]=target[previous]+Vector(d).normalized()*(rest[current]-rest[previous]).length
     following={a:b for finger in ['thumb','index','middle','ring','pinky'] for a,b in zip(names(finger),names(finger)[1:])}
     for b in arm.pose.bones:
