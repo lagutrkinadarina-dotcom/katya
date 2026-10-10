@@ -14,8 +14,10 @@ export function createDetainee(kind,index){
   root.ready=new GLTFLoader().loadAsync(assets[kind]).then(gltf=>{
     const model=gltf.scene;model.name=kind+'-model';
     const bones=new Map(),rest=new Map(),blinkMeshes=[];
+    let adaptedReference=false;
     model.updateMatrixWorld(true);
     model.traverse(object=>{
+      if(object.userData.visualStyle==='adapted-uploaded-model')adaptedReference=true;
       if(object.isBone){
         object.name=object.name.replace(/^(upper_arm|forearm|hand|thigh|shin|foot|finger\d|thumb)([LR])$/,'$1.$2');
         bones.set(object.name,object);
@@ -99,7 +101,7 @@ export function createDetainee(kind,index){
       turn('spine',.023+.012*Math.sin(t*(woman?.55:.42)),.008*Math.sin(t*.35),.009*Math.sin(t*.47));
       turn('neck',.008*Math.sin(t*1.5));
       turn('head',.035+.025*Math.sin(t*.7),
-        (woman?-.21:.24)*glance+.055*Math.sin(t*.37),.015*Math.sin(t*.44));
+        (woman?-.21:.24)*glance+.055*Math.sin(t*.37),(adaptedReference?-.23:0)+.015*Math.sin(t*.44));
       const blinkPhase=(t+.4)%4.6,blink=blinkPhase<.16?1-Math.abs(blinkPhase-.08)/.08:0;
       for(const mesh of blinkMeshes)mesh.morphTargetInfluences[mesh.morphTargetDictionary.Blink]=blink;
       for(const [side,sign] of [['L',-1],['R',1]]){

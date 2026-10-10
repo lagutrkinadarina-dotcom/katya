@@ -1,4 +1,5 @@
-"""Author both civilian meshes and rigs from an empty scene; no reused officer geometry.
+"""Author procedural Alice and an optional legacy male rig from an empty scene.
+The current male uses build-uploaded-detainee.py; --legacy-male rebuilds the former male.
 blender -b --factory-startup --python-exit-code 1 --python scripts/build-detainees.py
 Coordinates: metres, Z up, front -Y. Native editable .blend and runtime GLB are exported.
 """
@@ -269,4 +270,4 @@ def build(kind):
 if __name__=='__main__':
     import sys
     build('woman')
-    if '--alice-only' not in sys.argv:build('man')
+    if '--legacy-male' in sys.argv:build('man')

@@ -110,3 +110,20 @@ WASD — движение. Нажмите на коридор для захва�
 [Настоящий скриншот в игре](docs/previews/alice-sculpted-in-game.png) · [Крупный план](docs/previews/alice-sculpted-close.png) · [Вид сбоку](docs/previews/alice-sculpted-side.png).
 
 Редактируемая модель: `public/models/detainee-woman.blend`; игровой файл: `src/assets/detainee-woman.glb`. Только Алису можно пересобрать командой `blender -b --factory-startup --python-exit-code 1 --python scripts/build-detainees.py -- --alice-only`. Второй заключённый и его модель при этом не меняются.
+
+
+## Мужской NPC из присланных моделей
+
+Мужчина в камере теперь использует геометрию из пользовательского `Free Male Character.rar` и отдельно присланного `cartoon_stylized_character_face_head_base_mesh.glb`. Тело собрано из модулей, увеличен объём талии и живота, веса нормализованы. Вместо капюшона куртки рубашка использует поверхность тела, клетчатую текстуру и отдельный воротник. Голова подогнана к шее, добавлены её соединительная поверхность, моргание, волосы, приподнятая бровь, открытый рот и язык; для этой версии действует наклон головы. Скелет с 26 суставами совместим с игровыми анимациями сидения. Это приближение к образцу, не точная копия. Женщина пока не заменена: ожидается её исходная модель.
+
+Настоящие снимки игры: [общий вид](docs/previews/uploaded-male-in-game.png), [сбоку](docs/previews/uploaded-male-side.png), [крупный план мужчины](docs/previews/uploaded-male-close.png).
+
+Редактируемая модель — `public/models/detainee-man.blend`, игровой меш — `src/assets/detainee-man.glb`. Подготовленная исходная сборка тела находится в `public/models/source-preparation/uploaded-male-prepared.blend`; исходная голова — в `public/models/source-preparation/original-head.glb`. [Авторство головы и описание изменений](public/models/source-preparation/ATTRIBUTION.md).
+
+Пересборка мужчины:
+
+```sh
+blender -b --factory-startup --python-exit-code 1 --python scripts/build-uploaded-detainee.py -- public/models/source-preparation/uploaded-male-prepared.blend public/models/source-preparation/original-head.glb
+```
+
+`--preview-only` выводит изолированные `public/models/uploaded-male-adapted.blend` и `.glb` для проверки, сохраняя игровой меш. `scripts/build-detainees.py` по умолчанию пересобирает только Алису; `--legacy-male` явно создаёт прежний процедурный мужской вариант.
