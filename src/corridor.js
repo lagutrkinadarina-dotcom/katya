@@ -162,5 +162,5 @@ export function createCorridor(scene, renderer) {
   pipe([2.8,.32,-15],[2.8,.88,-15],.12,red);box(.1,.12,.14,2.8,.97,-15,dark);
   pipe([2.66,.84,-15],[2.66,1,-15],.025,dark);
   const {npcTarget,passageDoor,phoneTarget,noticeTargets,coffeeMachine,updateOfficer}=createReception(scene,{box,pipe,plaque,plaster,paint,floor,wood,iron,dark});
-  return {doors,passageDoor,coffeeMachine,interactables:[...doors,...noticeTargets,phoneTarget,npcTarget,...passageDoor.userData.leaves,passageDoor.userData.target,...coffeeMachine.targets],updateStreet:time=>{streetUpdates.forEach(update=>update(time));updateOfficer(time);}};
+  return {doors,passageDoor,coffeeMachine,interactables:[scene.getObjectByName('holding-cell-door-target'),...doors,...noticeTargets,phoneTarget,npcTarget,...passageDoor.userData.leaves,passageDoor.userData.target,...coffeeMachine.targets],updateStreet:time=>{streetUpdates.forEach(update=>update(time));updateOfficer(time);}};
 }

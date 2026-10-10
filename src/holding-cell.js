@@ -20,11 +20,18 @@ export function createHoldingCell(scene,{ground,wood,plaque}){
   for(const z of [start,end])rod([back,ground+2.38,z],[front,ground+2.38,z],.025);
   // End plates sink slightly into the plaster instead of leaving floating joints.
   for(const y of [.045,.79,1.43,2.38]){box(.035,.065,.07,back,ground+y,start);box(.07,.065,.035,front,ground+y,end);}
+  const gate=new THREE.Group();gate.name='holding-cell-gate';root.add(gate);
+  const gateSteel=steel.clone();gateSteel.emissive.set('#e1c985');gateSteel.emissiveIntensity=0;
+  // Give the actual gate bars their own material, leaving the rest of the cage dark.
+  for(const mesh of [...root.children])if(mesh.isMesh&&mesh.position.x>front-.03&&mesh.position.z>=4.02&&mesh.position.z<=4.69){gate.attach(mesh);mesh.material=gateSteel;}
   // Visible gate frame, hinges and a recessed lock, all contained in the grille.
   for(const z of [4.02,4.69])rod([front+.012,ground+.07,z],[front+.012,ground+2.23,z],.025);
   for(const y of [.07,2.23])rod([front+.012,ground+y,4.02],[front+.012,ground+y,4.69],.025);
   for(const y of [.4,1.85])box(.045,.085,.05,front+.018,ground+y,4.02);
   box(.042,.13,.095,front+.025,ground+1.08,4.69);rod([front+.053,ground+1.08,4.66],[front+.053,ground+1.08,4.74],.01);
+  for(const mesh of [...root.children])if(mesh.isMesh&&mesh.position.x>front-.03&&mesh.position.z>=4.02&&mesh.position.z<=4.75){gate.attach(mesh);mesh.material=gateSteel;}
+  const target=box(.10,2.16,.67,front+.045,ground+1.15,4.355,new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}),gate);
+  target.name='holding-cell-door-target';target.userData={type:'cellDoor',floor:1,setHighlighted(on){gateSteel.emissiveIntensity=on?.65:0;}};
   // Keep the bench and grille layout; replace only the two civilian models.
   box(.36,.065,1.72,-2.48,ground+.46,5.02,wood);
   box(.035,.27,1.72,-2.69,ground+.72,5.02,wood);
@@ -35,5 +42,5 @@ export function createHoldingCell(scene,{ground,wood,plaque}){
   root.userData.people=people;
   root.ready=Promise.all(people.map(person=>person.ready));
   root.userData.update=time=>people.forEach(person=>person.userData.update(time));
-  return {root,update:root.userData.update};
+  return {root,target,update:root.userData.update};
 }

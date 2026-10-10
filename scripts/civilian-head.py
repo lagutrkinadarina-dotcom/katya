@@ -7,6 +7,8 @@ coordinates are metres in Blender's Z-up, front-negative-Y model space.
 import math
 
 import bmesh
+from mathutils import Vector
+from mathutils.geometry import tessellate_polygon
 
 
 TAU = math.tau
@@ -51,16 +53,18 @@ def build_head(rig, woman, skin, Surface, patch, material):
         for row in range(len(levels) - 1):
             if levels[row][0] <= z <= levels[row + 1][0]:
                 t = (z - levels[row][0]) / (levels[row + 1][0] - levels[row][0])
-                # Interpolate the actual front columns to conform facial details
-                # to the exported polygon surface instead of a floating plane.
-                def point_y(index):
-                    f = max(-1, min(1, x / levels[index][1]))
-                    for column in range(len(fractions) - 1):
-                        if fractions[column] <= f <= fractions[column + 1]:
-                            u = (f - fractions[column]) / (fractions[column + 1] - fractions[column])
-                            return row_y(fractions[column], index) * (1 - u) + row_y(fractions[column + 1], index) * u
-                    return 0
-                return point_y(row) * (1 - t) + point_y(row + 1) * t
+                # Intersect the actual triangulated head, including its diagonal.
+                for column in range(len(fractions) - 1):
+                    points = [(levels[r][1] * fractions[c], row_y(fractions[c], r), levels[r][0])
+                              for r, c in [(row, column), (row, column + 1), (row + 1, column + 1), (row + 1, column)]]
+                    for indices in [(0, 1, 2), (0, 2, 3)]:
+                        a, b, c = [points[i] for i in indices]
+                        denominator = (b[2]-c[2])*(a[0]-c[0]) + (c[0]-b[0])*(a[2]-c[2])
+                        u = ((b[2]-c[2])*(x-c[0]) + (c[0]-b[0])*(z-c[2])) / denominator
+                        v = ((c[2]-a[2])*(x-c[0]) + (a[0]-c[0])*(z-c[2])) / denominator
+                        w = 1-u-v
+                        if min(u,v,w) >= -1e-8:
+                            return u*a[1]+v*b[1]+w*c[1]
         raise ValueError(f'Facial feature outside the head: {x}, {z}')
 
     head = Surface('sculpted-human-head', rig, [skin])
@@ -97,11 +101,30 @@ def build_head(rig, woman, skin, Surface, patch, material):
     eyes = Surface('eyes-eyelids-and-brows', rig, [white, iris, pupil, brow, lid])
     eye_z = 1.785
 
+    blink_depths = {}
+
     def polygon(points, slot, offset, blink=False):
-        ids = [eyes.vertex((x, surface_y(x, z) - offset, z), {'head': 1}) for x, z in points]
-        eyes.face(tuple(reversed(ids)), slot)
-        if blink:
-            eyes.blink.extend((i, eye_z) for i in ids)
+        # Dense conforming triangles cannot cut through the faceted cheek like
+        # the old nonplanar n-gons. Each layer retains its own surface clearance.
+        vectors = [Vector((x, z, 0)) for x, z in points]
+        for indices in tessellate_polygon([vectors]):
+            triangle = [vectors[index] for index in indices]
+            n = 6
+            grid = {}
+            for i in range(n+1):
+                for j in range(n+1-i):
+                    point = triangle[0] + (triangle[1]-triangle[0])*(i/n) + (triangle[2]-triangle[0])*(j/n)
+                    x, z = point.x, point.y
+                    index = eyes.vertex((x, surface_y(x,z)-offset, z), {'head':1})
+                    grid[i,j] = index
+                    if blink:
+                        eyes.blink.append((index,eye_z))
+                        blink_depths[index] = offset
+            for i in range(n):
+                for j in range(n-i):
+                    eyes.face((grid[i,j],grid[i+1,j],grid[i,j+1]),slot)
+                    if i+j < n-1:
+                        eyes.face((grid[i+1,j],grid[i+1,j+1],grid[i,j+1]),slot)
 
     for sign in [-1, 1]:
         x = sign * .047
@@ -112,7 +135,11 @@ def build_head(rig, woman, skin, Surface, patch, material):
         polygon([(x -.0028 + .0014 * math.cos(TAU * i / 8), eye_z + .0033 + .0016 * math.sin(TAU * i / 8)) for i in range(8)], 0, .0037, True)
         polygon([(x + dx, eye_z + dz) for dx, dz in [(-.022, 0), (-.010, .010), (.009, .011), (.022, 0), (.020, .001), (.008, .0085), (-.010, .0075), (-.020, -.001)]], 4, .0019, True)
         polygon([(x + dx, 1.816 + dz) for dx, dz in [(-.024, 0), (-.009, .006), (.011, .004), (.024, -.002), (.021, -.006), (.008, -.002), (-.008, .0005), (-.023, -.005)]], 3, .0030)
-    eyes.object()
+    eye_object = eyes.object()
+    blink_key = eye_object.data.shape_keys.key_blocks['Blink']
+    for index, offset in blink_depths.items():
+        point = blink_key.data[index].co
+        point.y = surface_y(point.x, point.z) - offset
 
     # Lips and nostrils are thin conforming details, never extended plates.
     lips = material('natural-lips', 'A56450' if woman else '815444')

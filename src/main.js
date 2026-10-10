@@ -6,11 +6,12 @@ import {createEditor} from './editor.js';
 import {createCorridor} from './corridor.js';
 import {createCoffeeInteraction} from './coffee-interaction.js';
 import {createMenus} from './menu.js';
+import {createDetaineeConversation,detaineeDialog} from './detainee-dialog.js';
 import {officerDialog} from './officer-dialog.js';
 import {rooms} from './rooms.js';
 import {canWalk, floorHeight, doorwayOccupied, floorNumber} from './navigation.js';
 const $=s=>document.querySelector(s),overlay=$('#overlay'),room=$('#room'),canvas=$('#world');
-const state={mode:'corridor',evidence:new Set(),contradiction:false,ended:false,briefed:false,accessDoorOpen:false};
+const state={mode:'corridor',evidence:new Set(),contradiction:false,ended:false,briefed:false,accessDoorOpen:false,detaineeTopics:[]};
 const evidence={
   file:{title:'01 / Дело «Последний раунд»',body:'В 22:15 после благотворительного турнира в раздевалке клуба «Ринг» найден убитым спортивный журналист Илья Громов. Рядом лежал металлический кубок со следами крови. Громов расследовал договорные бои. Боксёрша Марина Соколова, известная как «Сирень», публично поссорилась с ним перед финалом. В 23:20 её доставили в участок прямо с тренировки.'},
   log:{title:'02 / Журнал доступа в клуб',body:'Личный пропуск Марины Соколовой зарегистрирован у служебного входа в 21:58 и на выходе в 22:11. Время смерти Громова — между 22:00 и 22:10. Соколова утверждает, что ушла в 21:30. Её версия не совпадает с журналом.'},
@@ -30,7 +31,7 @@ function coffeeSound(kind){
     const oscillator=audio.createOscillator();oscillator.type='sine';oscillator.frequency.setValueAtTime(kind==='ready'?880:360,start);oscillator.frequency.exponentialRampToValueAtTime(kind==='ready'?660:160,start+.18);oscillator.connect(gain);gain.gain.setValueAtTime(.055*volume,start);gain.gain.exponentialRampToValueAtTime(.0001,start+.22);oscillator.start();oscillator.stop(start+.23);oscillator.onended=()=>{oscillator.disconnect();gain.disconnect();};
   }
 }
-function release(){if(typeof highlightedNotice!=='undefined')highlightNotice(null);if(document.pointerLockElement)document.exitPointerLock();keys.clear();}
+function release(){if(typeof sceneRendered!=='undefined')sceneRendered=false;if(typeof highlightedCell!=='undefined')highlightCell(null);if(typeof highlightedNotice!=='undefined')highlightNotice(null);if(document.pointerLockElement)document.exitPointerLock();keys.clear();}
 function panel(html){release();overlay.innerHTML=`<section class="panel"><button class="close" aria-label="Закрыть">×</button>${html}</section>`;$('.close').onclick=close;}
 async function showNotice(index){
   release();await noticePhotosReady;const notice=noticeDocuments[index],photo=document.createElement('canvas');photo.width=700;photo.height=700;drawNoticePhoto(photo.getContext('2d'),index,0,0,700,700);
@@ -84,11 +85,12 @@ function enter(type){
 }
 function exitRoom(){state.mode='corridor';room.hidden=true;$('#crosshair').hidden=false;$('#location').textContent=`УЧАСТОК № 7 · ${floorNumber(camera.position.y)} ЭТАЖ`;$('#controls').textContent='W A S D — движение / МЫШЬ — обзор / ЛКМ — открыть дверь';}
 const renderer=new THREE.WebGLRenderer({canvas,antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;const scene=new THREE.Scene();scene.background=new THREE.Color('#101b22');scene.fog=new THREE.Fog('#101b22',8,25);const camera=new THREE.PerspectiveCamera(65,innerWidth/innerHeight,.1,40);camera.position.set(0,1.65,5);camera.rotation.order='YXZ';const {doors,passageDoor,coffeeMachine,interactables,updateStreet}=createCorridor(scene,renderer);
-const ray=new THREE.Raycaster(),keys=new Set();let target=null,highlightedNotice=null,busy=false,yaw=0,pitch=0;
+const ray=new THREE.Raycaster(),keys=new Set();let target=null,highlightedNotice=null,highlightedCell=null,busy=false,yaw=0,pitch=0;
 function highlightNotice(next){if(next===highlightedNotice)return;if(highlightedNotice)highlightedNotice.material.emissiveIntensity=0;highlightedNotice=next?.userData.type==='notice'?next:null;if(highlightedNotice)highlightedNotice.material.emissiveIntensity=.36;}
-document.addEventListener('keydown',e=>{if(e.code==='F2'){e.preventDefault();if(menus.playing&&state.mode==='corridor'){if(editor.active)editor.exit();else if(!overlay.innerHTML)editor.enter();}return;}if(editor?.active){if(e.code==='Escape')editor.exit();return;}if(e.code==='KeyE'&&!e.repeat&&menus.playing&&state.mode==='corridor'&&!overlay.innerHTML&&!state.ended){e.preventDefault();coffee.drink();return;}if(['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','Space'].includes(e.code))e.preventDefault();if(e.code==='Escape'){if($('#start-story'))return;if(menus.back())return;if(overlay.innerHTML)close();else pause();}if(!overlay.innerHTML)keys.add(e.code);});document.addEventListener('keyup',e=>keys.delete(e.code));window.addEventListener('blur',release);
+function highlightCell(next){const gate=next?.userData.type==='cellDoor'?next:null;if(gate===highlightedCell)return;highlightedCell?.userData.setHighlighted(false);highlightedCell=gate;highlightedCell?.userData.setHighlighted(true);}
+document.addEventListener('keydown',e=>{if(overlay.querySelector('.detainee-dialog')&&['ArrowUp','ArrowDown','Enter','Space'].includes(e.code)){e.preventDefault();const buttons=[...overlay.querySelectorAll('.detainee-choice')];const index=buttons.indexOf(document.activeElement);if(e.code==='ArrowUp'||e.code==='ArrowDown')buttons[(index+(e.code==='ArrowUp'?-1:1)+buttons.length)%buttons.length]?.focus();else if(!e.repeat)document.activeElement?.classList.contains('detainee-choice')&&document.activeElement.click();return;}if(e.code==='F2'){e.preventDefault();if(menus.playing&&state.mode==='corridor'){if(editor.active)editor.exit();else if(!overlay.innerHTML)editor.enter();}return;}if(editor?.active){if(e.code==='Escape')editor.exit();return;}if(e.code==='KeyE'&&!e.repeat&&menus.playing&&state.mode==='corridor'&&!overlay.innerHTML&&!state.ended){e.preventDefault();if(target?.userData.type==='cellDoor')talkToDetainee();else coffee.drink();return;}if(['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','Space'].includes(e.code))e.preventDefault();if(e.code==='Escape'){if($('#start-story'))return;if(menus.back())return;if(overlay.innerHTML)close();else pause();}if(!overlay.innerHTML)keys.add(e.code);});document.addEventListener('keyup',e=>keys.delete(e.code));window.addEventListener('blur',release);
 document.addEventListener('mousemove',e=>{if(!editor?.active&&document.pointerLockElement===canvas&&state.mode==='corridor'&&!overlay.innerHTML){yaw-=e.movementX*.002*menus.preferences.sensitivity;pitch=Math.max(-1.2,Math.min(1.2,pitch-e.movementY*.002*menus.preferences.sensitivity));camera.rotation.set(pitch,yaw,0);}});
-canvas.addEventListener('click',async()=>{if(editor?.active||state.mode!=='corridor'||overlay.innerHTML||busy)return;sound();if(target){if(['coffeeMachine','coffeeCup'].includes(target.userData.type)){coffee.interact(target);return;}if(target.userData.type==='notice'){showNotice(target.userData.noticeIndex);return;}if(target.userData.type==='dutyOfficer'){briefing();return;}if(target.userData.type==='savePhone'){savePhone();return;}if(target.userData.type==='passageDoor'){togglePassageDoor();return;}busy=true;release();const selected=target;const hinge=selected.userData.hinge;const start=hinge.rotation.y;let t=0;const animate=()=>{t+=.07;hinge.rotation.y=start-Math.min(t,1)*1.15;if(t<1)requestAnimationFrame(animate);else{enter(selected.userData.type);hinge.rotation.y=start;busy=false;}};animate();}else{await captureMouse();}});
+canvas.addEventListener('click',async()=>{if(editor?.active||state.mode!=='corridor'||overlay.innerHTML||busy)return;sound();if(target){if(target.userData.type==='cellDoor'){talkToDetainee();return;}if(['coffeeMachine','coffeeCup'].includes(target.userData.type)){coffee.interact(target);return;}if(target.userData.type==='notice'){showNotice(target.userData.noticeIndex);return;}if(target.userData.type==='dutyOfficer'){briefing();return;}if(target.userData.type==='savePhone'){savePhone();return;}if(target.userData.type==='passageDoor'){togglePassageDoor();return;}busy=true;release();const selected=target;const hinge=selected.userData.hinge;const start=hinge.rotation.y;let t=0;const animate=()=>{t+=.07;hinge.rotation.y=start-Math.min(t,1)*1.15;if(t<1)requestAnimationFrame(animate);else{enter(selected.userData.type);hinge.rotation.y=start;busy=false;}};animate();}else{await captureMouse();}});
 function setPassageOpen(open){passageDoor.userData.hinges.forEach(hinge=>hinge.rotation.y=open?hinge.userData.openAngle:0);}
 function togglePassageDoor(){
   if(!state.briefed){toast('Сначала поговорите с дежурным: он откроет доступ к лестнице.');return;}
@@ -103,6 +105,19 @@ function briefing(topic='welcome'){
   document.querySelectorAll('[data-brief]').forEach(button=>button.onclick=()=>briefing(button.dataset.brief));$('#leave-officer').onclick=()=>{const fresh=!state.briefed;state.briefed=true;close();if(fresh)toast('Доступ к лестнице открыт. Подойдите к двери в проходе и нажмите ЛКМ.');};
   $('#lebedev-title').focus({preventScroll:true});
 }
+function talkToDetainee(){
+  const conversation=createDetaineeConversation(state.detaineeTopics);
+  function render(){
+    state.detaineeTopics=conversation.snapshot;
+    const view=conversation.view;panel(detaineeDialog(view));
+    const element=$('.panel');element.setAttribute('role','dialog');element.setAttribute('aria-modal','true');element.setAttribute('aria-labelledby','detainee-title');
+    overlay.querySelector('[data-advance]')?.addEventListener('click',()=>{conversation.advance();render();});
+    overlay.querySelectorAll('[data-response]').forEach(button=>button.onclick=()=>{conversation.choose(Number(button.dataset.response));render();});
+    overlay.querySelector('[data-end]')?.addEventListener('click',()=>{close();if(view.after)toast(`Заключённая (вслед): «${view.after}»`);});
+    overlay.querySelector('.detainee-choice')?.focus({preventScroll:true});
+  }
+  render();
+}
 function pause(){menus.pause();}
 const SAVE_KEY='night-shift-last-round-save-v1';
 function readSave(){try{const s=JSON.parse(localStorage.getItem(SAVE_KEY));if(s?.version!==1||!Array.isArray(s.evidence)||s.evidence.some(id=>!Object.hasOwn(evidence,id))||typeof s.contradiction!=='boolean'||!Array.isArray(s.position)||s.position.length!==3||!s.position.every(Number.isFinite)||!Number.isFinite(s.yaw)||!Number.isFinite(s.pitch))return null;return s;}catch{return null;}}
@@ -113,15 +128,15 @@ function savePhone(){
     const digit=button.dataset.digit;
     if(digit==='☎'){
       if(digits!=='007'){status.textContent='Номер не отвечает. Для сохранения наберите 007.';return;}
-      try{localStorage.setItem(SAVE_KEY,JSON.stringify({version:1,evidence:[...state.evidence],contradiction:state.contradiction,position:camera.position.toArray(),yaw,pitch,layoutVersion:2,briefed:state.briefed,accessDoorOpen:state.accessDoorOpen,coffee:coffee.snapshot()}));status.textContent='Дежурный: «Принято. Прогресс сохранён». В главном меню доступно «Продолжить».';toast('Игра сохранена');}
+      try{localStorage.setItem(SAVE_KEY,JSON.stringify({version:1,evidence:[...state.evidence],contradiction:state.contradiction,position:camera.position.toArray(),yaw,pitch,layoutVersion:2,briefed:state.briefed,accessDoorOpen:state.accessDoorOpen,coffee:coffee.snapshot(),detaineeTopics:state.detaineeTopics}));status.textContent='Дежурный: «Принято. Прогресс сохранён». В главном меню доступно «Продолжить».';toast('Игра сохранена');}
       catch{status.textContent='Не удалось сохранить. Браузер запрещает локальное хранилище.';}
     }else{digits=digit==='⌫'?digits.slice(0,-1):digits.length<3?digits+digit:digits;display.textContent=digits||'— — —';status.textContent='';}
   });
 }
-function resetGame(){coffee.restore();state.evidence.clear();state.contradiction=false;state.ended=false;state.briefed=false;state.accessDoorOpen=false;setPassageOpen(false);$('#count').textContent='0/3';camera.position.set(0,-1.715,3.4);yaw=Math.PI;pitch=0;camera.rotation.set(pitch,yaw,0);target=null;exitRoom();sound();
+function resetGame(){state.detaineeTopics=[];coffee.restore();state.evidence.clear();state.contradiction=false;state.ended=false;state.briefed=false;state.accessDoorOpen=false;setPassageOpen(false);$('#count').textContent='0/3';camera.position.set(0,-1.715,3.4);yaw=Math.PI;pitch=0;camera.rotation.set(pitch,yaw,0);target=null;exitRoom();sound();
   panel('<div class="eyebrow">ДЕЛО № 041 · ПОСЛЕДНИЙ РАУНД</div><h2>Ваша ночная смена</h2><p class="lead">Вы — старший следователь отдела тяжких преступлений. Сегодня вы принимаете ночную смену в участке № 7.</p><p>После боксёрского турнира убит журналист Илья Громов. Он расследовал договорные бои. Подозреваемую, Марину «Сирень» Соколову, уже доставили в допросную.</p><p>Вам предстоит изучить материалы дела, проверить её показания и решить, достаточно ли улик для обвинения. Вы входите в участок через главный вход на первом этаже. Начните с разговора с дежурным Лебедевым за стеклом: он передаст сведения о деле и разрешит подняться к кабинетам на второй этаж.</p><button class="primary" id="start-story">Продолжить</button>');$('.close').hidden=true;$('#start-story').onclick=()=>{close();captureMouse();};
 }
-function loadGame(saved){coffee.restore(saved.coffee);state.evidence=new Set(saved.evidence);state.contradiction=saved.contradiction;state.ended=false;$('#count').textContent=`${state.evidence.size}/3`;camera.position.fromArray(saved.position);state.accessDoorOpen=!!saved.accessDoorOpen&&!!saved.briefed;setPassageOpen(state.accessDoorOpen);const relocate=!canWalk(camera.position.x,camera.position.z,camera.position.y,state.accessDoorOpen)||(!saved.layoutVersion&&!saved.briefed&&camera.position.y>.9);if(relocate){camera.position.set(0,-1.715,3.4);}camera.position.y=floorHeight(camera.position.x,camera.position.z,camera.position.y)+1.65;state.briefed=!!saved.briefed;yaw=relocate?Math.PI:saved.yaw;pitch=relocate?0:THREE.MathUtils.clamp(saved.pitch,-1.2,1.2);camera.rotation.set(pitch,yaw,0);target=null;exitRoom();sound();captureMouse();}
+function loadGame(saved){state.detaineeTopics=Array.isArray(saved.detaineeTopics)?saved.detaineeTopics.filter(id=>id==='fight'):[];coffee.restore(saved.coffee);state.evidence=new Set(saved.evidence);state.contradiction=saved.contradiction;state.ended=false;$('#count').textContent=`${state.evidence.size}/3`;camera.position.fromArray(saved.position);state.accessDoorOpen=!!saved.accessDoorOpen&&!!saved.briefed;setPassageOpen(state.accessDoorOpen);const relocate=!canWalk(camera.position.x,camera.position.z,camera.position.y,state.accessDoorOpen)||(!saved.layoutVersion&&!saved.briefed&&camera.position.y>.9);if(relocate){camera.position.set(0,-1.715,3.4);}camera.position.y=floorHeight(camera.position.x,camera.position.z,camera.position.y)+1.65;state.briefed=!!saved.briefed;yaw=relocate?Math.PI:saved.yaw;pitch=relocate?0:THREE.MathUtils.clamp(saved.pitch,-1.2,1.2);camera.rotation.set(pitch,yaw,0);target=null;exitRoom();sound();captureMouse();}
 let sceneRendered=false;
 const menus=createMenus({panel,clear:close,edit:()=>{if(state.mode!=='corridor'){toast('Выйдите в коридор, чтобы редактировать предметы.');return;}editor.enter();},readSave,removeSave:()=>localStorage.removeItem(SAVE_KEY),startNew:resetGame,resume:loadGame,apply:preferences=>{sceneRendered=false;renderer.toneMappingExposure=1.25;renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.needsUpdate=true;if(audioGain&&audio)audioGain.gain.setTargetAtTime(.028*preferences.volume/100,audio.currentTime,.05);},stopSound:()=>{if(audio)audio.suspend().catch(()=>{});}});
 editor=createEditor({scene,camera,canvas,release,onExit:()=>{
@@ -154,12 +169,12 @@ function frame(now){
     ray.setFromCamera(new THREE.Vector2(0,0),camera);
     const hit=ray.intersectObjects(interactables.filter(object=>(object.userData.floor??1)===floorNumber(camera.position.y)&&coffee.canTarget(object)))[0];
     target=hit&&hit.distance<2.6?hit.object:null;
-    highlightNotice(target);
+    highlightNotice(target);highlightCell(target);
     $('#hint').textContent=target?.userData.type==='notice'?'Нажмите, чтобы прочитать объявление':'';
   }
   const coffeeActive=inCorridor&&!state.ended;
   coffee.update(Math.min(elapsed,.25),coffeeActive);
-  const coffeeHint=coffeeActive?coffee.hint(target):'';
+  const coffeeHint=coffeeActive?(target?.userData.type==='cellDoor'?'Нажмите «Е»':coffee.hint(target)):'';
   $('#hint').classList.toggle('coffee-hint',!!coffeeHint);
   if(coffeeHint)$('#hint').textContent=coffeeHint;
   if(!menus.exited&&state.mode==='corridor'&&(!overlay.innerHTML||!sceneRendered)){
