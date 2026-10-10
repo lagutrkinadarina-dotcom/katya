@@ -224,12 +224,12 @@ export function furnishReception(scene,{ground,wood,frame,dark,pipe,plaque}){
   const wallPanel=new THREE.Group();wallPanel.position.set(-2.79,ground+1.98,-1.37);wallPanel.rotation.y=Math.PI/2;scene.add(wallPanel);editable(wallPanel,'electrical-panel','Электрощиток',false);
   rounded(.24,.46,.065,0,0,0,agedMetal,wallPanel);rounded(.19,.37,.006,0,0,.037,steel,wallPanel);
   rounded(.04,.015,.012,.065,0,.045,frame,wallPanel);
-  createCoffeeMachine(scene,{ground,rounded,mesh,panel,canvasMap,pipe});
+  const coffeeMachine=createCoffeeMachine(scene,{ground,rounded,mesh,panel,canvasMap,pipe});
   // Document piles across the reception counter, clear of the save telephone.
   for(const [x,z,count]of [[-1.15,-4.26,6],[-1.39,-3.35,4],[-.37,-3.33,3]])for(let i=0;i<count;i++){
     rounded(.29,.017,.24,x+(i%2)*.009,ground+1.03+i*.022,z,i%2?paper:wood);
   }
   furnishReceptionDetails(scene,{ground,wood,frame,paper,steel,rounded,mesh,pipe,panel,canvasMap,plaque});
   const holdingCell=createHoldingCell(scene,{ground,wood,plaque});
-  return {noticeTargets,update(time){updateSteam(time);updateWater(time);holdingCell.update(time);const on=Math.floor(time*1.25)%2===0;led.emissiveIntensity=on?2.4:0;led.color.set(on?'#e93827':'#421611');}};
+  return {noticeTargets,coffeeMachine,update(time){updateSteam(time);updateWater(time);holdingCell.update(time);const on=Math.floor(time*1.25)%2===0;led.emissiveIntensity=on?2.4:0;led.color.set(on?'#e93827':'#421611');}};
 }

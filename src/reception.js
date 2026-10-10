@@ -141,5 +141,5 @@ export function createReception(scene,{box,pipe,plaque,plaster,paint,floor,wood,
   const officer=createOfficer();officer.position.set(-.35,ground,-4.75);officer.rotation.y=.25;scene.add(officer);
   // Interaction belongs to the reception window, so the player can speak through the glass.
   const target=new THREE.Mesh(new THREE.BoxGeometry(3.4,1.46,.06),new THREE.MeshBasicMaterial({visible:false}));target.position.set(0,ground+1.72,front+.06);target.userData.type='dutyOfficer';scene.add(target);
-  return {npcTarget:target,passageDoor,phoneTarget,noticeTargets:interior.noticeTargets,updateOfficer:time=>{officer.userData.update(time);interior.update(time);}};
+  return {npcTarget:target,passageDoor,phoneTarget,noticeTargets:interior.noticeTargets,coffeeMachine:interior.coffeeMachine,updateOfficer:time=>{officer.userData.update(time);interior.update(time);}};
 }
