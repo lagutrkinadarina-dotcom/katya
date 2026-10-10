@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {createStreetWindow} from './street.js';
 import {createReception} from './reception.js';
 import {createWallStrip,alignFloorTiles} from './architecture.js';
+import {createUpperFloor} from './upper-floor.js';
 
 // All surfaces are generated locally: no downloaded textures or model assets.
 export function createCorridor(scene, renderer) {
@@ -57,7 +58,7 @@ export function createCorridor(scene, renderer) {
     const c=document.createElement('canvas');c.width=1024;c.height=256;
     const ctx=c.getContext('2d');ctx.fillStyle='#20352f';ctx.fillRect(0,0,1024,256);
     ctx.strokeStyle='#b5aa81';ctx.lineWidth=8;ctx.strokeRect(15,15,994,226);
-    ctx.fillStyle='#eee5c8';ctx.font='bold 54px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(text,512,128);
+    ctx.fillStyle='#eee5c8';ctx.font='bold 54px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(text,512,128,934);
     const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;
     const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshStandardMaterial({map:t,roughness:.65}));m.position.set(x,y,z);parent.add(m);return m;
   }
@@ -65,10 +66,11 @@ export function createCorridor(scene, renderer) {
   box(6,.12,24,0,3.36,-5,'#7d8276');
   for(const x of [-3,3]) {
     if(x<0){box(.15,3.3,24,x,1.65,-5,plaster);box(.19,1.2,24,x,.6,-5,paint);}else{
-      for(const [length,z]of [[19.48,-7.26],[1.48,6.26]])box(.19,1.2,length,x,.6,z,paint);
+      for(const [length,z]of [[16.18,-8.91],[.26,2.35],[1.48,6.26]])box(.19,1.2,length,x,.6,z,paint);
+      box(.15,.55,2.8,x,3.025,.7,plaster);
       box(.15,.55,2.8,x,3.025,4,plaster);
     }
-    if(x<0){box(.23,.07,24,x,1.24,-5,'#acac94');box(.24,.13,24,x,.07,-5,dark);}else for(const [length,z]of [[19.48,-7.26],[1.48,6.26]]){box(.23,.07,length,x,1.24,z,'#acac94');box(.24,.13,length,x,.07,z,dark);}
+    if(x<0){box(.23,.07,24,x,1.24,-5,'#acac94');box(.24,.13,24,x,.07,-5,dark);}else for(const [length,z]of [[16.18,-8.91],[.26,2.35],[1.48,6.26]]){box(.23,.07,length,x,1.24,z,'#acac94');box(.24,.13,length,x,.07,z,dark);}
     box(.23,.12,24,x,3.18,-5,'#a5aa99');
   }
   const streetUpdates=[createStreetWindow(scene,-17,-1,{plaster,paint}),createStreetWindow(scene,7,1,{plaster,paint})];
@@ -76,7 +78,7 @@ export function createCorridor(scene, renderer) {
   const concrete=new THREE.MeshStandardMaterial({color:'#777d76',roughness:.92});
   // One continuous shell joins the corridor to both sides of the stair opening.
   // Separate corridor boxes previously overlapped the stair end caps and flickered.
-  createWallStrip(scene,[[3,-17],[3,2.56],[12.3,2.56],[12.3,5.44],[3,5.44],[3,7]],0,[[3.3,plaster]]);
+  createWallStrip(scene,[[3,-17],[3,-.74],[12.3,-.74],[12.3,2.14],[3,2.14],[3,2.56],[12.3,2.56],[12.3,5.44],[3,5.44],[3,7]],0,[[3.3,plaster]]);
   box(9.48,.12,3.04,7.64,3.3,4,plaster);
   alignFloorTiles(box(2.2,.16,2.8,4,-.075,4,floor));
   for(let i=0;i<16;i++){
@@ -97,13 +99,13 @@ export function createCorridor(scene, renderer) {
   const landingLight=new THREE.PointLight(0xd2decd,13,6,2);landingLight.position.set(4,2.6,4);scene.add(landingLight);
   const stairLight=new THREE.PointLight(0xd2decd,12,8,2);stairLight.position.set(7,-.5,4);scene.add(stairLight);
   const doors=[];
-  function door(x,z,type,label) {
-    const group=new THREE.Group();group.position.set(x,0,z);group.rotation.y=x<0?Math.PI/2:-Math.PI/2;scene.add(group);
+  function door(x,z,type,label,base=0,floorNumber=2) {
+    const group=new THREE.Group();group.position.set(x,base,z);group.rotation.y=x<0?Math.PI/2:-Math.PI/2;scene.add(group);
     box(1.64,2.59,.14,0,1.295,0,dark,group);
     for(const u of [-.79,.79])box(.12,2.58,.21,u,1.29,.16,trim,group);
     box(1.7,.12,.21,0,2.55,.16,trim,group);box(1.48,.03,.34,0,.018,.15,brass,group);
     const hinge=new THREE.Group();hinge.position.set(-.69,0,.13);group.add(hinge);
-    const leaf=box(1.38,2.42,.09,.69,1.23,0,wood,hinge);leaf.userData={type,hinge};doors.push(leaf);
+    const leaf=box(1.38,2.42,.09,.69,1.23,0,wood,hinge);leaf.userData={type,hinge,floor:floorNumber};doors.push(leaf);
     for(const [y,h] of [[.61,.65],[1.65,1.04]]) {
       box(1.03,h,.025,.69,y,.055,trim,hinge);
       box(.91,h-.12,.027,.69,y,.072,wood,hinge);
@@ -115,9 +117,9 @@ export function createCorridor(scene, renderer) {
     box(.025,.05,.008,1.23,1.03,.091,dark,hinge);
     for(const y of [.35,1.25,2.12])pipe([0,y-.06,.02],[0,y+.06,.02],.028,brass,hinge);
     plaque(label,1.6,.28,0,2.83,.13,group);
-    if(type==='locked'){const tape=box(1.45,.07,.012,.69,1.5,.1,'#b8a75b',hinge);tape.rotation.z=.24;}
   }
-  door(-2.84,1,'office','01 · СЛЕДОВАТЕЛЬ');door(2.84,-3,'interrogation','02 · ДОПРОС');door(-2.84,-9,'locked','03 · АРХИВ');
+  door(-2.84,1,'office','КАБИНЕТ СЛЕДОВАТЕЛЯ');door(2.84,-3,'interrogation','ДОПРОСНАЯ');door(-2.84,-9,'archive','АРХИВ');
+  createUpperFloor(scene,{box,pipe,plaque,door,plaster,paint,floor,trim,brass,dark,concrete});
   function radiator(side,z) {
     const group=new THREE.Group();group.position.set(side*2.77,0,z);scene.add(group);
     for(let i=0;i<12;i++) {
@@ -136,7 +138,7 @@ export function createCorridor(scene, renderer) {
     const valve=new THREE.Mesh(new THREE.TorusGeometry(.065,.012,8,16),brass);valve.position.set(-side*.1,.75,.86);valve.rotation.y=Math.PI/2;group.add(valve);
     for(const u of [-.45,.45])box(.16,.12,.05,side*.1,.35,u,dark,group);
   }
-  radiator(-1,4);radiator(1,.7);radiator(-1,-5);radiator(1,-11);
+  radiator(-1,4);radiator(-1,-5);radiator(1,-11);
   for(const z of [3,-3,-9,-15]) {
     box(1.55,.1,.53,0,3.21,z,dark);
     const glow=new THREE.MeshStandardMaterial({color:'#ebecd8',emissive:'#e6e8ce',emissiveIntensity:2});
@@ -160,5 +162,5 @@ export function createCorridor(scene, renderer) {
   pipe([2.8,.32,-15],[2.8,.88,-15],.12,red);box(.1,.12,.14,2.8,.97,-15,dark);
   pipe([2.66,.84,-15],[2.66,1,-15],.025,dark);
   const {npcTarget,passageDoor,phoneTarget,noticeTargets,updateOfficer}=createReception(scene,{box,pipe,plaque,plaster,paint,floor,wood,iron,dark});
-  return {doors,passageDoor,interactables:[...doors,...noticeTargets,phoneTarget,npcTarget,passageDoor,passageDoor.userData.target],updateStreet:time=>{streetUpdates.forEach(update=>update(time));updateOfficer(time);}};
+  return {doors,passageDoor,interactables:[...doors,...noticeTargets,phoneTarget,npcTarget,...passageDoor.userData.leaves,passageDoor.userData.target],updateStreet:time=>{streetUpdates.forEach(update=>update(time));updateOfficer(time);}};
 }

@@ -3,6 +3,7 @@ import {receptionSurface} from './reception-surfaces.js';
 import {createOfficer} from './officer.js';
 import {furnishReception} from './reception-interior.js';
 import {createWallStrip,alignFloorTiles} from './architecture.js';
+import {PASSAGE} from './building-layout.js';
 
 export function createReception(scene,{box,pipe,plaque,plaster,paint,floor,wood,iron,dark}){
   const ground=-3.365;
@@ -15,13 +16,13 @@ export function createReception(scene,{box,pipe,plaque,plaster,paint,floor,wood,
   const frame=new THREE.MeshStandardMaterial({color:'#cbcfc7',roughness:.6});
 
   // One continuous floor and ceiling follow the lobby and left stair return.
-  const outline=[[-2.9,-6.2],[2.9,-6.2],[2.9,1.25],[12.3,1.25],[12.3,5.44],[9.3,5.44],[9.3,2.56],[2.9,2.56],[2.9,6.83],[-2.9,6.83]];
+  const outline=[[-2.9,-6.2],[2.9,-6.2],[2.9,PASSAGE.north],[12.3,PASSAGE.north],[12.3,5.44],[9.3,5.44],[9.3,2.56],[2.9,2.56],[2.9,6.83],[-2.9,6.83]];
   const shape=new THREE.Shape();outline.forEach(([x,z],i)=>i?shape.lineTo(x,-z):shape.moveTo(x,-z));shape.closePath();
   const floorSurface=new THREE.Mesh(new THREE.ShapeGeometry(shape),floor);
   floorSurface.rotation.x=-Math.PI/2;floorSurface.position.y=ground;floorSurface.receiveShadow=true;alignFloorTiles(floorSurface);scene.add(floorSurface);
   // Keep the landing inside the open, full-height stair shaft. The lower ceiling
   // belongs only to the lobby/return hall, so it cannot jut across the stair opening.
-  const ceilingOutline=[[-2.9,-6.2],[2.9,-6.2],[2.9,1.25],[12.3,1.25],[12.3,2.64],[2.9,2.64],[2.9,6.83],[-2.9,6.83]],ceilingShape=new THREE.Shape();
+  const ceilingOutline=[[-2.9,-6.2],[2.9,-6.2],[2.9,PASSAGE.north],[12.3,PASSAGE.north],[12.3,2.64],[2.9,2.64],[2.9,6.83],[-2.9,6.83]],ceilingShape=new THREE.Shape();
   ceilingOutline.forEach(([x,z],i)=>i?ceilingShape.lineTo(x,-z):ceilingShape.moveTo(x,-z));ceilingShape.closePath();
   // Fill the header up to the upper wall at y=0; tiles remain above it at y=0.005.
   const ceiling=new THREE.Mesh(new THREE.ExtrudeGeometry(ceilingShape,{depth:.335,steps:1,bevelEnabled:false}),plaster);
@@ -29,20 +30,30 @@ export function createReception(scene,{box,pipe,plaque,plaster,paint,floor,wood,
   // Mitered wall strips share one footprint at every bend. Box end caps cannot leave
   // the former narrow columns or overlapping faces at the lobby/passage corners.
   const wallStrip=points=>createWallStrip(scene,points,ground,[[1.2,paint],[2.165,plaster]]);
-  wallStrip([[9.3,2.56],[2.9,2.56],[2.9,6.83],[-2.9,6.83],[-2.9,-6.2],[2.9,-6.2],[2.9,1.25],[12.3,1.25],[12.3,5.44],[2.98,5.44]]);
-  const routeSign=plaque('ЛЕСТНИЦА · 2 ЭТАЖ →',1.8,.26,2.805,ground+1.85,.15);routeSign.rotation.y=-Math.PI/2;
+  wallStrip([[9.3,2.56],[2.9,2.56],[2.9,6.83],[-2.9,6.83],[-2.9,-6.2],[2.9,-6.2],[2.9,PASSAGE.north],[12.3,PASSAGE.north],[12.3,5.44],[2.98,5.44]]);
   // The access door belongs to the existing stair passage, facing the reception lobby.
-  const doorway=new THREE.Group();doorway.position.set(2.9,ground,1.905);doorway.rotation.y=-Math.PI/2;scene.add(doorway);
-  for(const x of [-.59,.59])box(.085,2.34,.2,x,1.17,0,frame,doorway);
-  box(1.27,.085,.2,0,2.34,0,frame,doorway);
-  box(.16,.865,1.15,2.9,ground+2.7575,1.905,plaster);
-  const hinge=new THREE.Group();hinge.position.set(-.535,0,0);doorway.add(hinge);
-  const passageDoor=box(1.07,2.31,.065,.535,1.155,0,wood,hinge);passageDoor.userData={type:'passageDoor',hinge};
-  for(const y of [.65,1.64]){box(.88,.76,.022,.535,y,.043,frame,hinge);box(.8,.68,.022,.535,y,.06,wood,hinge);}
-  for(const side of [-1,1])pipe([.97,1.09,side*.09],[.83,1.09,side*.09],.017,iron,hinge);
-  plaque('ЛЕСТНИЦА · 2 ЭТАЖ',1.18,.2,0,2.63,.095,doorway);
+  const doorway=new THREE.Group();doorway.name='stair-double-door';doorway.position.set(2.9,ground,PASSAGE.center);doorway.rotation.y=-Math.PI/2;scene.add(doorway);
+  for(const x of [-1.09,1.09])box(.085,2.34,.2,x,1.17,0,frame,doorway);
+  box(2.27,.085,.2,0,2.34,0,frame,doorway);
+  box(.16,.865,PASSAGE.south-PASSAGE.north,2.9,ground+2.7575,PASSAGE.center,plaster);
+  const hinges=[],leaves=[];
+  for(const side of [-1,1]){
+    const hinge=new THREE.Group();hinge.position.set(side*1.045,0,0);hinge.userData.openAngle=-side*Math.PI/2;doorway.add(hinge);hinges.push(hinge);
+    const center=-side*.5215;
+    const leaf=box(1.043,2.31,.065,center,1.155,0,wood,hinge);leaf.userData={type:'passageDoor',floor:1,hinge,hinges};leaves.push(leaf);
+    for(const face of [-1,1]){
+      for(const y of [.65,1.64]){box(.85,.76,.022,center,y,face*.043,frame,hinge);box(.77,.68,.022,center,y,face*.061,wood,hinge);}
+      pipe([-side*.94,1.09,face*.09],[-side*.80,1.09,face*.09],.017,iron,hinge);
+    }
+  }
+  const passageDoor=leaves[0];passageDoor.userData.leaves=leaves;
+  plaque('ЛЕСТНИЦА · 2 ЭТАЖ',2.05,.24,0,2.63,.095,doorway);
   // The doorway can be clicked from either side, even when its leaf is fully open.
-  const doorTarget=new THREE.Mesh(new THREE.BoxGeometry(1.13,2.3,.15),new THREE.MeshBasicMaterial({visible:false}));doorTarget.position.set(0,1.15,0);doorTarget.userData={type:'passageDoor',hinge};doorway.add(doorTarget);passageDoor.userData.target=doorTarget;
+  const doorTarget=new THREE.Mesh(new THREE.BoxGeometry(2.13,2.3,.15),new THREE.MeshBasicMaterial({visible:false}));doorTarget.position.set(0,1.15,0);doorTarget.userData={type:'passageDoor',floor:1,hinges};doorway.add(doorTarget);passageDoor.userData.target=doorTarget;
+  const hallLight=new THREE.PointLight(0xd9e3cc,12,9,2);hallLight.position.set(6,ground+2.8,PASSAGE.center);scene.add(hallLight);
+  box(1.2,.08,.4,6,ground+3.05,PASSAGE.center,dark);
+  const hallGlow=new THREE.MeshStandardMaterial({color:'#e5ecd9',emissive:'#e5ecd9',emissiveIntensity:1.5});
+  box(1.05,.025,.25,6,ground+3,PASSAGE.center,hallGlow);
   // Closed exterior double doors mark the station entrance seen at the start of a new game.
   const exit=new THREE.Group();exit.position.set(0,ground,6.69);exit.rotation.y=Math.PI;scene.add(exit);
   const exitMetal=new THREE.MeshStandardMaterial({color:'#354745',metalness:.35,roughness:.55});

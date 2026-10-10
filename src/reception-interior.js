@@ -8,7 +8,7 @@ import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js'
 // Modelled furnishings stay inside the lobby shell; the staircase is left untouched.
 export function furnishReception(scene,{ground,wood,frame,dark,pipe,plaque}){
   const material=(color,roughness=.8,metalness=0)=>new THREE.MeshStandardMaterial({color,roughness,metalness});
-  const editable=(object,id,label,solid=false)=>{object.userData.editor={id,label,solid,revision:['locker','cooler','radiator','archive-table'].includes(id)?2:1};return object;};
+  const editable=(object,id,label,solid=false)=>{object.userData.editor={id,label,solid,revision:['locker','cooler','radiator','archive-table','extinguisher'].includes(id)?2:1};return object;};
   const steel=material('#343c39',.55,.45),agedMetal=material('#646e60',.7,.3),paper=material('#c8bfa6'),red=material('#863b2d',.5,.3);
   function mesh(geometry,mat,x,y,z,parent=scene){const m=new THREE.Mesh(geometry,mat);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m;}
   function rounded(w,h,d,x,y,z,mat,parent=scene,r=.012){return mesh(new RoundedBoxGeometry(w,h,d,2,Math.min(r,w/4,h/4,d/4)),mat,x,y,z,parent);}
@@ -113,7 +113,7 @@ export function furnishReception(scene,{ground,wood,frame,dark,pipe,plaque}){
   }
   for(const x of [-.26,.26])for(const z of [-.15,.15])rounded(.05,.07,.05,x,.035,z,steel,locker);
   // Extinguisher, pressure gauge and flexible hose near the stair entrance.
-  const extinguisher=new THREE.Group();extinguisher.position.set(2.63,ground+.90,.15);scene.add(extinguisher);editable(extinguisher,'extinguisher','Огнетушитель',false);
+  const extinguisher=new THREE.Group();extinguisher.position.set(2.63,ground+.90,-.55);scene.add(extinguisher);editable(extinguisher,'extinguisher','Огнетушитель',false);
   cylinder(.085,.085,.36,0,.20,0,red,extinguisher);
   mesh(new THREE.SphereGeometry(.086,24,16),red,0,.38,0,extinguisher).scale.y=.55;
   cylinder(.028,.03,.065,0,.44,0,steel,extinguisher);

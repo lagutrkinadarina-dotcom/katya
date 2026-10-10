@@ -46,3 +46,7 @@ header,footer{display:none!important}#room{inset:16px}
 .officer-finish:hover{background:#b9a36e28;color:#f4e8ce}
 @media(max-width:650px){.officer-hero{height:32vh;min-height:200px}.officer-hero img{object-position:center 40%}.officer-content{padding:22px 22px 30px}.officer-content h2{font-size:34px}.officer-question{min-height:65px;gap:14px;padding:14px 16px}.officer-icon{width:28px;height:28px;flex-basis:28px}.officer-answer p,.officer-player p{font-size:17px}.officer-actions{justify-content:stretch}.officer-finish{width:100%}.panel:has(.officer-dialog)>.close{top:12px;right:12px}}
 @media(prefers-reduced-motion:reduce){.officer-question{transition:none}}
+
+/* Keep room names readable over the new illustrated interiors. */
+.room-caption{padding:12px 18px;background:#0b151bd9;border-left:2px solid #c8b078;max-width:calc(100% - 56px);pointer-events:none}
+.room-caption h2{font-size:clamp(19px,2.3vw,30px)}
