@@ -3,13 +3,14 @@
   "nativeValidation": {
     "sourceJointHierarchyPreserved": true,
     "womanVertices": 72705,
-    "manVertices": 76024,
+    "manVertices": 45224,
     "jointsPerModel": 65
   },
-  "existingTests": {
-    "passed": 14,
-    "failed": 0,
-    "skipped": 0
+  "maleAppearanceValidation": {
+    "closedSourceLips": true,
+    "protrudingMouthAccessories": 0,
+    "closedManifoldHaircut": true,
+    "hairAboveSkullLessThanMetres": 0.02
   },
   "runtime": {
     "errors": [],
@@ -98,32 +99,8 @@
             "maxWeightError": 2.8870999813079834e-08
           },
           {
-            "name": "reference-man-attached-comic-tongue",
-            "vertices": 600,
-            "bones": 65,
-            "maxWeightError": 0
-          },
-          {
             "name": "reference-man-fitted-hair-cap",
-            "vertices": 33299,
-            "bones": 65,
-            "maxWeightError": 0
-          },
-          {
-            "name": "reference-man-integrated-lip-edge",
-            "vertices": 970,
-            "bones": 65,
-            "maxWeightError": 0
-          },
-          {
-            "name": "reference-man-recessed-mouth-interior",
-            "vertices": 288,
-            "bones": 65,
-            "maxWeightError": 0
-          },
-          {
-            "name": "reference-man-upper-tooth-row",
-            "vertices": 132,
+            "vertices": 3713,
             "bones": 65,
             "maxWeightError": 0
           },
@@ -135,7 +112,7 @@
           },
           {
             "name": "Sphere005_Retopology004",
-            "vertices": 21923,
+            "vertices": 22741,
             "bones": 65,
             "maxWeightError": 5.029141902923584e-08
           },
@@ -764,11 +741,11 @@
     "source": "Packaged production build; no source overrides, no development API",
     "models": [
       {
-        "url": "http://localhost:5191/assets/detainee-man-D0OLzwM8.glb",
+        "url": "http://localhost:5192/assets/detainee-man-BWiErJsN.glb",
         "status": 200
       },
       {
-        "url": "http://localhost:5191/assets/detainee-woman-B066sAhp.glb",
+        "url": "http://localhost:5192/assets/detainee-woman-B066sAhp.glb",
         "status": 200
       }
     ],

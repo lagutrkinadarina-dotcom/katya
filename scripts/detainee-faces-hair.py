@@ -93,148 +93,78 @@ def female_hair(rig,h,mat,zshift,xscale):
  return (obj,)
 
 def male_hair(rig,h,mat,zshift,xscale,main=None):
+ """One closed, short haircut fitted to the original deformed source skull."""
  from mathutils.bvhtree import BVHTree
  main=main or next(obj for obj in rig.children if obj.type=='MESH' and 'continuous-body' in obj.name)
  head_tree=BVHTree.FromPolygons([v.co for v in main.data.vertices],[list(face.vertices) for face in main.data.polygons])
- def hair_lock(name,path,radii):
-  # Carry the previous frame along the curve. Switching between world-Z and
-  # world-Y frames creates a 90-degree roll and folded elliptical sections.
-  surface=h.Surface(name,rig,[mat]);loops=[];previous=None
-  for k,centre in enumerate(path):
-   tangent=Vector(path[min(k+1,len(path)-1)])-Vector(path[max(0,k-1)]);tangent.normalize()
-   axis=(previous-tangent*previous.dot(tangent)) if previous is not None else Vector((0,1,0))-tangent*tangent.y
-   if axis.length<1e-5:axis=Vector((1,0,0))-tangent*tangent.x
-   axis.normalize();previous=axis.copy();other=tangent.cross(axis).normalized();radius=radii[k]
-   loops.append([surface.vertex(Vector(centre)+radius*math.cos(TAU*i/18)*axis+radius*.62*math.sin(TAU*i/18)*other,{'head':1}) for i in range(18)])
-  surface.face(tuple(reversed(loops[0])))
-  for aa,bb in zip(loops,loops[1:]):surface.strip(aa,bb)
-  surface.face(loops[-1]);return smooth(surface.object())
- before=set(bpy.data.objects)
- s=h.Surface('reference-man-fitted-hair-cap',rig,[mat]);rings=[]
- profiles=[(1.797,.111,.164),(1.838,.123,.164),(1.873,.114,.134),(1.900,.093,.112),(1.923,.050,.069),(1.933,.004,.005)]
- for level,(z,rx,ry) in enumerate(profiles):
-  ring=[]
-  for i in range(96):
-   a=TAU*i/96;c=math.cos(a);front=max(0,c)**4
-   # Higher forehead edge with a modest widow's peak; sides stop at ear top.
-   height=z+(.036*front if z<1.81 else 0)
-   if z<1.81:
-    # Forelocks are sculpted into the continuous cap edge; descending closed
-    # cones show dark underside discs in this game's overhead lighting.
-    fringe=.018*math.exp(-(math.sin(a)/.18)**2)+.012*math.exp(-((math.sin(a)-.36)/.15)**2)+.012*math.exp(-((math.sin(a)+.36)/.15)**2)
-    height-=fringe*max(0,c)**8
-   groove=.00065*math.cos(a*22)
-   point=Vector(((rx+groove)*xscale*math.sin(a),.020-(ry+groove)*c,height+zshift))
-   # The lower crown follows the actual deformed source skull. Fixed ellipse
-   # depths left a visible floating helmet brim, especially over the forehead.
-   origin=Vector((0,.020,point.z));direction=Vector((math.sin(a),-c,0))
-   hit=head_tree.ray_cast(origin,direction,.5)
-   if hit[0] is not None:
-    fit=1.0 if level<2 else .72 if level==2 else .22 if level==3 else 0.0
-    target=hit[0]+direction*(.008+groove)
-    point=point.lerp(target,fit)
-   ring.append(s.vertex(point,{'head':1}))
-  rings.append(ring)
- for a,b in zip(rings,rings[1:]):s.strip(a,b)
- # A filled scalp volume is essential: a thin Solidify shell leaves a hollow
- # interior, so deep lock roots retain exposed flat end caps after voxel union.
- # Close the entire dome beneath the roots before combining the solid locks.
- inner=[]
- for index in rings[0]:
-  point=Vector(s.vertices[index]);origin=Vector((0,.020,point.z));point=origin+(point-origin)*.83;point.z-=.012
-  inner.append(s.vertex(point,{'head':1}))
- s.strip(inner,rings[0]);s.face(tuple(reversed(inner)));s.face(rings[-1]);cap=smooth(s.object())
- # Voluminous swept clumps have rounded roots and pointed ends. Their bases
- # overlap the cap inside it, so no exposed seams appear from side/back views.
- # Keep upward crown locks. Lateral descending cones expose large circular
- # undersides from the opposite side and are replaced by the fitted crown.
- locks=[
-  ((-.050,-.070,1.900),(-.018,-.095,1.966),(.005,-.060,2.008),.040),
-  ((-.018,-.045,1.917),(.020,-.072,1.971),(.076,-.082,1.988),.043),
-  ((.046,-.031,1.904),(.083,-.065,1.954),(.120,-.063,1.976),.039),
-  ((.040,.089,1.895),(.069,.130,1.944),(.115,.148,1.969),.038),
-  ((-.043,.096,1.895),(-.052,.137,1.944),(-.106,.163,1.969),.039),
-  ((.005,.052,1.923),(.018,.087,1.977),(.067,.120,1.996),.041),
-  ((-.067,.049,1.902),(-.088,.087,1.955),(-.133,.129,1.977),.035)]
- for i,(a,b,c,r) in enumerate(locks):
-  a=(a[0],a[1],a[2]-.027)
-  path=[];radii=[]
-  for j in range(17):
-   t=j/16;p=Vector(a)*(1-t)**2+Vector(b)*2*t*(1-t)+Vector(c)*t*t;p.x*=xscale*.82;p.z=1.920+(p.z-1.920)*.82+zshift
-   path.append(tuple(p));radii.append(max(.0008,r*(1-t)**.65*(.72+.28*math.sin(math.pi*t))))
-  hair_lock('reference-man-swept-lock-'+str(i),path,radii)
- # Join and remesh the overlapping roots so the silhouette is a single haircut,
- # without the dark circular end caps of separately attached conical locks.
- parts=[o for o in set(bpy.data.objects)-before if o.type=='MESH']
- bpy.ops.object.select_all(action='DESELECT')
- for obj in parts:
-  obj.modifiers.clear()
-  bm=bmesh.new();bm.from_mesh(obj.data);bmesh.ops.recalc_face_normals(bm,faces=list(bm.faces))
-  if bm.calc_volume(signed=True)<0:bmesh.ops.reverse_faces(bm,faces=list(bm.faces))
-  bm.to_mesh(obj.data);bm.free();obj.select_set(True)
- bpy.context.view_layer.objects.active=cap;bpy.ops.object.join();cap=bpy.context.object
- mod=cap.modifiers.new('Continuous swept hair roots','REMESH');mod.mode='VOXEL';mod.voxel_size=.0022;mod.use_smooth_shade=True
- bpy.ops.object.modifier_apply(modifier=mod.name)
- mod=cap.modifiers.new('Rounded hair clumps','SMOOTH');mod.factor=.4;mod.iterations=3;bpy.ops.object.modifier_apply(modifier=mod.name)
- mod=cap.modifiers.new('Game hair topology','DECIMATE');mod.ratio=.45;bpy.ops.object.modifier_apply(modifier=mod.name)
- bm=bmesh.new();bm.from_mesh(cap.data);bmesh.ops.recalc_face_normals(bm,faces=list(bm.faces))
- if bm.calc_volume(signed=True)<0:bmesh.ops.reverse_faces(bm,faces=list(bm.faces))
- assert not any(edge.is_boundary for edge in bm.edges),'Haircut union has an open boundary'
- bm.to_mesh(cap.data);bm.free();cap['closedSolidScalpBeforeUnion']=True
- skin_object(cap,rig);return cap
-
-def open_comic_mouth(rig,main,h,skin,zcentre):
- # Fit the opening and its cavity to the original face surface. A fixed Y plane
- # left the first mouth sticking out as a dark oval plate when seen from the side.
- from mathutils.bvhtree import BVHTree
- tree=BVHTree.FromPolygons([v.co for v in main.data.vertices],[list(p.vertices) for p in main.data.polygons])
- def front(x,z):
-  hit=tree.ray_cast(Vector((x,-1,z)),Vector((0,1,0)))
-  return hit[0].y if hit[0] is not None else -.12
- rx=.067;rz=.020
- def centre(x):return zcentre+.10*x+.006*(x/rx)**2
- bm=bmesh.new();bm.from_mesh(main.data)
- def inside(p):return (p.x/.078)**2+((p.z-centre(p.x))/.024)**2
- drop=[f for f in bm.faces if f.calc_center_median().y<-.045 and inside(f.calc_center_median())<1.0]
- bmesh.ops.delete(bm,geom=drop,context='FACES')
- edgeverts=set()
- for e in bm.edges:
-  if e.is_boundary and all(v.co.y<-.044 and abs(v.co.x)<.091 and abs(v.co.z-zcentre)<.046 for v in e.verts):edgeverts.update(e.verts)
- for v in edgeverts:
-  a=math.atan2((v.co.z-centre(v.co.x))/rz,v.co.x/rx)
-  x=rx*math.cos(a);z=centre(x)+rz*math.sin(a)
-  v.co=Vector((x,front(x,z),z))
- bm.normal_update();bm.to_mesh(main.data);bm.free();main.data.update()
- mouthmat=h.material('reference-open-mouth-cavity','3D1E19');lipmat=h.material('reference-man-natural-lip','AA704B');pink=h.material('reference-man-comic-tongue','CF8073');teeth=h.material('reference-man-upper-teeth','EEE9D9')
- surface=h.Surface('reference-man-recessed-mouth-interior',rig,[mouthmat]);rings=[]
- for depth,amount in [(.002,1),(.013,.88),(.042,.30)]:
-  ring=[]
-  for i in range(96):
-   a=TAU*i/96;x=rx*amount*math.cos(a);z=centre(x)+rz*amount*math.sin(a)
-   ring.append(surface.vertex((x,front(x,z)+depth,z),{'head':1}))
+ crown_z=max(v.co.z for v in main.data.vertices)
+ crown_vertices=[v.co for v in main.data.vertices if v.co.z>crown_z-.0025]
+ crown_xy=sum(crown_vertices,Vector())/len(crown_vertices)
+ surface=h.Surface('reference-man-fitted-hair-cap',rig,[mat]);rings=[];n=128;rows=28
+ for row in range(rows):
+  t=row/(rows-1);ring=[]
+  for i in range(n):
+   a=TAU*i/n;c=math.cos(a)
+   # A higher forehead line, short temples and a neat lower nape. The edge is
+   # part of the same scalp surface, so there are no cones or floating forelocks.
+   edge=crown_z-.094+.016*max(0,c)**3-.030*max(0,-c)**2
+   edge+=.0018*math.sin(3*a)+.0010*math.cos(7*a)
+   z=edge*(1-t)+(crown_z-.002)*t
+   upper=max(0,min(1,(z-(crown_z-.030))/.028));upper=upper*upper*(3-2*upper)
+   origin=Vector((crown_xy.x*upper,.020*(1-upper)+crown_xy.y*upper,z))
+   direction=Vector((math.sin(a),-c,0));hit=head_tree.ray_cast(origin,direction,.5)
+   # The source head is a convex continuous scalp here. Keep a conservative
+   # fallback only for the few rays that coincide with a source triangle edge.
+   if hit[0] is not None:point=hit[0].copy()
+   else:
+    radius=max(.008,.132*math.sqrt(max(.002,1-((z-(crown_z-.115))/.118)**2)))
+    point=origin+direction*radius
+   # At most millimetres of combed relief, never detached spikes. Thickness
+   # grows gently over the crown while remaining close to temples and forehead.
+   comb=.00055*math.cos(18*(a+.32*t))*(.30+.70*t)
+   thickness=.0055+.0025*math.sin(math.pi*t/2)+comb
+   point+=direction*thickness
+   sweep=.0032*math.exp(-((point.x+.033)/.063)**2-((point.y+.036)/.080)**2)*t*t
+   point.z+=sweep
+   ring.append(surface.vertex(point,{'head':1}))
   rings.append(ring)
  for aa,bb in zip(rings,rings[1:]):surface.strip(aa,bb)
- surface.face(rings[-1]);smooth(surface.object())
- path=[]
- for i in range(97):
-  a=TAU*i/96;x=rx*math.cos(a);z=centre(x)+rz*math.sin(a)
-  path.append((x,front(x,z)-.0008,z))
- tube('reference-man-integrated-lip-edge',rig,h,path,[.0012]*len(path),lipmat,1,10)
- surface=h.Surface('reference-man-upper-tooth-row',rig,[teeth]);aa=[];bb=[]
- for i in range(33):
-  x=-rx*.80+rx*1.60*i/32;top=centre(x)+rz*math.sqrt(max(0,1-(x/rx)**2))-.002
-  y=front(x,top)+.004
-  aa.append(surface.vertex((x,y,top),{'head':1}));bb.append(surface.vertex((x,y,top-.005),{'head':1}))
- for i in range(32):surface.face((aa[i],aa[i+1],bb[i+1],bb[i]))
- solid(smooth(surface.object()),.0015)
- mean=front(.02,zcentre)
- path=[];radii=[]
- for i in range(25):
-  t=i/24;p=Vector((.012,mean+.009,zcentre-.004))*(1-t)**2+Vector((.047,mean-.060,zcentre-.002))*2*t*(1-t)+Vector((.082,mean-.078,zcentre-.030))*t*t
-  path.append(tuple(p));r=.010+.018*math.sin(math.pi*t/2)
-  if t>.78:r*=math.sqrt(max(.0001,1-((t-.78)/.22)**2))
-  radii.append(r)
- return tube('reference-man-attached-comic-tongue',rig,h,path,radii,pink,.43,24)
+ pole=surface.vertex((crown_xy.x-.002,crown_xy.y-.001,crown_z+.012),{'head':1})
+ for i in range(n):surface.face((rings[-1][i],rings[-1][(i+1)%n],pole))
+ # Close beneath the visible hairline inside the skull. This is a filled scalp
+ # volume, not a hollow helmet with an exposed horizontal brim.
+ inner=[]
+ for index in rings[0]:
+  point=Vector(surface.vertices[index]);origin=Vector((0,.020,point.z))
+  point=origin+(point-origin)*.84;point.z-=.009
+  inner.append(surface.vertex(point,{'head':1}))
+ surface.strip(inner,rings[0]);surface.face(tuple(reversed(inner)))
+ cap=smooth(surface.object());bpy.context.view_layer.objects.active=cap
+ mod=cap.modifiers.new('Soft short haircut surface','SMOOTH');mod.factor=.16;mod.iterations=2
+ while cap.modifiers.find(mod.name)>0:bpy.ops.object.modifier_move_up(modifier=mod.name)
+ bpy.ops.object.modifier_apply(modifier=mod.name)
+ bm=bmesh.new();bm.from_mesh(cap.data);bmesh.ops.recalc_face_normals(bm,faces=list(bm.faces))
+ if bm.calc_volume(signed=True)<0:bmesh.ops.reverse_faces(bm,faces=list(bm.faces))
+ assert not any(edge.is_boundary for edge in bm.edges),'Short haircut has an open boundary'
+ bm.to_mesh(cap.data);bm.free()
+ cap['closedSolidScalpBeforeUnion']=True;cap['haircut']='short, close fitted, gently swept crown'
+ skin_object(cap,rig);return cap
+
+def closed_natural_mouth(rig,main,zcentre):
+ # Retain the supplied face's actual lip topology. The exaggerated mouth used
+ # to cut away those polygons and attach a cavity, tooth strip and tongue.
+ # Sculpt a relaxed closed mouth into the continuous source face instead.
+ head=main.vertex_groups['head'].index
+ for vertex in main.data.vertices:
+  x,y,z=vertex.co
+  if y>=-.045:continue
+  weight=sum(group.weight for group in vertex.groups if group.group==head)
+  mask=math.exp(-(x/.060)**6-((z-zcentre)/.023)**4)*weight
+  centre=zcentre+.0015*min(1,abs(x)/.060)**2
+  target=centre+(z-zcentre)*.62
+  vertex.co.z=z+(target-z)*mask
+ main.data.update()
+ rig['mouthStyle']='relaxed closed lips sculpted into original face'
 
 def improve_faces_hair(rig,main,h,materials,woman):
  kind='woman' if woman else 'man';skin=materials.get('skin') or main.data.materials[0];hair=materials.get('hair') or bpy.data.materials.get('universal-red-hair' if woman else 'universal-brown-hair')
@@ -300,5 +230,5 @@ def improve_faces_hair(rig,main,h,materials,woman):
  if woman:female_hair(rig,h,hair,ez-1.7773,xscale)
  else:
   male_hair(rig,h,hair,ez-1.7874,xscale,main)
-  open_comic_mouth(rig,main,h,skin,mouth)
- main.data.update();rig['referenceHeadSculpt']='rounded fuller cheeks, fitted eyelids, blunt fringe' if woman else 'rounded full face, enlarged source eyes, real open mouth and attached tongue'
+  closed_natural_mouth(rig,main,mouth)
+ main.data.update();rig['referenceHeadSculpt']='rounded fuller cheeks, fitted eyelids, blunt fringe' if woman else 'rounded full face, enlarged source eyes, natural closed mouth and short hair'
