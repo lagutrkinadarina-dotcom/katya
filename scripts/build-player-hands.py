@@ -35,7 +35,9 @@ def tube(name,points,radii,mat):
         p=Vector(p);axis=(Vector(points[min(i+1,len(points)-1)])-Vector(points[max(0,i-1)])).normalized()
         n=axis.cross(Vector((1,0,0))).normalized();b=axis.cross(n).normalized()
         for j in range(sides):
-            a=j/sides*math.tau;verts.append(xyz(p+(n*math.cos(a)+b*math.sin(a))*radii[i]))
+            a=j/sides*math.tau
+            r=radii[i];rn,rb=r if isinstance(r,tuple) else (r,r)
+            verts.append(xyz(p+n*math.cos(a)*rn+b*math.sin(a)*rb))
     for i in range(len(points)-1):
         for j in range(sides):
             k=i*sides+j;q=i*sides+(j+1)%sides;faces.append((k,q,q+sides,k+sides))
@@ -99,6 +101,34 @@ def pose(kind):
     skin.parent=None;bpy.data.objects.remove(arm,do_unlink=True)
     # Smooth the approved mesh, rather than replacing its anatomy with primitive shapes.
     sub=skin.modifiers.new('Surface smoothing','SUBSURF');sub.levels=1;bpy.ops.object.modifier_apply(modifier=sub.name)
+    if kind=='cup':
+        # Shape contact pads against the outside of the cup, including while tilted.
+        for v in skin.data.vertices:
+            p=A.inverted()@v.co
+            if 0<=p.y<=.133:
+                radius=.037+.013*min(p.y,.13)/.13+.002
+                distance=math.hypot(p.x,p.z)
+                if 0<distance<radius:
+                    p.x*=radius/distance;p.z*=radius/distance;v.co=xyz(p)
+    else:
+        # Relax the folded distal surface so the contact pads do not form a lump.
+        tips={skin.vertex_groups[n].index for n in ['thumb-phalanx-distal','index-finger-phalanx-distal']}
+        refinement=skin.vertex_groups.new(name='pinch-tip-refinement')
+        for v in skin.data.vertices:
+            weight=sum(g.weight for g in v.groups if g.group in tips)
+            if weight:refinement.add([v.index],min(1,weight),'REPLACE')
+        smooth=skin.modifiers.new('Smooth pinch tips','SMOOTH');smooth.vertex_group=refinement.name
+        smooth.factor=.75;smooth.iterations=12;bpy.ops.object.modifier_apply(modifier=smooth.name)
+        pinch_pads={skin.vertex_groups[n].index for n in ['thumb-phalanx-distal','index-finger-phalanx-distal']}
+        for v in skin.data.vertices:
+            weight=sum(g.weight for g in v.groups if g.group in pinch_pads)
+            if weight>.15:
+                p=A.inverted()@v.co
+                # Keep the contact pads beneath the note edge instead of protruding as a lump.
+                blend=min(1,(weight-.15)/.35)
+                p.z+=(min(p.z,-.017)-p.z)*blend
+                p.x+=(min(p.x,.008)-p.x)*blend
+                v.co=xyz(p)
     skin.data.materials.clear();skin.data.materials.append(material('skin','bfa58f',.72))
     for f in skin.data.polygons:f.use_smooth=True
     shirt=material('shirt-cuff','d2cfbf',.85);cloth=material('uniform-sleeve','34414a',.94)
@@ -106,8 +136,8 @@ def pose(kind):
         tube('shirt-cuff',[(.075,-.038,.015),(.075,-.055,.016)],[.021,.022],shirt)
         tube('short-payment-cuff',[(.075,-.049,.016),(.077,-.078,.018),(.079,-.110,.020)],[.023,.026,.029],cloth)
     else:
-        tube('shirt-cuff',[(.065,.069,.120),(.065,.066,.141)],[.022,.024],shirt)
-        tube('held-drink-sleeve',[(.065,.067,.135),(.082,.037,.185),(.104,-.036,.24),(.145,-.13,.28),(.18,-.24,.33)],[.024,.028,.033,.038,.043],cloth)
+        tube('shirt-cuff',[(.065,.068,.113),(.065,.068,.147)],[(.029,.020),(.029,.020)],shirt)
+        tube('held-drink-sleeve',[(.065,.068,.142),(.065,.068,.160),(.082,.037,.198),(.104,-.036,.24),(.145,-.13,.28),(.18,-.24,.33)],[(.0305,.022),(.031,.023),.030,.033,.038,.043],cloth)
     for obj in bpy.context.scene.objects:
         if obj.type=='MESH':
             bpy.context.view_layer.objects.active=obj;obj.select_set(True)
