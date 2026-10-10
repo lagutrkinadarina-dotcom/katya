@@ -1,5 +1,5 @@
 const player = text => ({speaker:'Игрок',text});
-const prisoner = text => ({speaker:'Заключённая',text});
+const prisoner = text => ({speaker:'Алиса',text});
 const exchange = (...lines) => lines.map((text,index)=>index%2?player(text):prisoner(text));
 const option = (text,next) => ({text,next});
 export const mainTopics = [
@@ -69,9 +69,102 @@ export function createDetaineeConversation(unlocked=[]){
 }
 
 const escape = text=>text.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
-export function detaineeDialog(view){
-  return `<article class="detainee-dialog"><div class="eyebrow">КАМЕРА ВРЕМЕННОГО СОДЕРЖАНИЯ</div><h2 id="detainee-title">Заключённая</h2>
-    <div class="detainee-line" aria-live="polite"><span>${view.line.speaker}</span><p>— ${escape(view.line.text)}</p></div>
-    <nav aria-label="Варианты ответа">${!view.finished?'<button class="detainee-choice" data-advance>Продолжить <span>↵</span></button>':view.end?'<button class="detainee-choice" data-end>Завершить разговор <span>↵</span></button>':view.options.map((item,index)=>`<button class="detainee-choice" data-response="${index}"><span class="dialog-arrow">›</span>${escape(item.text)}</button>`).join('')}</nav>
-    <div class="detainee-help">↑ ↓ — выбрать · Enter — ответить · Esc — выйти</div></article>`;
+export function detaineeDialog(){
+  return `<article class="detainee-dialog" aria-label="Разговор с Алисой">
+    <div class="detainee-topics"><h2 id="detainee-title">Алиса</h2><div class="detainee-ornament" aria-hidden="true"><span>◇</span></div>
+      <nav aria-label="Варианты ответа" hidden></nav>
+    </div>
+    <div class="detainee-subtitle"><span class="detainee-speaker"></span><span class="detainee-text" aria-hidden="true"></span><span class="dialog-announcement" role="status"></span></div>
+    <div class="detainee-help"><span class="detainee-typing-help">Enter — показать реплику</span><span class="detainee-navigation-help" hidden>↑ ↓ Выбор · Enter Ответить</span><button data-dialog-exit>Esc Выйти</button></div>
+  </article>`;
+}
+
+// Each visit owns its animation and listeners. Closing a conversation cancels
+// pending letters, automatic player lines and selection transitions together.
+export function mountDetaineeDialog(element,conversation,{onUpdate,onClose}){
+  const text=element.querySelector('.detainee-text');
+  const speaker=element.querySelector('.detainee-speaker');
+  const announcement=element.querySelector('.dialog-announcement');
+  const nav=element.querySelector('nav');
+  const typingHelp=element.querySelector('.detainee-typing-help');
+  const navigationHelp=element.querySelector('.detainee-navigation-help');
+  const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const subtitle=element.querySelector('.detainee-subtitle');
+  const resize=new ResizeObserver(()=>element.style.setProperty('--subtitle-height',`${subtitle.getBoundingClientRect().height}px`));
+  resize.observe(subtitle);
+  const seen=new Set();
+  let disposed=false,typing=false,selecting=false,raf=0,timer=0,letters=[],count=0,nextLetter=0;
+  const clear=()=>{cancelAnimationFrame(raf);clearTimeout(timer);raf=0;timer=0;};
+  const focus=button=>{
+    nav.querySelectorAll('button').forEach(item=>item.classList.toggle('is-focused',item===button));
+    button?.focus({preventScroll:true});button?.scrollIntoView({block:'nearest'});
+  };
+  function complete(){
+    if(disposed||!typing)return;
+    typing=false;cancelAnimationFrame(raf);text.textContent=letters.join('');
+    element.classList.remove('is-typing');announcement.textContent=`${conversation.view.line.speaker}: ${text.textContent}`;
+    const view=conversation.view;onUpdate(conversation.snapshot);
+    if(view.line.speaker==='Игрок'&&!view.finished){
+      typingHelp.textContent='Enter — продолжить';
+      timer=setTimeout(advance,reduced?250:650);return;
+    }
+    typingHelp.hidden=true;navigationHelp.hidden=false;nav.hidden=false;
+    nav.innerHTML=!view.finished?'<button class="detainee-choice" data-advance><span class="dialog-arrow">›</span>Продолжить</button>':
+      view.end?'<button class="detainee-choice" data-end><span class="dialog-arrow">›</span>Завершить разговор</button>':
+      view.options.map((item,index)=>`<button class="detainee-choice ${seen.has(item.next)?'is-visited':''}" data-response="${index}" style="--choice-delay:${index*65}ms"><span class="dialog-arrow" aria-hidden="true">›</span><span>${escape(item.text)}</span></button>`).join('');
+    nav.querySelectorAll('button').forEach(button=>{
+      button.onpointerenter=()=>{if(!selecting)focus(button);};
+      button.onclick=()=>activate(button);
+    });
+    focus(nav.querySelector('button'));
+  }
+  function tick(now){
+    if(disposed||!typing)return;
+    if(!nextLetter)nextLetter=now;
+    while(count<letters.length&&now>=nextLetter){
+      const letter=letters[count++];nextLetter+=/[.!?…]/.test(letter)?110:24;
+    }
+    text.textContent=letters.slice(0,count).join('');
+    if(count===letters.length)complete();else raf=requestAnimationFrame(tick);
+  }
+  function render(){
+    clear();selecting=false;typing=true;count=0;nextLetter=0;
+    letters=Array.from(conversation.view.line.text);text.textContent='';announcement.textContent='';
+    speaker.textContent=`${conversation.view.line.speaker}: `;
+    element.classList.add('is-typing');element.classList.remove('is-selecting');
+    nav.hidden=true;nav.innerHTML='';typingHelp.hidden=false;typingHelp.textContent='Enter — показать реплику';navigationHelp.hidden=true;
+    if(reduced)complete();else raf=requestAnimationFrame(tick);
+  }
+  function advance(){
+    if(disposed||selecting)return;
+    clear();if(conversation.advance())render();
+  }
+  function activate(button){
+    if(disposed||typing||selecting||!button)return;
+    if(button.hasAttribute('data-advance')){advance();return;}
+    if(button.hasAttribute('data-end')){onClose(conversation.view.after);return;}
+    const index=Number(button.dataset.response),choice=conversation.view.options[index];
+    if(!choice)return;clear();selecting=true;element.classList.add('is-selecting');button.classList.add('is-chosen');
+    nav.querySelectorAll('button').forEach(item=>item.disabled=true);
+    timer=setTimeout(()=>{if(disposed)return;seen.add(choice.next);conversation.choose(index);render();},reduced?0:240);
+  }
+  function keydown(event){
+    if(!['ArrowUp','ArrowDown','Enter','Space','Escape','KeyE'].includes(event.code))return;
+    event.preventDefault();event.stopImmediatePropagation();
+    if(event.code==='Escape'){onClose();return;}
+    if(event.repeat||selecting)return;
+    if(['Enter','Space','KeyE'].includes(event.code)){
+      if(typing){complete();return;}
+      if(conversation.view.line.speaker==='Игрок'&&!conversation.view.finished){advance();return;}
+      activate(nav.querySelector('.is-focused')??nav.querySelector('button'));return;
+    }
+    if(typing||nav.hidden)return;
+    const buttons=[...nav.querySelectorAll('button')],index=buttons.findIndex(button=>button.classList.contains('is-focused'));
+    focus(buttons[(index+(event.code==='ArrowUp'?-1:1)+buttons.length)%buttons.length]);
+  }
+  document.addEventListener('keydown',keydown,true);
+  element.querySelector('[data-dialog-exit]').onclick=()=>onClose();
+  element.querySelector('.detainee-subtitle').onclick=()=>{if(typing)complete();else if(!conversation.view.finished)advance();};
+  render();
+  return {dispose(){disposed=true;clear();resize.disconnect();document.removeEventListener('keydown',keydown,true);}};
 }

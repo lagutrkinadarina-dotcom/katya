@@ -35,3 +35,10 @@ test('selected player reply is followed by all authored lines in order; goodbye 
   assert.equal(c.view.line.text,'Всего доброго.');finish(c);
   assert.equal(c.view.end,true);assert.equal(c.view.after,'Хотя какую нахуй дверь…');
 });
+
+
+test('NPC subtitles consistently use Alice, without changing player speakers',()=>{
+  for(const node of Object.values(detaineeNodes))
+    for(const line of node.lines)assert.ok(['Игрок','Алиса'].includes(line.speaker));
+  const c=createDetaineeConversation();c.advance();assert.equal(c.view.line.speaker,'Алиса');
+});

@@ -6,7 +6,7 @@ import {createEditor} from './editor.js';
 import {createCorridor} from './corridor.js';
 import {createCoffeeInteraction} from './coffee-interaction.js';
 import {createMenus} from './menu.js';
-import {createDetaineeConversation,detaineeDialog} from './detainee-dialog.js';
+import {createDetaineeConversation,detaineeDialog,mountDetaineeDialog} from './detainee-dialog.js';
 import {officerDialog} from './officer-dialog.js';
 import {rooms} from './rooms.js';
 import {canWalk, floorHeight, doorwayOccupied, floorNumber} from './navigation.js';
@@ -17,7 +17,7 @@ const evidence={
   log:{title:'02 / Журнал доступа в клуб',body:'Личный пропуск Марины Соколовой зарегистрирован у служебного входа в 21:58 и на выходе в 22:11. Время смерти Громова — между 22:00 и 22:10. Соколова утверждает, что ушла в 21:30. Её версия не совпадает с журналом.'},
   record:{title:'03 / Запись и заключение эксперта',body:'Эксперт восстановил запись на телефоне Громова. В 22:06 он говорит: «Марина, поставь кубок. Редакция уже получила доказательства договорного боя». Слышен её ответ: «Ты обещал не трогать мою сестру!», затем удар. Эксперт подтвердил голос Соколовой и обнаружил её отпечатки на кубке с кровью Громова. Запись и экспертиза подтверждают журнал доступа.'}
 };
-let audio,audioGain,editor,coffee;
+let audio,audioGain,editor,coffee,activeDetainee=null;
 function sound(){if(audio){audio.resume().catch(()=>{});return;}try{audio=new AudioContext();const o=audio.createOscillator(),g=audio.createGain();o.type='sine';o.frequency.value=58;audioGain=g;g.gain.value=.028*menus.preferences.volume/100;o.connect(g).connect(audio.destination);o.start();}catch{}}
 function coffeeSound(kind){
   sound();if(!audio||menus.preferences.volume===0)return;
@@ -32,12 +32,12 @@ function coffeeSound(kind){
   }
 }
 function release(){if(typeof sceneRendered!=='undefined')sceneRendered=false;if(typeof highlightedCell!=='undefined')highlightCell(null);if(typeof highlightedNotice!=='undefined')highlightNotice(null);if(document.pointerLockElement)document.exitPointerLock();keys.clear();}
-function panel(html){release();overlay.innerHTML=`<section class="panel"><button class="close" aria-label="Закрыть">×</button>${html}</section>`;$('.close').onclick=close;}
+function panel(html){endDetainee();release();overlay.innerHTML=`<section class="panel"><button class="close" aria-label="Закрыть">×</button>${html}</section>`;$('.close').onclick=close;}
 async function showNotice(index){
   release();await noticePhotosReady;const notice=noticeDocuments[index],photo=document.createElement('canvas');photo.width=700;photo.height=700;drawNoticePhoto(photo.getContext('2d'),index,0,0,700,700);
   panel(`<article class="notice-reader" aria-label="Объявление"><div class="notice-primary"><h2>${notice.title}</h2><h3>${notice.name}</h3><img src="${photo.toDataURL()}" alt="Фотография к объявлению"><div class="notice-copy">${notice.lines.map(line=>`<p>${line}</p>`).join('')}</div><strong>${notice.footer}</strong></div><aside><h2>Дополнительная информация</h2>${noticeDetails[index].map(text=>`<p>${text}</p>`).join('')}<div class="notice-stamp">УЧАСТОК № 7 · ЗАПИСИ ДЕЖУРНОЙ ЧАСТИ</div></aside></article>`);
 }
-function close(){overlay.innerHTML='';captureMouse();}
+function close(){endDetainee();overlay.innerHTML='';captureMouse();}
 let mouseCapturePending=false;
 async function captureMouse(){
   if(editor?.active||!menus.playing||state.mode!=='corridor'||overlay.innerHTML||state.ended||document.pointerLockElement===canvas||mouseCapturePending)return;
@@ -88,7 +88,7 @@ const renderer=new THREE.WebGLRenderer({canvas,antialias:true});renderer.setPixe
 const ray=new THREE.Raycaster(),keys=new Set();let target=null,highlightedNotice=null,highlightedCell=null,busy=false,yaw=0,pitch=0;
 function highlightNotice(next){if(next===highlightedNotice)return;if(highlightedNotice)highlightedNotice.material.emissiveIntensity=0;highlightedNotice=next?.userData.type==='notice'?next:null;if(highlightedNotice)highlightedNotice.material.emissiveIntensity=.36;}
 function highlightCell(next){const gate=next?.userData.type==='cellDoor'?next:null;if(gate===highlightedCell)return;highlightedCell?.userData.setHighlighted(false);highlightedCell=gate;highlightedCell?.userData.setHighlighted(true);}
-document.addEventListener('keydown',e=>{if(overlay.querySelector('.detainee-dialog')&&['ArrowUp','ArrowDown','Enter','Space'].includes(e.code)){e.preventDefault();const buttons=[...overlay.querySelectorAll('.detainee-choice')];const index=buttons.indexOf(document.activeElement);if(e.code==='ArrowUp'||e.code==='ArrowDown')buttons[(index+(e.code==='ArrowUp'?-1:1)+buttons.length)%buttons.length]?.focus();else if(!e.repeat)document.activeElement?.classList.contains('detainee-choice')&&document.activeElement.click();return;}if(e.code==='F2'){e.preventDefault();if(menus.playing&&state.mode==='corridor'){if(editor.active)editor.exit();else if(!overlay.innerHTML)editor.enter();}return;}if(editor?.active){if(e.code==='Escape')editor.exit();return;}if(e.code==='KeyE'&&!e.repeat&&menus.playing&&state.mode==='corridor'&&!overlay.innerHTML&&!state.ended){e.preventDefault();if(target?.userData.type==='cellDoor')talkToDetainee();else coffee.drink();return;}if(['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','Space'].includes(e.code))e.preventDefault();if(e.code==='Escape'){if($('#start-story'))return;if(menus.back())return;if(overlay.innerHTML)close();else pause();}if(!overlay.innerHTML)keys.add(e.code);});document.addEventListener('keyup',e=>keys.delete(e.code));window.addEventListener('blur',release);
+document.addEventListener('keydown',e=>{if(e.code==='F2'){e.preventDefault();if(menus.playing&&state.mode==='corridor'){if(editor.active)editor.exit();else if(!overlay.innerHTML)editor.enter();}return;}if(editor?.active){if(e.code==='Escape')editor.exit();return;}if(e.code==='KeyE'&&!e.repeat&&menus.playing&&state.mode==='corridor'&&!overlay.innerHTML&&!state.ended){e.preventDefault();if(target?.userData.type==='cellDoor')talkToDetainee();else coffee.drink();return;}if(['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','Space'].includes(e.code))e.preventDefault();if(e.code==='Escape'){if($('#start-story'))return;if(menus.back())return;if(overlay.innerHTML)close();else pause();}if(!overlay.innerHTML)keys.add(e.code);});document.addEventListener('keyup',e=>keys.delete(e.code));window.addEventListener('blur',release);
 document.addEventListener('mousemove',e=>{if(!editor?.active&&document.pointerLockElement===canvas&&state.mode==='corridor'&&!overlay.innerHTML){yaw-=e.movementX*.002*menus.preferences.sensitivity;pitch=Math.max(-1.2,Math.min(1.2,pitch-e.movementY*.002*menus.preferences.sensitivity));camera.rotation.set(pitch,yaw,0);}});
 canvas.addEventListener('click',async()=>{if(editor?.active||state.mode!=='corridor'||overlay.innerHTML||busy)return;sound();if(target){if(target.userData.type==='cellDoor'){talkToDetainee();return;}if(['coffeeMachine','coffeeCup'].includes(target.userData.type)){coffee.interact(target);return;}if(target.userData.type==='notice'){showNotice(target.userData.noticeIndex);return;}if(target.userData.type==='dutyOfficer'){briefing();return;}if(target.userData.type==='savePhone'){savePhone();return;}if(target.userData.type==='passageDoor'){togglePassageDoor();return;}busy=true;release();const selected=target;const hinge=selected.userData.hinge;const start=hinge.rotation.y;let t=0;const animate=()=>{t+=.07;hinge.rotation.y=start-Math.min(t,1)*1.15;if(t<1)requestAnimationFrame(animate);else{enter(selected.userData.type);hinge.rotation.y=start;busy=false;}};animate();}else{await captureMouse();}});
 function setPassageOpen(open){passageDoor.userData.hinges.forEach(hinge=>hinge.rotation.y=open?hinge.userData.openAngle:0);}
@@ -105,18 +105,35 @@ function briefing(topic='welcome'){
   document.querySelectorAll('[data-brief]').forEach(button=>button.onclick=()=>briefing(button.dataset.brief));$('#leave-officer').onclick=()=>{const fresh=!state.briefed;state.briefed=true;close();if(fresh)toast('Доступ к лестнице открыт. Подойдите к двери в проходе и нажмите ЛКМ.');};
   $('#lebedev-title').focus({preventScroll:true});
 }
+function endDetainee(){
+  if(!activeDetainee)return;
+  activeDetainee.ui.dispose();
+  camera.position.copy(activeDetainee.position);camera.quaternion.copy(activeDetainee.rotation);camera.fov=activeDetainee.fov;camera.updateProjectionMatrix();
+  activeDetainee=null;document.body.classList.remove('in-detainee-dialog');target=null;sceneRendered=false;
+}
 function talkToDetainee(){
+  if(activeDetainee)return;
+  const original={position:camera.position.clone(),rotation:camera.quaternion.clone(),fov:camera.fov};
   const conversation=createDetaineeConversation(state.detaineeTopics);
-  function render(){
-    state.detaineeTopics=conversation.snapshot;
-    const view=conversation.view;panel(detaineeDialog(view));
-    const element=$('.panel');element.setAttribute('role','dialog');element.setAttribute('aria-modal','true');element.setAttribute('aria-labelledby','detainee-title');
-    overlay.querySelector('[data-advance]')?.addEventListener('click',()=>{conversation.advance();render();});
-    overlay.querySelectorAll('[data-response]').forEach(button=>button.onclick=()=>{conversation.choose(Number(button.dataset.response));render();});
-    overlay.querySelector('[data-end]')?.addEventListener('click',()=>{close();if(view.after)toast(`Заключённая (вслед): «${view.after}»`);});
-    overlay.querySelector('.detainee-choice')?.focus({preventScroll:true});
-  }
-  render();
+  panel(detaineeDialog());
+  const element=$('.panel');element.setAttribute('role','dialog');element.setAttribute('aria-modal','true');element.setAttribute('aria-labelledby','detainee-title');
+  document.body.classList.add('in-detainee-dialog');
+  // Eye-level dialogue framing keeps Alice to the left of the floating topics.
+  const destination=new THREE.Vector3(-.76,-1.715,5.30);
+  const framing=camera.clone();framing.position.copy(destination);framing.lookAt(-2.48,-2.24,5.46-.52*THREE.MathUtils.clamp(camera.aspect/1.6,.2,1));
+  const ui=mountDetaineeDialog(element,conversation,{
+    onUpdate:topics=>{state.detaineeTopics=topics;},
+    onClose:after=>{close();if(after)toast(`Алиса (вслед): «${after}»`);},
+  });
+  activeDetainee={...original,ui,destination,direction:framing.quaternion.clone(),started:performance.now(),aspect:camera.aspect,reduced:matchMedia('(prefers-reduced-motion: reduce)').matches};
+}
+function updateDetaineeCamera(now){
+  if(!activeDetainee)return;
+  const pose=activeDetainee;
+  if(pose.aspect!==camera.aspect){const framing=camera.clone();framing.position.copy(pose.destination);framing.lookAt(-2.48,-2.24,5.46-.52*THREE.MathUtils.clamp(camera.aspect/1.6,.2,1));pose.direction.copy(framing.quaternion);pose.aspect=camera.aspect;}
+  const t=pose.reduced?1:Math.min(1,(now-pose.started)/450),ease=t*t*(3-2*t);
+  camera.position.lerpVectors(pose.position,pose.destination,ease);camera.quaternion.slerpQuaternions(pose.rotation,pose.direction,ease);
+  camera.fov=THREE.MathUtils.lerp(pose.fov,50,ease);camera.updateProjectionMatrix();
 }
 function pause(){menus.pause();}
 const SAVE_KEY='night-shift-last-round-save-v1';
@@ -177,7 +194,8 @@ function frame(now){
   const coffeeHint=coffeeActive?(target?.userData.type==='cellDoor'?'Нажмите «Е»':coffee.hint(target)):'';
   $('#hint').classList.toggle('coffee-hint',!!coffeeHint);
   if(coffeeHint)$('#hint').textContent=coffeeHint;
-  if(!menus.exited&&state.mode==='corridor'&&(!overlay.innerHTML||!sceneRendered)){
+  updateDetaineeCamera(now);
+  if(!menus.exited&&state.mode==='corridor'&&(!overlay.innerHTML||!sceneRendered||activeDetainee)){
     editor.update();updateStreet(now/1000);
     scene.getObjectByName('stationAmbient').intensity=THREE.MathUtils.lerp(.62,1.65,THREE.MathUtils.clamp((camera.position.y+.5)/2.15,0,1));
     renderer.render(scene,camera);sceneRendered=true;
