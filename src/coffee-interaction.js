@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {CoffeeOrder, drinks, DRINK_PRICE} from './coffee-order.js';
+import {CoffeeOrder, drinks} from './coffee-order.js';
 import {createDrinkCup, createSteam} from './drink-cup.js';
 import {createPlayerHand} from './player-hand.js';
 
@@ -25,54 +25,54 @@ export function createCoffeeInteraction({scene,camera,machine,panel,close,toast,
   const billCanvas=document.createElement('canvas');billCanvas.width=384;billCanvas.height=192;
   const ctx=billCanvas.getContext('2d');ctx.fillStyle='#b5c4c4';ctx.fillRect(0,0,384,192);ctx.strokeStyle='#3c6973';ctx.lineWidth=8;ctx.strokeRect(12,12,360,168);ctx.fillStyle='#355d68';ctx.textAlign='center';ctx.font='bold 82px Georgia';ctx.fillText('50 ₽',192,119);ctx.font='16px Arial';ctx.fillText('ПЯТЬДЕСЯТ РУБЛЕЙ',192,153);
   const billMap=new THREE.CanvasTexture(billCanvas);billMap.colorSpace=THREE.SRGBColorSpace;
-  const bill=new THREE.Mesh(new THREE.PlaneGeometry(.105,.055),new THREE.MeshStandardMaterial({map:billMap,side:THREE.DoubleSide,roughness:.85}));paymentHand.add(bill);bill.position.set(-.042,.097,-.013);
-  const hud=document.createElement('div');hud.id='coffee-wallet';hud.setAttribute('aria-label','Кошелёк');hud.innerHTML='<span aria-hidden="true">₽</span><output id="wallet-balance" aria-live="polite">50 ₽</output>';document.body.append(hud);
+  const bill=new THREE.Mesh(new THREE.PlaneGeometry(.105,.055),new THREE.MeshStandardMaterial({map:billMap,side:THREE.DoubleSide,roughness:.85}));paymentHand.add(bill);bill.position.set(-.042,.097,-.008);
   const basePosition=new THREE.Vector3(.20,-.27,-.48),startPosition=new THREE.Vector3(),endPosition=new THREE.Vector3();
   const startQuaternion=new THREE.Quaternion(),endQuaternion=new THREE.Quaternion(),worldScale=new THREE.Vector3();
-  const billGrip=new THREE.Vector3(-.042,.097,-.013),gripOffset=new THREE.Vector3();
-  let selectedId=null,clock=0,lastScreen='',lastBalance=-1;
+  const billGrip=new THREE.Vector3(-.042,.097,-.008),gripOffset=new THREE.Vector3();
+  let selectedId=null,clock=0,lastScreen='',menuRefresh=null;
+  const cooldownText=()=>{const seconds=order.cooldownRemaining;return `${Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')}`;};
 
-  function showMenu(id) {
-    if (order.phase==='ready') {toast('Напиток готов. Наведитесь на стаканчик в лотке и нажмите ЛКМ.');return;}
-    if (['paying','brewing'].includes(order.phase)) {toast('Автомат готовит ваш напиток. Дождитесь окончания налива.');return;}
-    if (order.phase!=='idle') {toast('Сначала выпейте напиток в руке — нажмите E.');return;}
-    selectedId=drinks.some(drink=>drink.id===id)?id:null;
-    panel(`<article class="coffee-menu"><div class="eyebrow">КОФЕЙНЫЙ АВТОМАТ · ГОРЯЧИЕ НАПИТКИ</div><h2>Перерыв на кофе</h2><div class="coffee-menu-meta"><span>Любой напиток · ${DRINK_PRICE} ₽</span><span>В кошельке: <strong>${order.balance} ₽</strong></span></div><div class="coffee-options">${drinks.map(drink=>`<button class="coffee-option" data-drink="${drink.id}" aria-pressed="false"><span class="coffee-cup-icon" aria-hidden="true">☕</span><strong>${drink.name}</strong><small>${drink.description}</small></button>`).join('')}</div><div class="coffee-checkout"><p id="coffee-selection" role="status"></p><button class="primary" id="pay-coffee" disabled>Оплатить ${DRINK_PRICE} ₽</button></div></article>`);
-    const payment=document.querySelector('#pay-coffee'),status=document.querySelector('#coffee-selection');
+  function showMenu() {
+    selectedId=null;
+    panel(`<article class="coffee-menu"><div class="eyebrow">КОФЕЙНЫЙ АВТОМАТ · ГОРЯЧИЕ НАПИТКИ</div><h2>Выбрать напиток</h2><div class="coffee-menu-meta"><span>После покупки — перезарядка 3 минуты</span><span id="coffee-cooldown" aria-live="polite"></span></div><div class="coffee-options">${drinks.map(drink=>`<button class="coffee-option" data-drink="${drink.id}" aria-pressed="false"><span class="coffee-cup-icon" aria-hidden="true">☕</span><strong>${drink.name}</strong><small>${drink.description}</small></button>`).join('')}</div><div class="coffee-checkout"><p id="coffee-selection" role="status"></p><button class="primary" id="pay-coffee" disabled>Купить кофе</button></div></article>`);
+    const payment=document.querySelector('#pay-coffee'),status=document.querySelector('#coffee-selection'),cooldown=document.querySelector('#coffee-cooldown');
+    let lastKey='';
     function refresh() {
+      const key=`${selectedId}|${order.phase}|${order.cooldownRemaining}`;if(key===lastKey)return;lastKey=key;
       document.querySelectorAll('[data-drink]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.drink===selectedId)));
       const drink=drinks.find(drink=>drink.id===selectedId);
-      status.textContent=order.balance<DRINK_PRICE?'Недостаточно денег. В кошельке 0 ₽.':drink?`${drink.name} · ${drink.price} ₽. Стаканчик появится в лотке после оплаты.`:'Выберите напиток.';
-      payment.disabled=!drink||order.balance<DRINK_PRICE;
+      cooldown.textContent=order.cooldownRemaining?`Перезарядка · ${cooldownText()}`:'Можно купить кофе';
+      status.textContent=order.phase==='ready'?'Заберите готовый стаканчик из лотка.':
+        ['paying','brewing'].includes(order.phase)?'Ваш напиток готовится…':
+        order.phase!=='idle'?'Сначала выпейте напиток в руке — нажмите E.':
+        order.cooldownRemaining?`Следующая покупка через ${cooldownText()}.`:
+        drink?`${drink.name}. Стаканчик появится в лотке после покупки.`:'Выберите напиток.';
+      payment.disabled=!drink||order.phase!=='idle'||order.cooldownRemaining>0;
     }
     document.querySelectorAll('[data-drink]').forEach(button=>button.onclick=()=>{selectedId=button.dataset.drink;refresh();});
     payment.onclick=()=>{
       if (!order.pay(selectedId)) return;
-      payment.disabled=true;close();syncVisuals(false);sound('pay');toast(`Оплачено 50 ₽. Готовится ${order.drink.name.toLowerCase()}.`);
+      payment.disabled=true;close();menuRefresh=null;syncVisuals(false);sound('pay');toast(`Готовится ${order.drink.name.toLowerCase()}. Следующая покупка — через 3 минуты.`);
     };
-    refresh();
+    menuRefresh=refresh;refresh();
   }
   function interact(target) {
     if(target.userData.type==='coffeeCup') {
       if(order.take()) {syncVisuals(true);sound('take');}
-    } else showMenu(target.userData.drinkId);
+    } else showMenu();
   }
   function drink() {if(order.drinkNow()){sound('drink');syncVisuals(true);return true;}return false;}
   function hint(target) {
+    if(target?.userData.type==='coffeeCup'&&order.phase==='ready')return 'Напиток готов · ЛКМ — взять стаканчик';
+    if(target?.userData.type==='coffeeMachine')return 'Выбрать напиток · ЛКМ';
     if(order.phase==='holding')return `${order.drink.name} в руке · E — выпить`;
     if(order.phase==='taking')return 'Вы берёте стаканчик';
     if(order.phase==='drinking')return 'Вы пьёте горячий напиток';
-    if(target?.userData.type==='coffeeCup'&&order.phase==='ready')return 'Напиток готов · ЛКМ — взять стаканчик';
-    if(target?.userData.type==='coffeeMachine') {
-      if(order.phase==='paying')return 'Оплата принята · 50 ₽';
-      if(order.phase==='brewing')return 'Стаканчик наполняется…';
-      if(order.phase==='ready')return 'Заберите стаканчик из лотка';
-      return target.userData.drinkId?`${drinks.find(drink=>drink.id===target.userData.drinkId).name} · 50 ₽ · ЛКМ — выбрать`:'ЛКМ — выбрать напиток · 50 ₽';
-    }
     return '';
   }
   function updateScreen() {
-    const lines={idle:order.balance?['ВЫБЕРИТЕ','НАПИТОК','50 ₽']:['НЕТ СРЕДСТВ','БАЛАНС','0 ₽'],paying:['ОПЛАЧЕНО','ГОТОВИМ','50 ₽'],brewing:['ГОТОВИМ',(order.drink?.name??'НАПИТОК').toUpperCase(),`${Math.round(order.fill*100)}%`],ready:['ГОТОВО','ЗАБЕРИТЕ','СТАКАНЧИК'],taking:['ПРИЯТНОГО','ПЕРЕРЫВА',''],holding:['ПРИЯТНОГО','ПЕРЕРЫВА',''],drinking:['ПРИЯТНОГО','ПЕРЕРЫВА','']}[order.phase];
+    const idle=order.cooldownRemaining?['ПЕРЕЗАРЯДКА',cooldownText(),'']:['ВЫБЕРИТЕ','НАПИТОК',''];
+    const lines={idle,paying:['ОПЛАЧЕНО','ГОТОВИМ',''],brewing:['ГОТОВИМ',(order.drink?.name??'НАПИТОК').toUpperCase(),`${Math.round(order.fill*100)}%`],ready:['ГОТОВО','ЗАБЕРИТЕ','СТАКАНЧИК'],taking:['ПРИЯТНОГО','ПЕРЕРЫВА',''],holding:idle,drinking:idle}[order.phase];
     const key=lines.join('|');if(key===lastScreen)return;lastScreen=key;
     const ctx=screenMap.image.getContext('2d');ctx.fillStyle='#223c32';ctx.fillRect(0,0,256,210);ctx.fillStyle='#b7d2a2';ctx.font='bold 29px monospace';ctx.textAlign='center';lines.forEach((line,i)=>ctx.fillText(line,128,[62,111,175][i],244));screenMap.needsUpdate=true;
   }
@@ -117,8 +117,7 @@ export function createCoffeeInteraction({scene,camera,machine,panel,close,toast,
     }
     machineSteam.update(clock,onMachine&&order.fill>.1);
     handSteam.update(clock,phase==='holding'||phase==='drinking'&&order.fill>.05);
-    if(lastBalance!==order.balance){hud.querySelector('output').textContent=`${order.balance} ₽`;lastBalance=order.balance;}
-    hud.hidden=!visible;updateScreen();
+    updateScreen();
   }
   function update(dt,active) {
     const previous=order.phase;
@@ -129,6 +128,7 @@ export function createCoffeeInteraction({scene,camera,machine,panel,close,toast,
       if(order.phase==='holding')toast('Стаканчик в руке. Нажмите E, чтобы выпить.');
       if(previous==='drinking'&&order.phase==='idle')toast(`Вы выпили ${order.drink.name.toLowerCase()}.`);
     }
+    if(menuRefresh){if(document.querySelector('.coffee-menu'))menuRefresh();else menuRefresh=null;}
     syncVisuals(active);
   }
   syncVisuals(false);

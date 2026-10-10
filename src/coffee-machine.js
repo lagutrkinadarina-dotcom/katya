@@ -22,7 +22,7 @@ export function createCoffeeMachine(scene,{ground,rounded,mesh,panel,canvasMap,p
   const light=new THREE.MeshStandardMaterial({color:'#d5e9d7',emissive:'#bcdbc9',emissiveIntensity:.7});
   for(const x of [-.322,.163])rounded(.008,1.20,.009,x,1.21,.329,light,model);
   rounded(.14,.30,.022,.245,1.58,.321,metal,model);
-  const screenMap=canvasMap((ctx,w,h)=>{ctx.fillStyle='#223c32';ctx.fillRect(0,0,w,h);ctx.fillStyle='#b7d2a2';ctx.font='bold 34px monospace';ctx.textAlign='center';ctx.fillText('ВЫБЕРИТЕ',w/2,62);ctx.fillText('НАПИТОК',w/2,111);ctx.fillText('50 ₽',w/2,175);},256,210);
+  const screenMap=canvasMap((ctx,w,h)=>{ctx.fillStyle='#223c32';ctx.fillRect(0,0,w,h);ctx.fillStyle='#b7d2a2';ctx.font='bold 34px monospace';ctx.textAlign='center';ctx.fillText('ВЫБЕРИТЕ',w/2,62);ctx.fillText('НАПИТОК',w/2,111);},256,210);
   const screen=panel(screenMap,.108,.088,.245,1.64,.335,model);
   rounded(.115,.011,.012,.245,1.51,.342,black,model);
   for(let row=0;row<4;row++)for(let col=0;col<3;col++)rounded(.022,.025,.01,.210+col*.032,1.32-row*.037,.334,paper,model);

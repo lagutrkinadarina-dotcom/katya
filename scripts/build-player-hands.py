@@ -78,7 +78,7 @@ def pose(kind):
         # Index and thumb meet on opposite sides of the note; the remaining fingers curl.
         for finger in ['index','middle','ring','pinky']:
             ns=names(finger)
-            ds=[(-.38,.55,-.74),(-.85,-.25,.46),(-.72,-.05,.69)] if finger=='index' else [(0,.60,-.80),(0,-.60,-.80),(0,-1,.10)]
+            ds=[(-.58,.64,-.50),(-.65,-.21,.73),(-.50,-.56,.66)] if finger=='index' else [(0,.88,-.48),(0,.20,-.98),(0,-.60,-.80)]
             for previous,current,d in zip(ns[1:],ns[2:],ds):
                 target[current]=target[previous]+Vector(d).normalized()*(rest[current]-rest[previous]).length
         ns=names('thumb');target[ns[0]]=Vector((.048,.022,.005))
@@ -110,25 +110,6 @@ def pose(kind):
                 distance=math.hypot(p.x,p.z)
                 if 0<distance<radius:
                     p.x*=radius/distance;p.z*=radius/distance;v.co=xyz(p)
-    else:
-        # Relax the folded distal surface so the contact pads do not form a lump.
-        tips={skin.vertex_groups[n].index for n in ['thumb-phalanx-distal','index-finger-phalanx-distal']}
-        refinement=skin.vertex_groups.new(name='pinch-tip-refinement')
-        for v in skin.data.vertices:
-            weight=sum(g.weight for g in v.groups if g.group in tips)
-            if weight:refinement.add([v.index],min(1,weight),'REPLACE')
-        smooth=skin.modifiers.new('Smooth pinch tips','SMOOTH');smooth.vertex_group=refinement.name
-        smooth.factor=.75;smooth.iterations=12;bpy.ops.object.modifier_apply(modifier=smooth.name)
-        pinch_pads={skin.vertex_groups[n].index for n in ['thumb-phalanx-distal','index-finger-phalanx-distal']}
-        for v in skin.data.vertices:
-            weight=sum(g.weight for g in v.groups if g.group in pinch_pads)
-            if weight>.15:
-                p=A.inverted()@v.co
-                # Keep the contact pads beneath the note edge instead of protruding as a lump.
-                blend=min(1,(weight-.15)/.35)
-                p.z+=(min(p.z,-.017)-p.z)*blend
-                p.x+=(min(p.x,.008)-p.x)*blend
-                v.co=xyz(p)
     skin.data.materials.clear();skin.data.materials.append(material('skin','bfa58f',.72))
     for f in skin.data.polygons:f.use_smooth=True
     shirt=material('shirt-cuff','d2cfbf',.85);cloth=material('uniform-sleeve','34414a',.94)

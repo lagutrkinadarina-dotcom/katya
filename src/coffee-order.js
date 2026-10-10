@@ -1,4 +1,4 @@
-export const DRINK_PRICE = 50;
+export const COFFEE_COOLDOWN_MS = 3 * 60 * 1000;
 export const drinks = [
   ['espresso', 'Эспрессо', 'Крепкий и насыщенный', '#48291b'],
   ['ristretto', 'Ристретто', 'Короткий, особенно крепкий', '#382219'],
@@ -12,7 +12,7 @@ export const drinks = [
   ['mocha', 'Мокка', 'Кофе, молоко и шоколад', '#96704e'],
   ['tea', 'Чай', 'Горячий чёрный чай', '#946029'],
   ['cocoa', 'Какао', 'Какао с тёплым молоком', '#ad835c'],
-].map(([id, name, description, color]) => ({id, name, description, color, price: DRINK_PRICE}));
+].map(([id, name, description, color]) => ({id, name, description, color}));
 
 export const durations = {paying: 1.4, brewing: 4.6, taking: .65, drinking: 3.8};
 const nextPhase = {paying: 'brewing', brewing: 'ready', taking: 'holding', drinking: 'idle'};
@@ -21,18 +21,20 @@ const clamp = value => Math.max(0, Math.min(1, value));
 
 // Transactions and saved orders are independent of the render frame rate.
 export class CoffeeOrder {
-  constructor(saved) { this.restore(saved); }
+  constructor(saved, now = Date.now) { this.now = now; this.restore(saved); }
   restore(saved) {
     const drink = drinks.find(drink => drink.id === saved?.drinkId);
-    const valid = saved && (saved.balance === 50 || saved.balance === 0) && phases.has(saved.phase)
+    const valid = saved && phases.has(saved.phase)
       && Number.isFinite(saved.elapsed) && saved.elapsed >= 0
-      && (saved.phase === 'idle' || (drink && saved.balance === 0))
+      && (saved.phase === 'idle' || drink)
       && (!durations[saved.phase] || saved.elapsed < durations[saved.phase]);
-    this.balance = valid ? saved.balance : 50;
+    this.cooldownUntil = valid && Number.isFinite(saved.cooldownUntil) && saved.cooldownUntil >= 0
+      ? Math.min(saved.cooldownUntil, this.now() + COFFEE_COOLDOWN_MS) : 0;
     this.phase = valid ? saved.phase : 'idle';
     this.drinkId = valid && drink ? drink.id : null;
     this.elapsed = valid ? saved.elapsed : 0;
   }
+  get cooldownRemaining() { return Math.max(0, Math.ceil((this.cooldownUntil - this.now()) / 1000)); }
   get drink() { return drinks.find(drink => drink.id === this.drinkId); }
   get progress() { return durations[this.phase] ? clamp(this.elapsed / durations[this.phase]) : 0; }
   get fill() {
@@ -42,8 +44,8 @@ export class CoffeeOrder {
   }
   pay(id) {
     const drink = drinks.find(drink => drink.id === id);
-    if (this.phase !== 'idle' || !drink || this.balance < drink.price) return false;
-    this.balance -= drink.price;
+    if (this.phase !== 'idle' || !drink || this.cooldownRemaining > 0) return false;
+    this.cooldownUntil = this.now() + COFFEE_COOLDOWN_MS;
     this.drinkId = id;
     this.phase = 'paying';
     this.elapsed = 0;
@@ -65,5 +67,5 @@ export class CoffeeOrder {
       dt -= remaining; this.phase = nextPhase[this.phase]; this.elapsed = 0;
     }
   }
-  snapshot() { return {balance: this.balance, phase: this.phase, drinkId: this.drinkId, elapsed: this.elapsed}; }
+  snapshot() { return {phase: this.phase, drinkId: this.drinkId, elapsed: this.elapsed, cooldownUntil: this.cooldownUntil}; }
 }
