@@ -25,10 +25,10 @@ export function createCoffeeInteraction({scene,camera,machine,panel,close,toast,
   const billCanvas=document.createElement('canvas');billCanvas.width=384;billCanvas.height=192;
   const ctx=billCanvas.getContext('2d');ctx.fillStyle='#b5c4c4';ctx.fillRect(0,0,384,192);ctx.strokeStyle='#3c6973';ctx.lineWidth=8;ctx.strokeRect(12,12,360,168);ctx.fillStyle='#355d68';ctx.textAlign='center';ctx.font='bold 82px Georgia';ctx.fillText('50 ₽',192,119);ctx.font='16px Arial';ctx.fillText('ПЯТЬДЕСЯТ РУБЛЕЙ',192,153);
   const billMap=new THREE.CanvasTexture(billCanvas);billMap.colorSpace=THREE.SRGBColorSpace;
-  const bill=new THREE.Mesh(new THREE.PlaneGeometry(.105,.055),new THREE.MeshStandardMaterial({map:billMap,side:THREE.DoubleSide,roughness:.85}));paymentHand.add(bill);bill.position.set(-.042,.097,-.008);
+  const bill=new THREE.Mesh(new THREE.PlaneGeometry(.105,.055),new THREE.MeshStandardMaterial({map:billMap,side:THREE.DoubleSide,roughness:.85}));paymentHand.add(bill);bill.position.set(-.017,.105,-.027);
   const basePosition=new THREE.Vector3(.20,-.27,-.48),startPosition=new THREE.Vector3(),endPosition=new THREE.Vector3();
   const startQuaternion=new THREE.Quaternion(),endQuaternion=new THREE.Quaternion(),worldScale=new THREE.Vector3();
-  const billGrip=new THREE.Vector3(-.042,.097,-.008),gripOffset=new THREE.Vector3();
+  const billGrip=new THREE.Vector3(-.017,.105,-.027),gripOffset=new THREE.Vector3();
   let selectedId=null,clock=0,lastScreen='',menuRefresh=null;
   const cooldownText=()=>{const seconds=order.cooldownRemaining;return `${Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')}`;};
 
@@ -113,7 +113,7 @@ export function createCoffeeInteraction({scene,camera,machine,panel,close,toast,
       paymentHand.rotation.set(-Math.PI/2*wrist*(1-retreat*.2),0,-.15*(1-insertion)+retreat*.05);
       gripOffset.copy(billGrip).applyEuler(paymentHand.rotation);
       paymentHand.position.set(.245+.12*(1-insertion),1.51-.18*(1-insertion)-retreat*.23,.41+.30*(1-insertion)+retreat*.20).sub(gripOffset);
-      bill.visible=t<.83;bill.position.y=.097+ease((t-.54)/.25)*.10;
+      bill.visible=t<.83;bill.position.y=.105+ease((t-.54)/.25)*.10;
     }
     machineSteam.update(clock,onMachine&&order.fill>.1);
     handSteam.update(clock,phase==='holding'||phase==='drinking'&&order.fill>.05);

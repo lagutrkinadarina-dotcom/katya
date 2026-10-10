@@ -110,53 +110,29 @@ def rebuild_fingertip(skin,rest,finger,cut_back=.003,cap_depth=.005):
     bm.to_mesh(skin.data);bm.free();skin.data.update()
 
 
-def remove_payment_projection(skin):
-    # Remove the raised sheet at the pinch in the posed mesh, without moving bones.
-    bm=bmesh.new();bm.from_mesh(skin.data);weights=bm.verts.layers.deform.active
-    groups={skin.vertex_groups['index-finger-phalanx-'+part].index for part in ['distal','intermediate']}
-    def affected(v):
-        p=A.inverted()@v.co
-        return sum(v[weights].get(group,0) for group in groups)>.5 and p.x<.035 and p.y>.073
-    bmesh.ops.remove_doubles(bm,verts=[v for v in bm.verts if affected(v)],dist=.000001)
-    faces=[f for f in bm.faces if any(affected(v) for v in f.verts) and
-        ((A.inverted()@f.calc_center_median()).z>-.011 or (A.inverted()@f.calc_center_median()).x<.003) and
-        (A.inverted()@f.calc_center_median()).x<.025]
-    assert faces, 'Projection faces missing'
-    surrounding={e for f in faces for e in f.edges}
-    bmesh.ops.delete(bm,geom=faces,context='FACES_ONLY')
-    boundary=[e for e in surrounding if e.is_valid and len(e.link_faces)==1]
-    assert boundary, 'Pinch projection boundary missing'
-    adjacent={}
-    for edge in boundary:
-        a,b=edge.verts;adjacent.setdefault(a,[]).append(b);adjacent.setdefault(b,[]).append(a)
-    assert all(len(ns)==2 for ns in adjacent.values()), 'Pinch cut must be closed'
-    remaining=set(adjacent)
-    while remaining:
-        first=next(iter(remaining));ring=[first];previous=None;current=first
-        while True:
-            nxt=next(v for v in adjacent[current] if v!=previous)
-            if nxt==first:break
-            ring.append(nxt);previous,current=current,nxt
-        remaining.difference_update(ring)
-        center=bm.verts.new(sum((v.co for v in ring),Vector())/len(ring))
-        average_weights={}
-        for vertex in ring:
-            for joint,weight in vertex[weights].items():average_weights[joint]=average_weights.get(joint,0)+weight/len(ring)
-        for joint,weight in average_weights.items():center[weights][joint]=weight
-        for j in range(len(ring)):bm.faces.new((ring[j],ring[(j+1)%len(ring)],center))
-    assert all(not e.is_boundary for e in boundary), 'Pinch repair left an open surface'
-    bmesh.ops.delete(bm,geom=[e for e in bm.edges if not e.link_faces],context='EDGES')
-    bmesh.ops.delete(bm,geom=[v for v in bm.verts if not v.link_faces],context='VERTS')
-    print('REMOVED pinch projection faces:',len(faces),'closed with skin surface')
-    bmesh.ops.recalc_face_normals(bm,faces=list(bm.faces));bm.to_mesh(skin.data);bm.free();skin.data.update()
-
-
 def pose(kind):
     bpy.ops.object.select_all(action='SELECT');bpy.ops.object.delete(use_global=False)
     bpy.ops.import_scene.gltf(filepath=str(SOURCE))
     arm=next(o for o in bpy.context.scene.objects if o.type=='ARMATURE')
     skin=next(o for o in bpy.context.scene.objects if o.type=='MESH');skin.name='webxr-'+kind+'-skin'
     rest={b.name:b.head_local.copy() for b in arm.data.bones}
+    wrist_end=None
+    if kind=='payment':
+        # The source wrist cap is a separate twenty-vertex surface. Mark both
+        # the cap and its matching seam vertices so their end plane stays joined.
+        bm=bmesh.new();bm.from_mesh(skin.data);unseen=set(bm.verts);cap=[]
+        while unseen:
+            stack=[next(iter(unseen))];component=set()
+            while stack:
+                vertex=stack.pop()
+                if vertex in component:continue
+                component.add(vertex);stack.extend(edge.other_vert(vertex) for edge in vertex.link_edges)
+            unseen.difference_update(component)
+            if len(component)==20:cap=[v.co.copy() for v in component]
+        bm.free();assert cap, 'Source wrist end cap missing'
+        wrist_end=skin.vertex_groups.new(name='wrist-end-plane').index
+        for vertex in skin.data.vertices:
+            if any((vertex.co-point).length<.000001 for point in cap):skin.vertex_groups[wrist_end].add([vertex.index],1.,'REPLACE')
     rebuild_fingertip(skin,rest,'thumb')
     if kind=='payment':rebuild_fingertip(skin,rest,'index-finger')
     base=Matrix.Identity(3) if kind=='cup' else P
@@ -178,11 +154,14 @@ def pose(kind):
         # Index and thumb meet on opposite sides of the note; the remaining fingers curl.
         for finger in ['index','middle','ring','pinky']:
             ns=names(finger)
-            ds=[(-.58,.64,-.50),(-.85,-.48,.20),(-.95,-.24,.17)] if finger=='index' else [(0,.88,-.48),(0,.20,-.98),(0,-.60,-.80)]
+            if finger=='index':target[ns[1]].y-=.012
+            ds=[(.10,.98,-.15),(-.70,.55,-.45),(-.75,.50,-.42)] if finger=='index' else [(0,.79,-.61),(0,.20,-.98),(0,-.60,-.80)]
+            if finger=='middle':ds[2]=(0,.20,-.98)
+            elif finger=='ring':ds[2]=(0,-.30,-.95)
             for previous,current,d in zip(ns[1:],ns[2:],ds):
                 target[current]=target[previous]+Vector(d).normalized()*(rest[current]-rest[previous]).length
-        ns=names('thumb');target[ns[0]]=Vector((.048,.022,-.010))
-        for previous,current,d in zip(ns,ns[1:],[(-.60,.78,-.35),(-.47,.85,.10),(-.65,.68,.15)]):
+        ns=names('thumb');target[ns[0]]=Vector((.048,.022,-.035))
+        for previous,current,d in zip(ns,ns[1:],[(-.26,.96,-.08),(-.16,.97,.17),(-.10,.99,.02)]):
             target[current]=target[previous]+Vector(d).normalized()*(rest[current]-rest[previous]).length
     following={a:b for finger in ['thumb','index','middle','ring','pinky'] for a,b in zip(names(finger),names(finger)[1:])}
     for b in arm.pose.bones:
@@ -199,7 +178,11 @@ def pose(kind):
     bpy.context.view_layer.objects.active=skin
     for modifier in list(skin.modifiers):bpy.ops.object.modifier_apply(modifier=modifier.name)
     skin.parent=None;bpy.data.objects.remove(arm,do_unlink=True)
-    if kind=='payment':remove_payment_projection(skin)
+    if kind=='payment':
+        for vertex in skin.data.vertices:
+            if any(g.group==wrist_end and g.weight>.99 for g in vertex.groups):
+                point=A.inverted()@vertex.co;point.y=-.040;vertex.co=xyz(point)
+
     # Smooth the approved mesh, rather than replacing its anatomy with primitive shapes.
     sub=skin.modifiers.new('Surface smoothing','SUBSURF');sub.levels=1;bpy.ops.object.modifier_apply(modifier=sub.name)
     if kind=='cup':
@@ -215,8 +198,8 @@ def pose(kind):
     for f in skin.data.polygons:f.use_smooth=True
     shirt=material('shirt-cuff','d2cfbf',.85);cloth=material('uniform-sleeve','34414a',.94)
     if kind=='payment':
-        tube('shirt-cuff',[(.075,-.038,.015),(.075,-.055,.016)],[.021,.022],shirt)
-        tube('short-payment-cuff',[(.075,-.049,.016),(.077,-.078,.018),(.079,-.110,.020)],[.023,.026,.029],cloth)
+        tube('shirt-cuff',[(.075,-.029,.015),(.075,-.057,.015)],[(.0215,.0285),(.0215,.0285)],shirt)
+        tube('short-payment-cuff',[(.075,-.051,.015),(.075,-.078,.015),(.075,-.110,.015)],[(.0225,.0295),(.0235,.0305),(.0255,.0325)],cloth)
     else:
         tube('shirt-cuff',[(.065,.068,.113),(.065,.068,.147)],[(.029,.020),(.029,.020)],shirt)
         tube('held-drink-sleeve',[(.065,.068,.142),(.065,.068,.160),(.082,.037,.198),(.104,-.036,.24),(.145,-.13,.28),(.18,-.24,.33)],[(.0305,.022),(.031,.023),.030,.033,.038,.043],cloth)
