@@ -38,13 +38,17 @@ async function showNotice(index){
   panel(`<article class="notice-reader" aria-label="Объявление"><div class="notice-primary"><h2>${notice.title}</h2><h3>${notice.name}</h3><img src="${photo.toDataURL()}" alt="Фотография к объявлению"><div class="notice-copy">${notice.lines.map(line=>`<p>${line}</p>`).join('')}</div><strong>${notice.footer}</strong></div><aside><h2>Дополнительная информация</h2>${noticeDetails[index].map(text=>`<p>${text}</p>`).join('')}<div class="notice-stamp">УЧАСТОК № 7 · ЗАПИСИ ДЕЖУРНОЙ ЧАСТИ</div></aside></article>`);
 }
 function close(){endDetainee();overlay.innerHTML='';captureMouse();}
-let mouseCapturePending=false;
+let mouseCapturePending=false,mouseCaptureQueued=false;
 async function captureMouse(){
-  if(editor?.active||!menus.playing||state.mode!=='corridor'||overlay.innerHTML||state.ended||document.pointerLockElement===canvas||mouseCapturePending)return;
+  if(editor?.active||!menus.playing||state.mode!=='corridor'||overlay.innerHTML||state.ended||document.pointerLockElement===canvas)return;
+  // A quick dialog exit can race the previous browser lock request. Preserve
+  // the new request instead of leaving the player with the menu cursor.
+  if(mouseCapturePending){mouseCaptureQueued=true;return;}
+  canvas.tabIndex=-1;canvas.focus({preventScroll:true});
   mouseCapturePending=true;
   try{await canvas.requestPointerLock();}
   catch{if(menus.playing&&state.mode==='corridor'&&!overlay.innerHTML)toast('Нажмите на сцену, чтобы вернуть управление мышью.');}
-  finally{mouseCapturePending=false;}
+  finally{mouseCapturePending=false;if(mouseCaptureQueued){mouseCaptureQueued=false;captureMouse();}}
 }
 // If a menu opens while a browser request is pending, do not lock its cursor.
 document.addEventListener('pointerlockchange',()=>{
@@ -109,7 +113,7 @@ function endDetainee(){
   if(!activeDetainee)return;
   activeDetainee.ui.dispose();
   camera.position.copy(activeDetainee.position);camera.quaternion.copy(activeDetainee.rotation);camera.fov=activeDetainee.fov;camera.updateProjectionMatrix();
-  activeDetainee=null;document.body.classList.remove('in-detainee-dialog');target=null;sceneRendered=false;
+  activeDetainee=null;document.body.classList.remove('in-detainee-dialog');keys.clear();target=null;sceneRendered=false;
 }
 function talkToDetainee(){
   if(activeDetainee)return;

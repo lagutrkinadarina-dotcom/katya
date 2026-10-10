@@ -71,21 +71,26 @@ body.in-detainee-dialog #crosshair,body.in-detainee-dialog #hint{display:none!im
 .detainee-ornament span{font-size:20px;line-height:1}
 .detainee-topics nav{overflow:auto;scrollbar-width:thin;scrollbar-color:#bbb29a70 transparent;padding:3px 4px 10px;}
 .detainee-topics nav[hidden]{display:none}
-.detainee-choice{position:relative;display:flex;align-items:center;gap:14px;width:100%;padding:12px 0;margin:0 0 9px;text-align:left;border:0;background:transparent;color:#c5c0b5;font:400 clamp(18px,1.9vw,28px)/1.4 Georgia,serif;text-shadow:inherit;cursor:pointer;transition:color .16s,transform .16s,opacity .2s;animation:dialog-choice-in .3s both;animation-delay:var(--choice-delay,0ms)}
+.detainee-choice{position:relative;display:flex;align-items:center;gap:14px;width:100%;padding:12px 0;margin:0 0 9px;text-align:left;border:0;background:transparent;color:#c5c0b5;font:400 clamp(18px,1.9vw,28px)/1.4 Georgia,serif;text-shadow:inherit;cursor:pointer;opacity:1;translate:0 0;transition:color .35s,transform .35s,opacity .48s,translate .48s;transition-delay:0s,0s,var(--choice-delay,0ms),var(--choice-delay,0ms)}
 .detainee-choice>.dialog-arrow{flex:0 0 16px;font-size:30px;line-height:1;opacity:0;transform:translateX(-7px);transition:opacity .16s,transform .16s}
 .detainee-choice.is-visited{color:#979388}
 .detainee-choice.is-focused,.detainee-choice:hover,.detainee-choice:focus-visible{outline:none;color:#fff9e9;transform:translateX(4px)}
 .detainee-choice.is-focused>.dialog-arrow{opacity:1;transform:translateX(0)}
-.detainee-choice.is-chosen{color:#fffaf0;animation:dialog-choice-confirm .24s both}
-.is-selecting .detainee-choice:not(.is-chosen){opacity:.15;animation:none}
+.is-selecting .detainee-choice{transition-delay:0s;translate:0 0;transform:none}
+.is-selecting .detainee-choice.is-chosen{color:#aaa397;opacity:.58;text-shadow:inherit;transform:none}
+.is-selecting .detainee-choice.is-chosen>.dialog-arrow{opacity:.65;transform:none}
+.is-selecting .detainee-choice:not(.is-chosen){opacity:0}
+.detainee-topics nav{opacity:1;transition:opacity .36s ease}
+.detainee-topics nav.is-topics-out{opacity:0;pointer-events:none}
 .detainee-subtitle{position:absolute;left:8%;right:8%;bottom:9%;min-height:2.8em;text-align:center;color:#f8f4e8;font:400 clamp(18px,1.85vw,28px)/1.4 Georgia,serif;cursor:pointer}
+.detainee-subtitle{opacity:0;transition:opacity .24s ease}.detainee-subtitle.is-line-visible{opacity:1}
+.dialog-letter{animation:dialog-letter-in .16s ease both}
 .detainee-speaker{white-space:nowrap}.detainee-text{white-space:pre-wrap}
 .dialog-announcement{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 .detainee-help{position:absolute;right:5%;bottom:3%;display:flex;gap:24px;align-items:center;font:14px/1.5 Georgia,serif;color:#beb9af}
 .detainee-help [hidden]{display:none}
 .detainee-help button{border:0;background:none;padding:5px 0;color:inherit;font:inherit;text-shadow:inherit}.detainee-help button:hover,.detainee-help button:focus-visible{color:#fff9e9}
-@keyframes dialog-choice-in{from{opacity:0;translate:12px 0}to{opacity:1;translate:0 0}}
-@keyframes dialog-choice-confirm{0%{transform:translateX(4px);opacity:1}50%{transform:translateX(12px);opacity:1;text-shadow:0 0 9px #fff7d088}100%{transform:translateX(17px);opacity:0}}
+@starting-style{.detainee-choice{opacity:0;translate:12px 0}}
+@keyframes dialog-letter-in{from{opacity:0}to{opacity:1}}
 @media(max-width:700px){.detainee-topics{right:4%;top:15%;width:47%;max-height:calc(75% - var(--subtitle-height,80px) - 20px)}.detainee-topics h2{font-size:24px}.detainee-ornament{margin:8px 0 14px}.detainee-choice{font-size:16px;gap:6px;padding:8px 0;margin-bottom:4px}.detainee-choice>.dialog-arrow{flex-basis:12px;font-size:24px}.detainee-subtitle{left:4%;right:4%;bottom:10%;font-size:17px}.detainee-help{right:4%;left:4%;justify-content:flex-end;gap:12px;font-size:11px}}
 @media(max-height:520px){.detainee-topics{top:8%;max-height:calc(83% - var(--subtitle-height,60px) - 20px)}.detainee-ornament{margin:6px 0}.detainee-choice{font-size:16px;margin:0;padding:7px 0}.detainee-subtitle{font-size:16px;bottom:9%}.detainee-help{font-size:11px;bottom:2%}}
-@media(prefers-reduced-motion:reduce){.detainee-choice,.detainee-choice.is-chosen{animation:none;transition:none}.detainee-choice>.dialog-arrow{transition:none}}
