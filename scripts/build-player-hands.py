@@ -59,6 +59,23 @@ def pose(kind):
     arm=next(o for o in bpy.context.scene.objects if o.type=='ARMATURE')
     skin=next(o for o in bpy.context.scene.objects if o.type=='MESH');skin.name='webxr-'+kind+'-skin'
     rest={b.name:b.head_local.copy() for b in arm.data.bones}
+    # The source distal thumb extends about 10 mm beyond its tip joint.
+    # Trim that projection into a rounded fingertip in the rest mesh; retain
+    # all faces, skin weights, joint transforms and the existing grasp poses.
+    thumb_start=rest['thumb-phalanx-distal'];thumb_end=rest['thumb-tip']
+    thumb_axis=(thumb_end-thumb_start).normalized()
+    thumb_length=(thumb_end-thumb_start).length
+    cap_center=thumb_length-.005;cap_radius=.008
+    for vertex in skin.data.vertices:
+        if not any(skin.vertex_groups[g.group].name=='thumb-phalanx-distal' and g.weight>.5 for g in vertex.groups):
+            continue
+        delta=vertex.co-thumb_start;along=delta.dot(thumb_axis)
+        if along<=cap_center:
+            continue
+        radial=delta-thumb_axis*along
+        cap=radial+thumb_axis*(along-cap_center)
+        if cap.length>cap_radius:
+            vertex.co=thumb_start+thumb_axis*cap_center+cap.normalized()*cap_radius
     base=Matrix.Identity(3) if kind=='cup' else P
     offset=Vector((.026,.078,.05)) if kind=='cup' else Vector((.075,-.020,.015))-base@rest['wrist']
     target={name:base@p+offset for name,p in rest.items()}
