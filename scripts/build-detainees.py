@@ -11,6 +11,8 @@ from mathutils import Vector
 ROOT=Path(__file__).resolve().parents[1]
 head_spec=importlib.util.spec_from_file_location('civilian_head',ROOT/'scripts/rounded-civilian-head.py')
 head_builder=importlib.util.module_from_spec(head_spec);head_spec.loader.exec_module(head_builder)
+alice_spec=importlib.util.spec_from_file_location('alice_head',ROOT/'scripts/alice-sculpted-head.py')
+alice_builder=importlib.util.module_from_spec(alice_spec);alice_spec.loader.exec_module(alice_builder)
 TAU=math.tau
 BODY=[(-.95,-.70),(-.65,-.94),(-.27,-1),(0,-1.035),(.27,-1),(.65,-.94),(.95,-.70),(1,-.36),(1,0),(1,.36),(.75,.9),(0,1.05),(-.75,.9),(-1,.36),(-1,0),(-1,-.36)]
 
@@ -183,6 +185,28 @@ def plaid(obj,cloth_slot):
         for j in p.loop_indices:
             v=obj.data.vertices[obj.data.loops[j].vertex_index].co;uv.data[j].uv=(v.x/.20,v.z/.20)
 
+def denim_texture(rig,cloth):
+    import random
+    rng=random.Random(17);img=bpy.data.images.new('Alice-woven-denim',width=256,height=256);pixels=[]
+    for y in range(256):
+        for x in range(256):
+            grain=(rng.random()-.5)*.035+(.012 if (x+y)%4==0 else -.004)
+            pixels.extend((.326+grain,.506+grain,.635+grain,1))
+    img.pixels=pixels;img.pack()
+    tex=cloth.node_tree.nodes.new('ShaderNodeTexImage');tex.image=img
+    cloth.node_tree.links.new(tex.outputs['Color'],cloth.node_tree.nodes['Principled BSDF'].inputs['Base Color'])
+    for obj in rig.children:
+        if obj.type!='MESH' or cloth not in obj.data.materials[:]:continue
+        uv=obj.data.uv_layers.new(name='Alice-denim-weave')
+        for loop in obj.data.loops:
+            p=obj.data.vertices[loop.vertex_index].co;uv.data[loop.index].uv=(p.x/.10,p.z/.10)
+        if obj.name.startswith(('collar-','breast-pocket','denim-tie')):
+            bpy.context.view_layer.objects.active=obj
+            solid=obj.modifiers.new('Actual cloth thickness','SOLIDIFY');solid.thickness=.0015
+            bpy.ops.object.modifier_apply(modifier=solid.name)
+            bevel=obj.modifiers.new('Soft garment edges','BEVEL');bevel.width=.001;bevel.segments=3
+            bpy.ops.object.modifier_apply(modifier=bevel.name)
+
 def clothes(rig,woman,cloth,skin,green,white):
     if woman:
         # These NPCs are seated. A closed, pre-draped skirt follows the hips
@@ -216,7 +240,7 @@ def build(kind):
     green=material('lime-dress','B2CE42');pants=material('olive-trousers','6D7352');shoe=material('dark-shoes','30332C');white=material('buttons','C9D0CA')
     body=body_and_arms(rig,woman,shoulder,elbow,wrist,[cloth,shade,skin,green])
     if not woman:plaid(body,0)
-    legs_and_shoes(rig,woman,[skin if woman else pants,shoe,green if woman else pants]);head_builder.build_head(rig,woman,skin,Surface,patch,material);clothes(rig,woman,cloth,skin,green,white)
+    legs_and_shoes(rig,woman,[skin if woman else pants,shoe,green if woman else pants]);(alice_builder if woman else head_builder).build_head(rig,woman,skin,Surface,patch,material);clothes(rig,woman,cloth,skin,green,white)
     if not woman:
         # Give small shirt details the same projected plaid coordinates.
         for obj in rig.children:
@@ -235,11 +259,14 @@ def build(kind):
                 if obj.name.startswith('continuous-body') and polygon.material_index==1:polygon.material_index=0
             sub=obj.modifiers.new('Soft cartoon body','SUBSURF');sub.levels=1
             bpy.ops.object.modifier_apply(modifier=sub.name)
+    if woman:denim_texture(rig,cloth)
     rig.name='detainee-'+kind+'-rig';bpy.context.preferences.filepaths.save_version=0
     bpy.ops.wm.save_as_mainfile(filepath=str(ROOT/f'public/models/detainee-{kind}.blend'))
     bpy.ops.object.select_all(action='DESELECT');rig.select_set(True)
     for obj in rig.children:obj.select_set(True)
     bpy.ops.export_scene.gltf(filepath=str(ROOT/f'src/assets/detainee-{kind}.glb'),export_format='GLB',use_selection=True,export_yup=True,export_animations=False)
     print('EXPORTED',kind,'from empty scene,',len(rig.data.bones),'bones')
-build('woman')
-build('man')
+if __name__=='__main__':
+    import sys
+    build('woman')
+    if '--alice-only' not in sys.argv:build('man')
