@@ -4,6 +4,7 @@ Source: @webxr-input-profiles/assets 1.0.18, generic-hand/right.glb.
 Copyright (c) 2019 Amazon. See public/licenses/webxr-input-profiles-assets-MIT.txt.
 """
 import bpy
+import bmesh
 import math
 from pathlib import Path
 from mathutils import Vector, Matrix
@@ -53,29 +54,111 @@ def names(finger):
     return [base+'metacarpal',base+'phalanx-proximal',*([base+'phalanx-intermediate'] if finger!='thumb' else []),base+'phalanx-distal',base+'tip']
 
 
+def rebuild_fingertip(skin,rest,finger,cut_back=.003,cap_depth=.005):
+    """Delete the projecting distal faces and close the finger with a rounded cap.
+
+    Work in the source rest mesh, so bone transforms and grasp poses stay intact.
+    Only the local cut seam is welded; the cap inherits its boundary skin weights.
+    """
+    group=skin.vertex_groups[finger+'-phalanx-distal'].index
+    affected={group}
+    if finger=='index-finger':affected.add(skin.vertex_groups[finger+'-phalanx-intermediate'].index)
+    start=rest[finger+'-phalanx-distal'];end=rest[finger+'-tip']
+    axis=(end-start).normalized();cut=(end-start).length-cut_back
+    bm=bmesh.new();bm.from_mesh(skin.data);weights=bm.verts.layers.deform.active
+    def belongs(v):return sum(v[weights].get(joint,0) for joint in affected)>.5
+    def local(v):return belongs(v) and (v.co-start).dot(axis)>cut-.004
+    bmesh.ops.remove_doubles(bm,verts=[v for v in bm.verts if local(v)],dist=.000001)
+    faces=[f for f in bm.faces if any(local(v) for v in f.verts)]
+    edges={e for f in faces for e in f.edges};verts={v for f in faces for v in f.verts}
+    bmesh.ops.bisect_plane(bm,geom=[*faces,*edges,*verts],dist=.0000001,
+        plane_co=start+axis*cut,plane_no=axis,clear_outer=True,clear_inner=False)
+    cut_vertices=[v for v in bm.verts if belongs(v) and abs((v.co-start).dot(axis)-cut)<.000001]
+    bmesh.ops.remove_doubles(bm,verts=cut_vertices,dist=.000001)
+    boundary=[e for e in bm.edges if e.is_boundary and all(belongs(v) and abs((v.co-start).dot(axis)-cut)<.000001 for v in e.verts)]
+    assert boundary, 'Missing fingertip cut boundary: '+finger
+    adjacent={}
+    for edge in boundary:
+        a,b=edge.verts;adjacent.setdefault(a,[]).append(b);adjacent.setdefault(b,[]).append(a)
+    assert all(len(ns)==2 for ns in adjacent.values()), 'Open fingertip cut seam: '+finger
+    first=next(iter(adjacent));ring=[first];previous=None;current=first
+    while True:
+        nxt=next(v for v in adjacent[current] if v!=previous)
+        if nxt==first:break
+        ring.append(nxt);previous,current=current,nxt
+    assert len(ring)==len(adjacent), 'Unexpected fingertip boundary components: '+finger
+    center=sum((v.co for v in ring),Vector())/len(ring);radials=[v.co-center for v in ring]
+    # Skin rings close to a short rounded tip, with no nail mesh.
+    average_weights={}
+    for vertex in ring:
+        for joint,weight in vertex[weights].items():average_weights[joint]=average_weights.get(joint,0)+weight/len(ring)
+    previous_ring=ring
+    for angle in [math.pi/6,math.pi/3]:
+        new_ring=[]
+        for boundary_vertex,radial in zip(ring,radials):
+            v=bm.verts.new(center+radial*math.cos(angle)+axis*cap_depth*math.sin(angle))
+            for joint,weight in boundary_vertex[weights].items():v[weights][joint]=weight
+            new_ring.append(v)
+        for j in range(len(ring)):
+            k=(j+1)%len(ring)
+            bm.faces.new((previous_ring[j],previous_ring[k],new_ring[k],new_ring[j]))
+        previous_ring=new_ring
+    tip=bm.verts.new(center+axis*cap_depth)
+    for joint,weight in average_weights.items():tip[weights][joint]=weight
+    for j in range(len(ring)):bm.faces.new((previous_ring[j],previous_ring[(j+1)%len(ring)],tip))
+    bmesh.ops.recalc_face_normals(bm,faces=list(bm.faces))
+    bm.to_mesh(skin.data);bm.free();skin.data.update()
+
+
+def remove_payment_projection(skin):
+    # Remove the raised sheet at the pinch in the posed mesh, without moving bones.
+    bm=bmesh.new();bm.from_mesh(skin.data);weights=bm.verts.layers.deform.active
+    groups={skin.vertex_groups['index-finger-phalanx-'+part].index for part in ['distal','intermediate']}
+    def affected(v):
+        p=A.inverted()@v.co
+        return sum(v[weights].get(group,0) for group in groups)>.5 and p.x<.035 and p.y>.073
+    bmesh.ops.remove_doubles(bm,verts=[v for v in bm.verts if affected(v)],dist=.000001)
+    faces=[f for f in bm.faces if any(affected(v) for v in f.verts) and
+        ((A.inverted()@f.calc_center_median()).z>-.011 or (A.inverted()@f.calc_center_median()).x<.003) and
+        (A.inverted()@f.calc_center_median()).x<.025]
+    assert faces, 'Projection faces missing'
+    surrounding={e for f in faces for e in f.edges}
+    bmesh.ops.delete(bm,geom=faces,context='FACES_ONLY')
+    boundary=[e for e in surrounding if e.is_valid and len(e.link_faces)==1]
+    assert boundary, 'Pinch projection boundary missing'
+    adjacent={}
+    for edge in boundary:
+        a,b=edge.verts;adjacent.setdefault(a,[]).append(b);adjacent.setdefault(b,[]).append(a)
+    assert all(len(ns)==2 for ns in adjacent.values()), 'Pinch cut must be closed'
+    remaining=set(adjacent)
+    while remaining:
+        first=next(iter(remaining));ring=[first];previous=None;current=first
+        while True:
+            nxt=next(v for v in adjacent[current] if v!=previous)
+            if nxt==first:break
+            ring.append(nxt);previous,current=current,nxt
+        remaining.difference_update(ring)
+        center=bm.verts.new(sum((v.co for v in ring),Vector())/len(ring))
+        average_weights={}
+        for vertex in ring:
+            for joint,weight in vertex[weights].items():average_weights[joint]=average_weights.get(joint,0)+weight/len(ring)
+        for joint,weight in average_weights.items():center[weights][joint]=weight
+        for j in range(len(ring)):bm.faces.new((ring[j],ring[(j+1)%len(ring)],center))
+    assert all(not e.is_boundary for e in boundary), 'Pinch repair left an open surface'
+    bmesh.ops.delete(bm,geom=[e for e in bm.edges if not e.link_faces],context='EDGES')
+    bmesh.ops.delete(bm,geom=[v for v in bm.verts if not v.link_faces],context='VERTS')
+    print('REMOVED pinch projection faces:',len(faces),'closed with skin surface')
+    bmesh.ops.recalc_face_normals(bm,faces=list(bm.faces));bm.to_mesh(skin.data);bm.free();skin.data.update()
+
+
 def pose(kind):
     bpy.ops.object.select_all(action='SELECT');bpy.ops.object.delete(use_global=False)
     bpy.ops.import_scene.gltf(filepath=str(SOURCE))
     arm=next(o for o in bpy.context.scene.objects if o.type=='ARMATURE')
     skin=next(o for o in bpy.context.scene.objects if o.type=='MESH');skin.name='webxr-'+kind+'-skin'
     rest={b.name:b.head_local.copy() for b in arm.data.bones}
-    # The source distal thumb extends about 10 mm beyond its tip joint.
-    # Trim that projection into a rounded fingertip in the rest mesh; retain
-    # all faces, skin weights, joint transforms and the existing grasp poses.
-    thumb_start=rest['thumb-phalanx-distal'];thumb_end=rest['thumb-tip']
-    thumb_axis=(thumb_end-thumb_start).normalized()
-    thumb_length=(thumb_end-thumb_start).length
-    cap_center=thumb_length-.005;cap_radius=.008
-    for vertex in skin.data.vertices:
-        if not any(skin.vertex_groups[g.group].name=='thumb-phalanx-distal' and g.weight>.5 for g in vertex.groups):
-            continue
-        delta=vertex.co-thumb_start;along=delta.dot(thumb_axis)
-        if along<=cap_center:
-            continue
-        radial=delta-thumb_axis*along
-        cap=radial+thumb_axis*(along-cap_center)
-        if cap.length>cap_radius:
-            vertex.co=thumb_start+thumb_axis*cap_center+cap.normalized()*cap_radius
+    rebuild_fingertip(skin,rest,'thumb')
+    if kind=='payment':rebuild_fingertip(skin,rest,'index-finger')
     base=Matrix.Identity(3) if kind=='cup' else P
     offset=Vector((.026,.078,.05)) if kind=='cup' else Vector((.075,-.020,.015))-base@rest['wrist']
     target={name:base@p+offset for name,p in rest.items()}
@@ -116,6 +199,7 @@ def pose(kind):
     bpy.context.view_layer.objects.active=skin
     for modifier in list(skin.modifiers):bpy.ops.object.modifier_apply(modifier=modifier.name)
     skin.parent=None;bpy.data.objects.remove(arm,do_unlink=True)
+    if kind=='payment':remove_payment_projection(skin)
     # Smooth the approved mesh, rather than replacing its anatomy with primitive shapes.
     sub=skin.modifiers.new('Surface smoothing','SUBSURF');sub.levels=1;bpy.ops.object.modifier_apply(modifier=sub.name)
     if kind=='cup':
