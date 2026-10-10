@@ -79,3 +79,9 @@ WASD — движение. Нажмите на коридор для захва�
 `npm test` проверяет непрерывный проход между тремя этажами в обе стороны, блокировку двухстворчатой двери, защиту от закрывания на игроке и совместимость координат старых сохранений.
 
 Скриншоты: [расширенный проход](docs/previews/double-stair-door.png), [лестница на третий этаж](docs/previews/stairs-to-third-floor.png), [новый коридор](docs/previews/third-floor.png), [дверь лаборатории](docs/previews/third-floor-laboratory-door.png), [архив](docs/previews/archive.png), [лаборатория](docs/previews/laboratory.png), [морг](docs/previews/morgue.png), [хранение улик](docs/previews/evidence-storage.png).
+
+## Персонажи в камере
+
+Два задержанных заменены на модели по визуальному образцу: зелёная толстовка, фиолетовая шапка и светлая борода у первого; светлая рубашка, красный галстук, очки и тёмная борода у второго. Обе модели используют скелет с 26 суставами, соединённые плечи, локти и колени. В сидячей позе работают дыхание, небольшие повороты головы и движения кистей; первый персонаж также моргает.
+
+Модели собираются командой `blender --background --factory-startup --python-exit-code 1 --python scripts/build-detainees.py`. [Вид в игре](docs/previews/detainees-cell.png), [другая фаза анимации](docs/previews/detainees-cell-glance.png), [модели целиком](docs/previews/detainees-reference.png).
