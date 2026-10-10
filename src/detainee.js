@@ -14,11 +14,12 @@ export function createDetainee(kind,index){
   root.ready=new GLTFLoader().loadAsync(assets[kind]).then(gltf=>{
     const model=gltf.scene;model.name=kind+'-model';
     const bones=new Map(),rest=new Map(),blinkMeshes=[];
-    let adaptedReference=false,universalReference=false;
+    let adaptedReference=false,universalReference=false,hipSupportHeight;
     model.updateMatrixWorld(true);
     model.traverse(object=>{
       if(object.userData.visualStyle==='adapted-uploaded-model')adaptedReference=true;
       if(object.userData.visualStyle==='universal-reference')universalReference=true;
+      if(Number.isFinite(object.userData.restHipSupportHeight))hipSupportHeight=object.userData.restHipSupportHeight;
       if(object.isBone){
         object.name=object.name.replace(/^(upper_arm|forearm|hand|thigh|shin|foot|finger\d|thumb)([LR])$/,'$1.$2');
         bones.set(object.name,object);
@@ -39,9 +40,17 @@ export function createDetainee(kind,index){
     // officer that older civilians were assembled from. Positions here are in
     // the glTF's Y-up model space; the bench itself has not moved.
     function supportMinimumY(name){
+      // The seating anchor belongs to the source pelvis. Garment hems must not
+      // determine the contact height, including after covered skin is removed.
+      if(name==='hips'&&Number.isFinite(hipSupportHeight))return hipSupportHeight;
       let minimum=Infinity;
       model.traverse(object=>{
         if(!object.isSkinnedMesh)return;
+        if(universalReference){
+          let surface=object;
+          while(surface&&!surface.userData.supportSurface)surface=surface.parent;
+          if(!surface)return;
+        }
         object.skeleton.update();
         const ids=object.geometry.attributes.skinIndex,weights=object.geometry.attributes.skinWeight;
         for(let i=0;i<ids.count;i++){
@@ -113,37 +122,48 @@ export function createDetainee(kind,index){
       turn('spine',.023+.012*Math.sin(t*(woman?.55:.42)),.008*Math.sin(t*.35),.009*Math.sin(t*.47));
       turn('neck',.008*Math.sin(t*1.5));
       turn('head',.035+.025*Math.sin(t*.7),
-        (woman?-.21:.24)*glance+.055*Math.sin(t*.37),((adaptedReference||universalReference&&!woman)?-.20:0)+.015*Math.sin(t*.44));
+        (woman?-.21:.24)*glance+.055*Math.sin(t*.37),(universalReference&&!woman?.32:adaptedReference?-.20:0)+.015*Math.sin(t*.44));
       const blinkPhase=(t+.4)%4.6,blink=blinkPhase<.16?1-Math.abs(blinkPhase-.08)/.08:0;
       for(const mesh of blinkMeshes)mesh.morphTargetInfluences[mesh.morphTargetDictionary.Blink]=blink;
       for(const [side,sign] of [['L',-1],['R',1]]){
         const hipWidth=Math.abs(rest.get('thigh.'+side).position.x);
-        limb('thigh.'+side,'shin.'+side,'foot.'+side,new THREE.Vector3(sign*hipWidth,ankleHeight[side],universalReference?.48:.31),new THREE.Vector3(0,0,1));
+        const footWidth=universalReference&&woman?.125:hipWidth;
+        limb('thigh.'+side,'shin.'+side,'foot.'+side,new THREE.Vector3(sign*footWidth,ankleHeight[side],universalReference?.48:.31),new THREE.Vector3(0,0,1));
         rotation('foot.'+side,rest.get('foot.'+side).rotation);
         const fidget=.5+.5*Math.sin(t*(woman?.85:1.1)+sign*1.7);
         // The new female pose crosses the forearms; the male pose rests on
         // the thighs. Both targets use the adapted skeleton's seated height.
         const crossed=universalReference&&woman;
-        const wrist=crossed?new THREE.Vector3(-sign*.115,seatedHipHeight+(side==='L'?.335:.265)+.002*fidget,side==='L'?.275:.315):new THREE.Vector3(sign*(hipWidth+(universalReference?-.010:.040)),
+        const wrist=crossed?new THREE.Vector3(-sign*.05,seatedHipHeight+(side==='L'?.32:.27)+.002*fidget,side==='L'?.235:.29):new THREE.Vector3(sign*(hipWidth+(universalReference?-.010:.040)),
           (universalReference?seatedHipHeight+.130:woman?.710:.648)+.003*fidget,(universalReference?.29:woman?.130:.160)+.004*Math.sin(t*.48+sign));
-        limb('upper_arm.'+side,'forearm.'+side,'hand.'+side,wrist,new THREE.Vector3(sign*.75,-.45,crossed?.35:-.60));
+        limb('upper_arm.'+side,'forearm.'+side,'hand.'+side,wrist,crossed?new THREE.Vector3(sign*.85,side==='L'?-.55:-.75,.30):new THREE.Vector3(sign*.75,-.45,-.60));
         // Specify both finger direction and palm plane to control wrist roll
         // when moving the source T-pose into crossed arms or hands on the lap.
-        if(crossed)placePalm('hand.'+side,new THREE.Vector3(-sign*.94,.18,-.29),new THREE.Vector3(0,0,1));
+        if(crossed)placePalm('hand.'+side,new THREE.Vector3(-sign*.98,-.07,-.17),new THREE.Vector3(0,0,1));
         else if(universalReference)placePalm('hand.'+side,new THREE.Vector3(0,-.15,.9887),new THREE.Vector3(0,1,.15));
         else orientAxis('hand.'+side,new THREE.Vector3(0,-.50,.8660254));
         for(let i=0;i<4;i++){
-          const finger=bones.get(`finger${i}.${side}`),curl=(universalReference&&woman?.35:.03)+.025*Math.max(0,Math.sin(t*(woman?1.4:.8)+i*.7+sign));
+          const finger=bones.get(`finger${i}.${side}`),curl=(universalReference&&woman?.60:.03)+.025*Math.max(0,Math.sin(t*(woman?1.4:.8)+i*.7+sign));
           finger.quaternion.copy(rest.get(finger.name).localRotation)
             .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),-curl));
           finger.updateMatrixWorld(true);
           if(universalReference){
             const source=['index','middle','ring','pinky'][i],suffix=side.toLowerCase();
-            for(const [part,angle] of [['02',woman?.55:.06],['03',woman?.35:.03]]){
+            for(const [part,angle] of [['02',woman?.90:.06],['03',woman?.50:.03]]){
               const name=source+'_'+part+'_'+suffix,phalange=bones.get(name);
               phalange.quaternion.copy(rest.get(name).localRotation).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),-angle));
               phalange.updateMatrixWorld(true);
             }
+          }
+        }
+        if(crossed){
+          const thumb=bones.get('thumb.'+side);
+          thumb.quaternion.copy(rest.get(thumb.name).localRotation).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(-.20,0,sign*.20)));
+          thumb.updateMatrixWorld(true);
+          for(const [part,angle] of [['02',.45],['03',.25]]){
+            const name='thumb_'+part+'_'+side.toLowerCase(),joint=bones.get(name);
+            joint.quaternion.copy(rest.get(name).localRotation).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),-angle));
+            joint.updateMatrixWorld(true);
           }
         }
       }

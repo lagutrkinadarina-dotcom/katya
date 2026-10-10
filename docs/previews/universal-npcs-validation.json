@@ -1,0 +1,779 @@
+{
+  "source": "Actual exported Universal Base models in the game; no image generation or retouching",
+  "nativeValidation": {
+    "sourceJointHierarchyPreserved": true,
+    "womanVertices": 72705,
+    "manVertices": 76024,
+    "jointsPerModel": 65
+  },
+  "existingTests": {
+    "passed": 14,
+    "failed": 0,
+    "skipped": 0
+  },
+  "runtime": {
+    "errors": [],
+    "metrics": [
+      {
+        "name": "detainee-man",
+        "sourceProfile": "universal-base",
+        "bones": 65,
+        "meshes": [
+          {
+            "name": "reference-male-centre-placket",
+            "vertices": 84,
+            "bones": 65,
+            "maxWeightError": 4.0046870708465576e-08
+          },
+          {
+            "name": "reference-male-continuous-shirt",
+            "vertices": 10100,
+            "bones": 65,
+            "maxWeightError": 5.029141902923584e-08
+          },
+          {
+            "name": "reference-male-shirt-breast-pocket",
+            "vertices": 10,
+            "bones": 65,
+            "maxWeightError": 2.1187588572502136e-08
+          },
+          {
+            "name": "reference-male-shirt-button-00",
+            "vertices": 32,
+            "bones": 65,
+            "maxWeightError": 2.0489096641540527e-08
+          },
+          {
+            "name": "reference-male-shirt-button-01",
+            "vertices": 32,
+            "bones": 65,
+            "maxWeightError": 1.4901161193847656e-08
+          },
+          {
+            "name": "reference-male-shirt-button-02",
+            "vertices": 32,
+            "bones": 65,
+            "maxWeightError": 1.0593794286251068e-08
+          },
+          {
+            "name": "reference-male-shirt-button-03",
+            "vertices": 32,
+            "bones": 65,
+            "maxWeightError": 3.236345946788788e-08
+          },
+          {
+            "name": "reference-male-shirt-button-04",
+            "vertices": 32,
+            "bones": 65,
+            "maxWeightError": 2.3370375856757164e-08
+          },
+          {
+            "name": "reference-male-shirt-button-05",
+            "vertices": 32,
+            "bones": 65,
+            "maxWeightError": 2.2351741790771484e-08
+          },
+          {
+            "name": "reference-male-shirt-button-06",
+            "vertices": 32,
+            "bones": 65,
+            "maxWeightError": 3.026798367500305e-08
+          },
+          {
+            "name": "reference-male-shirt-button-07",
+            "vertices": 32,
+            "bones": 65,
+            "maxWeightError": 7.043126970529556e-09
+          },
+          {
+            "name": "reference-male-single-rolled-cuffs",
+            "vertices": 288,
+            "bones": 65,
+            "maxWeightError": 2.9802322387695312e-08
+          },
+          {
+            "name": "reference-male-surface-fitted-collar",
+            "vertices": 468,
+            "bones": 65,
+            "maxWeightError": 2.8870999813079834e-08
+          },
+          {
+            "name": "reference-man-attached-comic-tongue",
+            "vertices": 600,
+            "bones": 65,
+            "maxWeightError": 0
+          },
+          {
+            "name": "reference-man-fitted-hair-cap",
+            "vertices": 33299,
+            "bones": 65,
+            "maxWeightError": 0
+          },
+          {
+            "name": "reference-man-integrated-lip-edge",
+            "vertices": 970,
+            "bones": 65,
+            "maxWeightError": 0
+          },
+          {
+            "name": "reference-man-recessed-mouth-interior",
+            "vertices": 288,
+            "bones": 65,
+            "maxWeightError": 0
+          },
+          {
+            "name": "reference-man-upper-tooth-row",
+            "vertices": 132,
+            "bones": 65,
+            "maxWeightError": 0
+          },
+          {
+            "name": "universal-man-brows",
+            "vertices": 646,
+            "bones": 65,
+            "maxWeightError": 0
+          },
+          {
+            "name": "Sphere005_Retopology004",
+            "vertices": 21923,
+            "bones": 65,
+            "maxWeightError": 5.029141902923584e-08
+          },
+          {
+            "name": "Sphere005_Retopology004_1",
+            "vertices": 2840,
+            "bones": 65,
+            "maxWeightError": 3.026798367500305e-08
+          },
+          {
+            "name": "universal-man-eyes",
+            "vertices": 516,
+            "bones": 65,
+            "maxWeightError": 0
+          },
+          {
+            "name": "universal-man-tailored-trousers",
+            "vertices": 4301,
+            "bones": 65,
+            "maxWeightError": 4.470348358154297e-08
+          }
+        ],
+        "phases": [
+          {
+            "time": 0,
+            "handPositions": {
+              "L": [
+                -0.15296736815072087,
+                0.6857446307130797,
+                0.2934971968071034
+              ],
+              "R": [
+                0.15296742767334592,
+                0.6857969809402613,
+                0.29031004747323896
+              ]
+            },
+            "finiteJoints": 65,
+            "limbErrors": [
+              3.100026368940689e-08,
+              2.0098114672517653e-08,
+              1.0187856169796561e-08,
+              2.2431784835186264e-07,
+              1.1631853424898253e-08,
+              1.1068815808368271e-08,
+              1.1175101399807374e-08,
+              1.1424928136882784e-07
+            ],
+            "minFootY": 0.008223986140549755
+          },
+          {
+            "time": 1,
+            "handPositions": {
+              "L": [
+                -0.15296738102357388,
+                0.6843248746279786,
+                0.2939985610100466
+              ],
+              "R": [
+                0.15296742737170188,
+                0.6869995116258596,
+                0.2884334490948124
+              ]
+            },
+            "finiteJoints": 65,
+            "limbErrors": [
+              2.999402926029404e-08,
+              2.113797004099638e-08,
+              1.0187856169796561e-08,
+              2.2431784835186264e-07,
+              1.1457849558027533e-08,
+              1.1521560150384857e-08,
+              1.1175101399807374e-08,
+              1.1424928136882784e-07
+            ],
+            "minFootY": 0.008223986140549755
+          },
+          {
+            "time": 2,
+            "handPositions": {
+              "L": [
+                -0.15296738075151595,
+                0.6842740976708157,
+                0.29359619555258476
+              ],
+              "R": [
+                0.15296742737350844,
+                0.6866481105239091,
+                0.28691090516917006
+              ]
+            },
+            "finiteJoints": 65,
+            "limbErrors": [
+              2.8602364088303744e-08,
+              2.1850054432448474e-08,
+              1.0187856169796561e-08,
+              2.2431784835186264e-07,
+              1.1359917839737221e-08,
+              1.1538982325198788e-08,
+              1.1175101399807374e-08,
+              1.1424928136882784e-07
+            ],
+            "minFootY": 0.008223986140549755
+          },
+          {
+            "time": 6,
+            "handPositions": {
+              "L": [
+                -0.15308248143096836,
+                0.6859513127081245,
+                0.28652683622579644
+              ],
+              "R": [
+                0.15296742781043005,
+                0.6862483455524502,
+                0.28866911241883386
+              ]
+            },
+            "finiteJoints": 65,
+            "limbErrors": [
+              2.7280855463551745e-08,
+              2.2700430923894288e-08,
+              1.0187856169796561e-08,
+              2.2431784835186264e-07,
+              1.1642224018171277e-08,
+              1.0983956355570257e-08,
+              1.1175101399807374e-08,
+              1.1424928136882784e-07
+            ],
+            "minFootY": 0.008223986140549755
+          },
+          {
+            "time": 11,
+            "handPositions": {
+              "L": [
+                -0.15296736746859185,
+                0.6863970693401242,
+                0.29024309309509766
+              ],
+              "R": [
+                0.15306383667936796,
+                0.6856648934173109,
+                0.29304027820022505
+              ]
+            },
+            "finiteJoints": 65,
+            "limbErrors": [
+              2.9390735234446907e-08,
+              2.003580318321596e-08,
+              1.0187856169796561e-08,
+              2.2431784835186264e-07,
+              1.2125627946169004e-08,
+              1.0275767903245026e-08,
+              1.1175101399807374e-08,
+              1.1424928136882784e-07
+            ],
+            "minFootY": 0.008223986140549755
+          },
+          {
+            "time": 15,
+            "handPositions": {
+              "L": [
+                -0.1529673808005727,
+                0.6865213066309139,
+                0.29366844931754077
+              ],
+              "R": [
+                0.15296742757821047,
+                0.6843672281205864,
+                0.2870234927223816
+              ]
+            },
+            "finiteJoints": 65,
+            "limbErrors": [
+              3.0897517488970294e-08,
+              2.0526132460396695e-08,
+              1.0187856169796561e-08,
+              2.2431784835186264e-07,
+              1.1361270202403517e-08,
+              1.1514869446838105e-08,
+              1.1175101399807374e-08,
+              1.1424928136882784e-07
+            ],
+            "minFootY": 0.008223986140549755
+          },
+          {
+            "time": 30,
+            "handPositions": {
+              "L": [
+                -0.15296738038109225,
+                0.6840848450128818,
+                0.2909662007759555
+              ],
+              "R": [
+                0.15296742689710374,
+                0.6870583664773844,
+                0.2860684173098478
+              ]
+            },
+            "finiteJoints": 65,
+            "limbErrors": [
+              2.931828169128181e-08,
+              2.1064539224013856e-08,
+              1.0187856169796561e-08,
+              2.2431784835186264e-07,
+              1.1210890771273796e-08,
+              1.2401992099952963e-08,
+              1.1175101399807374e-08,
+              1.1424928136882784e-07
+            ],
+            "minFootY": 0.008223986140549755
+          },
+          {
+            "time": 60,
+            "handPositions": {
+              "L": [
+                -0.1529673806106393,
+                0.685450193700353,
+                0.28600070712225634
+              ],
+              "R": [
+                0.15296742729034563,
+                0.68531879612474,
+                0.29173290651332495
+              ]
+            },
+            "finiteJoints": 65,
+            "limbErrors": [
+              3.192779512994903e-08,
+              2.0257516220034688e-08,
+              1.0187856169796561e-08,
+              2.2431784835186264e-07,
+              1.1617787509798916e-08,
+              1.170587188292771e-08,
+              1.1175101399807374e-08,
+              1.1424928136882784e-07
+            ],
+            "minFootY": 0.008223986140549755
+          }
+        ]
+      },
+      {
+        "name": "detainee-woman",
+        "sourceProfile": "universal-base",
+        "bones": 65,
+        "meshes": [
+          {
+            "name": "alice-continuous-source-denim-shirt",
+            "vertices": 7812,
+            "bones": 65,
+            "maxWeightError": 4.6566128730773926e-08
+          },
+          {
+            "name": "alice-lime-dress-bodice",
+            "vertices": 25088,
+            "bones": 65,
+            "maxWeightError": 2.9802322387695312e-08
+          },
+          {
+            "name": "alice-pocket-fine-seam",
+            "vertices": 54,
+            "bones": 65,
+            "maxWeightError": 0
+          },
+          {
+            "name": "alice-pocket-fine-seam001",
+            "vertices": 54,
+            "bones": 65,
+            "maxWeightError": 0
+          },
+          {
+            "name": "alice-seated-thigh-draped-dress",
+            "vertices": 8000,
+            "bones": 65,
+            "maxWeightError": 3.073364496231079e-08
+          },
+          {
+            "name": "alice-short-surface-fitted-collar",
+            "vertices": 162,
+            "bones": 65,
+            "maxWeightError": 3.4371623769402504e-08
+          },
+          {
+            "name": "alice-short-surface-fitted-collar001",
+            "vertices": 162,
+            "bones": 65,
+            "maxWeightError": 2.6542693376541138e-08
+          },
+          {
+            "name": "alice-small-denim-waist-knot",
+            "vertices": 336,
+            "bones": 65,
+            "maxWeightError": 0
+          },
+          {
+            "name": "alice-small-front-button",
+            "vertices": 32,
+            "bones": 65,
+            "maxWeightError": 0
+          },
+          {
+            "name": "alice-small-front-button001",
+            "vertices": 32,
+            "bones": 65,
+            "maxWeightError": 0
+          },
+          {
+            "name": "alice-small-front-button002",
+            "vertices": 32,
+            "bones": 65,
+            "maxWeightError": 0
+          },
+          {
+            "name": "alice-small-front-button003",
+            "vertices": 32,
+            "bones": 65,
+            "maxWeightError": 0
+          },
+          {
+            "name": "alice-small-front-button004",
+            "vertices": 32,
+            "bones": 65,
+            "maxWeightError": 0
+          },
+          {
+            "name": "alice-small-front-button005",
+            "vertices": 32,
+            "bones": 65,
+            "maxWeightError": 0
+          },
+          {
+            "name": "alice-small-front-button006",
+            "vertices": 32,
+            "bones": 65,
+            "maxWeightError": 0
+          },
+          {
+            "name": "alice-small-front-button007",
+            "vertices": 32,
+            "bones": 65,
+            "maxWeightError": 0
+          },
+          {
+            "name": "alice-soft-chest-pocket",
+            "vertices": 10,
+            "bones": 65,
+            "maxWeightError": 0
+          },
+          {
+            "name": "alice-soft-chest-pocket001",
+            "vertices": 10,
+            "bones": 65,
+            "maxWeightError": 0
+          },
+          {
+            "name": "alice-soft-flat-waist-tie",
+            "vertices": 890,
+            "bones": 65,
+            "maxWeightError": 0
+          },
+          {
+            "name": "alice-soft-flat-waist-tie001",
+            "vertices": 890,
+            "bones": 65,
+            "maxWeightError": 0
+          },
+          {
+            "name": "alice-soft-turned-short-cuffs",
+            "vertices": 272,
+            "bones": 65,
+            "maxWeightError": 0
+          },
+          {
+            "name": "reference-alice-continuous-straight-hair",
+            "vertices": 7232,
+            "bones": 65,
+            "maxWeightError": 2.9802322387695312e-08
+          },
+          {
+            "name": "universal-woman-brows",
+            "vertices": 912,
+            "bones": 65,
+            "maxWeightError": 0
+          },
+          {
+            "name": "Superhero_Female",
+            "vertices": 19375,
+            "bones": 65,
+            "maxWeightError": 4.988396540284157e-08
+          },
+          {
+            "name": "Superhero_Female_1",
+            "vertices": 3322,
+            "bones": 65,
+            "maxWeightError": 3.026798367500305e-08
+          },
+          {
+            "name": "universal-woman-eyes",
+            "vertices": 516,
+            "bones": 65,
+            "maxWeightError": 0
+          }
+        ],
+        "phases": [
+          {
+            "time": 0,
+            "handPositions": {
+              "L": [
+                0.050000048439104106,
+                0.8849563020467093,
+                0.23499997511697934
+              ],
+              "R": [
+                -0.05000005720560807,
+                0.8369396302435854,
+                0.2900000224588326
+              ]
+            },
+            "finiteJoints": 65,
+            "limbErrors": [
+              3.2568734598115157e-08,
+              2.0735314854025688e-08,
+              1.379880820717716e-08,
+              5.978158835739933e-07,
+              7.870366025564124e-10,
+              1.6321588858225766e-08,
+              6.949455899629697e-09,
+              3.1065162869881036e-07
+            ],
+            "minFootY": 0.004714496083946695
+          },
+          {
+            "time": 1,
+            "handPositions": {
+              "L": [
+                0.0500000483485703,
+                0.8851966860800404,
+                0.23499997506939652
+              ],
+              "R": [
+                -0.050000057456963454,
+                0.8365056486432221,
+                0.2900000228152746
+              ]
+            },
+            "finiteJoints": 65,
+            "limbErrors": [
+              3.262124298464286e-08,
+              2.09199110812186e-08,
+              1.379880820717716e-08,
+              5.978158835739933e-07,
+              8.134189988240337e-10,
+              1.6664324697934774e-08,
+              6.949455899629697e-09,
+              3.1065162869881036e-07
+            ],
+            "minFootY": 0.004714496083946695
+          },
+          {
+            "time": 2,
+            "handPositions": {
+              "L": [
+                0.05000004831220384,
+                0.8859479659870289,
+                0.2349999747761191
+              ],
+              "R": [
+                -0.05000005758571824,
+                0.835692423446249,
+                0.2900000233454332
+              ]
+            },
+            "finiteJoints": 65,
+            "limbErrors": [
+              3.269648102266487e-08,
+              2.105088225956564e-08,
+              1.379880820717716e-08,
+              5.978158835739933e-07,
+              8.570303910993005e-10,
+              1.6934010582669856e-08,
+              6.949455899629697e-09,
+              3.1065162869881036e-07
+            ],
+            "minFootY": 0.004714496083946695
+          },
+          {
+            "time": 6,
+            "handPositions": {
+              "L": [
+                0.050000048072609715,
+                0.8856924255628211,
+                0.23499997417068963
+              ],
+              "R": [
+                -0.05000005727812873,
+                0.8364420787750877,
+                0.29000002339266384
+              ]
+            },
+            "finiteJoints": 65,
+            "limbErrors": [
+              3.2712254238731475e-08,
+              2.052821379550096e-08,
+              1.379880820717716e-08,
+              5.978158835739933e-07,
+              9.434796277574264e-10,
+              1.6447748885095592e-08,
+              6.949455899629697e-09,
+              3.1065162869881036e-07
+            ],
+            "minFootY": 0.004714496083946695
+          },
+          {
+            "time": 11,
+            "handPositions": {
+              "L": [
+                0.05000004874918673,
+                0.8869272342278585,
+                0.23499997482504487
+              ],
+              "R": [
+                -0.050000056830102224,
+                0.8349494467073879,
+                0.2900000229724138
+              ]
+            },
+            "finiteJoints": 65,
+            "limbErrors": [
+              3.2648604653129354e-08,
+              2.0600275818516423e-08,
+              1.379880820717716e-08,
+              5.978158835739933e-07,
+              8.493630243577854e-10,
+              1.6287547033311256e-08,
+              6.949455899629697e-09,
+              3.1065162869881036e-07
+            ],
+            "minFootY": 0.004714496083946695
+          },
+          {
+            "time": 15,
+            "handPositions": {
+              "L": [
+                0.05000004910192146,
+                0.8849494470684656,
+                0.2349999760715571
+              ],
+              "R": [
+                -0.05000005726794221,
+                0.8368994299702641,
+                0.29000002155515325
+              ]
+            },
+            "finiteJoints": 65,
+            "limbErrors": [
+              3.240148777061691e-08,
+              2.1512350512065126e-08,
+              1.379880820717716e-08,
+              5.978158835739933e-07,
+              5.253477097788561e-10,
+              1.6411574599306533e-08,
+              6.949455899629697e-09,
+              3.1065162869881036e-07
+            ],
+            "minFootY": 0.004714496083946695
+          },
+          {
+            "time": 30,
+            "handPositions": {
+              "L": [
+                0.050000083719921484,
+                0.8849761348026219,
+                0.23499994825760506
+              ],
+              "R": [
+                -0.05000005630647664,
+                0.8368272381670288,
+                0.2900000217458305
+              ]
+            },
+            "finiteJoints": 65,
+            "limbErrors": [
+              3.0569634323907025e-08,
+              2.2772959462624698e-08,
+              1.379880820717716e-08,
+              5.978158835739933e-07,
+              4.766331218597486e-10,
+              1.518609932249504e-08,
+              6.949455899629697e-09,
+              3.1065162869881036e-07
+            ],
+            "minFootY": 0.004714496083946695
+          },
+          {
+            "time": 60,
+            "handPositions": {
+              "L": [
+                0.05000004790043189,
+                0.8851256427646477,
+                0.2349999752114682
+              ],
+              "R": [
+                -0.05000005796941487,
+                0.8365975778233987,
+                0.2900000231772015
+              ]
+            },
+            "finiteJoints": 65,
+            "limbErrors": [
+              3.2755828383024266e-08,
+              2.071216159693634e-08,
+              1.379880820717716e-08,
+              5.978158835739933e-07,
+              9.663736477705243e-10,
+              1.728925330679587e-08,
+              6.949455899629697e-09,
+              3.1065162869881036e-07
+            ],
+            "minFootY": 0.004714496083946695
+          }
+        ]
+      }
+    ]
+  },
+  "production": {
+    "source": "Packaged production build; no source overrides, no development API",
+    "models": [
+      {
+        "url": "http://localhost:5191/assets/detainee-man-D0OLzwM8.glb",
+        "status": 200
+      },
+      {
+        "url": "http://localhost:5191/assets/detainee-woman-B066sAhp.glb",
+        "status": 200
+      }
+    ],
+    "errors": [],
+    "failures": [],
+    "pauseMenu": true
+  }
+}

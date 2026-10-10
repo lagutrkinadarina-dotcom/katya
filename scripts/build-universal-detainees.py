@@ -1,5 +1,5 @@
-"""Build both NPCs only from the newly submitted Universal Base FBX models.
-The complete original skeleton hierarchy and all original body/head meshes are retained.
+"""Adapt both supplied Universal Base FBX bodies into the reference cell NPCs.
+Keep the 65-joint source hierarchy and visible anatomy; tailor clothing and sculpt faces.
 Run: blender -b --factory-startup --python-exit-code 1 --python scripts/build-universal-detainees.py
 """
 import bpy,bmesh,math,importlib.util
@@ -22,25 +22,44 @@ def build(woman):
  kind='woman' if woman else 'man';sex='Female' if woman else 'Male';bpy.ops.import_scene.fbx(filepath=str(SRC/f'Superhero_{sex}_FullBody.fbx'))
  original=next(o for o in bpy.context.scene.objects if o.type=='ARMATURE');meshes=[o for o in bpy.context.scene.objects if o.type=='MESH'];names=aliases();scale=1.065 if woman else 1.045;head_z=1.5496 if woman else 1.5998
  source={b.name:(original.matrix_world@b.head_local,original.matrix_world@b.tail_local,b.parent.name if b.parent else None) for b in original.data.bones}
+ leg_axes={}
  def point(p,weights=None):
   x,y,z=p.x,-p.y,p.z
+  raw_point=Vector((x,y,z))
   head_amount=sum(v for n,v in (weights or {}).items() if n=='Head') if weights is not None else max(0,min(1,(z-head_z)/.075))
   if head_amount>.2:
    # Skull and face are widened as one continuous source mesh.
    f=1+.24*head_amount;x*=f;y*=f;z=head_z+(z-head_z)*(1+.12*head_amount)
   else:
    torso=math.exp(-((z-1.09)/.28)**4);core=math.exp(-(abs(x)/.23)**4)
-   x*=1+(.56 if woman else .40)*torso*core
-   y*=1+(.52 if woman else .75)*torso*core
+   arm=sum(v for n,v in (weights or {}).items() if n.startswith(('upperarm','lowerarm')))
+   leg=sum(v for n,v in (weights or {}).items() if n.startswith(('thigh','calf')))
+   cloth_core=torso*core*(1-arm)*(1-leg if woman else 1)
+   x*=1+(.56 if woman else .40)*cloth_core
+   y*=1+(.52 if woman else .75)*cloth_core
+   if y>0:y*=1-(.25 if woman else .38)*cloth_core
    # Full hips and thighs are grown around the original leg axes.
-   leg=sum(v for n,v in (weights or {}).items() if n.startswith(('thigh','calf'))) if weights else 0
    if leg>.2:
-    centre=math.copysign(.1114 if woman else .1143,x);factor=1+(.30 if woman else .17)*leg*math.exp(-((z-.76)/.24)**2)
+    if woman:
+     # Shape about the uploaded leg's actual axis and retarget its centre to the
+     # adapted skeleton. Expanding absolute X twice (torso + thigh) produced the
+     # long skin ribbons sticking out beside the seated skirt.
+     side='l' if raw_point.x<0 else 'r';calf=sum(v for n,v in weights.items() if n.startswith('calf'));thigh=sum(v for n,v in weights.items() if n.startswith('thigh'));name=('calf_' if calf>thigh else 'thigh_')+side
+     if name not in leg_axes:
+      a,b,_=source[name];leg_axes[name]=(Vector((a.x,-a.y,a.z)),Vector((b.x,-b.y,b.z)),point(a),point(b))
+     a,b,da,db=leg_axes[name];axis=b-a;t=max(0,min(1,(raw_point-a).dot(axis)/axis.length_squared));centre=a+axis*t
+     fullness=1.40 if calf<=thigh else 1+.28*(1-t)
+     fitted=da.lerp(db,t)+(raw_point-centre)*scale*fullness
+     return (Vector((x,y,z))*scale).lerp(fitted,leg)
+    centre=math.copysign(.1114 if woman else .1143,x);factor=1+(.70 if woman else .17)*leg*math.exp(-((z-.76)/(.34 if woman else .24))**2)
     x=centre+(x-centre)*factor;y*=factor
-   arm=sum(v for n,v in (weights or {}).items() if n.startswith(('upperarm','lowerarm'))) if weights else 0
    if arm>.2:
-    centre_z=1.4181 if woman else 1.4555;centre_y=.055 if woman else .065
-    factor=1+(.16 if woman else .12)*arm;y=centre_y+(y-centre_y)*factor;z=centre_z+(z-centre_z)*factor
+    # Expand about the actual source limb axis. A fixed shoulder-height axis
+    # shifted the elbow surface outwards when the forearm bent.
+    side='l' if x<0 else 'r';axis_name=('upperarm_' if sum(v for n,v in (weights or {}).items() if n.startswith('upperarm'))>sum(v for n,v in (weights or {}).items() if n.startswith('lowerarm')) else 'lowerarm_')+side
+    a,b,_=source[axis_name];start=Vector((a.x,-a.y,a.z));end=Vector((b.x,-b.y,b.z));axis=end-start
+    t=max(0,min(1,(Vector((x,y,z))-start).dot(axis)/axis.length_squared));centre=start+axis*t
+    factor=1+(.10 if woman else .06)*arm;y=centre.y+(y-centre.y)*factor;z=centre.z+(z-centre.z)*factor
    shoulder=.1516 if woman else .212;shift=.055 if woman else .022
    if abs(x)>shoulder:x+=math.copysign(shift*min(1,(abs(x)-shoulder)/.07),x)
   return Vector((x,y,z))*scale
@@ -51,7 +70,7 @@ def build(woman):
  for name,(a,b,parent) in source.items():
   if parent:data.edit_bones[names.get(name,name)].parent=data.edit_bones[names.get(parent,parent)]
  bpy.ops.object.mode_set(mode='OBJECT')
- skin=h.material('universal-'+kind+'-skin','D5A171' if woman else 'BC8057');shirt=h.material('universal-denim' if woman else 'universal-plaid','497E9C' if woman else 'DAE3DF');dress=h.material('universal-lime-dress','BED63B');pants=h.material('universal-olive-trousers','777852');shoes=h.material('universal-shoes','32312A');hairmat=h.material('universal-red-hair' if woman else 'universal-brown-hair','8E2918' if woman else '5D3920');white=h.material('universal-eye-white','F0E9D9');iris=h.material('universal-iris','52633A' if woman else '65482A');pupil=h.material('universal-pupil','24201A')
+ skin=h.material('universal-'+kind+'-skin','DCAA77' if woman else 'C4895B');shirt=h.material('universal-denim' if woman else 'universal-plaid','497E9C' if woman else 'DAE3DF');dress=h.material('universal-lime-dress','BED63B');pants=h.material('universal-olive-trousers','777852');shoes=h.material('universal-shoes','32312A');hairmat=h.material('universal-red-hair' if woman else 'universal-brown-hair','8E2918' if woman else '5D3920');white=h.material('universal-eye-white','F0E9D9');iris=h.material('universal-iris','52633A' if woman else '65482A');pupil=h.material('universal-pupil','24201A')
  main=None;eyes=None
  for obj in meshes:
   world=obj.matrix_world.copy();weights=[];rest=[]
@@ -83,10 +102,11 @@ def build(woman):
    ramp.color_ramp.elements[0].position=0;ramp.color_ramp.elements[0].color=(.018,.014,.012,1);ramp.color_ramp.elements[1].position=.20;ramp.color_ramp.elements[1].color=(.88,.86,.78,1);ramp.color_ramp.elements.new(.095).color=(.16,.22,.085,1) if woman else (.23,.12,.05,1)
    links.new(distance.outputs['Value'],ramp.inputs[0]);links.new(ramp.outputs['Color'],nodes.get('Principled BSDF').inputs['Base Color'])
    # Bake a portable texture because glTF cannot export procedural math.
-   image=bpy.data.images.new('universal-'+kind+'-eye-paint',width=128,height=128);pixels=[]
-   for iy in range(128):
-    for ix in range(128):
-     r=math.hypot((ix+.5)/128-.5,(iy+.5)/128-.5);c=(.08,.06,.045,1) if r<.095 else ((.44,.52,.32,1) if woman else (.51,.36,.24,1)) if r<.20 else (.95,.94,.88,1);pixels.extend(c)
+   eye_size=512
+   image=bpy.data.images.new('universal-'+kind+'-eye-paint',width=eye_size,height=eye_size);pixels=[]
+   for iy in range(eye_size):
+    for ix in range(eye_size):
+     r=math.hypot((ix+.5)/eye_size-(.54 if woman else .5),(iy+.5)/eye_size-.5);c=(.08,.06,.045,1) if r<(.085 if woman else .060) else ((.44,.52,.32,1) if woman else (.51,.36,.24,1)) if r<(.19 if woman else .13) else (.95,.94,.88,1);pixels.extend(c)
    image.pixels=pixels;image.pack();tex=nodes.new('ShaderNodeTexImage');tex.image=image;links.new(coord.outputs['UV'],tex.inputs[0]);links.new(tex.outputs['Color'],nodes.get('Principled BSDF').inputs['Base Color'])
    obj.shape_key_add(name='Basis');blink=obj.shape_key_add(name='Blink');eyez=sum(v.co.z for v in obj.data.vertices)/len(obj.data.vertices)
    for v in blink.data:v.co.z=eyez+(v.co.z-eyez)*.04
@@ -272,6 +292,19 @@ def build(woman):
   if y is not None:h.patch('universal-shirt-button',rig,[(x+.004*math.cos(TAU*j/12),y-.002,z+.004*math.sin(TAU*j/12)) for j in range(12)],metal,'spine_03')
   rig['visualStyle']='universal-reference';rig['sourceBody']=f'Superhero_{sex}_FullBody.fbx';rig['originalBoneCount']=len(source);rig['preservesSourceHierarchy']=True;rig['referencePose']='crossed-arms-angry' if woman else 'seated-comic';rig['weightEdit']='fuller waist, abdomen, hips, thighs and upper arms'
  # Keep source history in the native file and write actual game assets.
+ main['supportSurface']=True
+ hip_group=main.vertex_groups['hips'].index
+ rig['restHipSupportHeight']=min(v.co.z for v in main.data.vertices if sum(g.weight for g in v.groups if g.group==hip_group)>=.40)
+ materials={'skin':skin,'shirt':shirt,'dress':dress,'pants':pants,'shoes':shoes,'hair':hairmat,'eye_white':white,'iris':iris,'pupil':pupil}
+ for module_name,function_name,args in [
+  ('detainee-female-clothing','improve_female',(rig,main,h,materials)) if woman else ('detainee-male-clothing','improve_male',(rig,main,h,materials)),
+  ('detainee-faces-hair','improve_faces_hair',(rig,main,h,materials,woman)),
+ ]:
+  file=ROOT/'scripts'/f'{module_name}.py'
+  if not file.is_file():raise FileNotFoundError(f'Required NPC editing module missing: {file}')
+  spec=importlib.util.spec_from_file_location(module_name.replace('-','_'),file);module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module);getattr(module,function_name)(*args)
+ for obj in rig.children:
+  if obj!=main and 'supportSurface' in obj:del obj['supportSurface']
  bpy.data.orphans_purge(do_recursive=True);bpy.context.preferences.filepaths.save_version=0;bpy.ops.wm.save_as_mainfile(filepath=str(ROOT/f'public/models/detainee-{kind}.blend'))
  bpy.ops.object.select_all(action='DESELECT');rig.select_set(True)
  for obj in rig.children:
