@@ -127,3 +127,9 @@ blender -b --factory-startup --python-exit-code 1 --python scripts/build-uploade
 ```
 
 `--preview-only` выводит изолированные `public/models/uploaded-male-adapted.blend` и `.glb` для проверки, сохраняя игровой меш. `scripts/build-detainees.py` по умолчанию пересобирает только Алису; `--legacy-male` явно создаёт прежний процедурный мужской вариант.
+
+### Текущие NPC из Universal Base
+
+Оба заключённых теперь используют присланные цельные FBX тела и головы из `Unity.7z`, с причёсками из `FBX (Unity).7z`. Сохранены исходные веса и иерархии всех 65 суставов; изменены пропорции тела, материалы, одежда и сидячие позы. У Алисы скрещены руки, у мужчины кисти лежат на бёдрах. Совпадение с картинкой приблизительное. Старые разделы выше описывают предыдущие версии моделей.
+
+Для текущих моделей используйте `scripts/build-universal-detainees.py`; [исходники и команда пересборки](public/models/universal-sources/README.md). Прежние генераторы перезаписывают новые модели. Реальные снимки игры: [оба персонажа](docs/previews/universal-npcs-in-game.png), [сбоку](docs/previews/universal-npcs-side.png), [крупный план](docs/previews/universal-npcs-close.png), [посадка целиком](docs/previews/universal-npcs-full.png).
