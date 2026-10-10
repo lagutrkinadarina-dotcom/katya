@@ -9,7 +9,7 @@ import bpy
 import bmesh
 from mathutils import Vector
 ROOT=Path(__file__).resolve().parents[1]
-head_spec=importlib.util.spec_from_file_location('civilian_head',ROOT/'scripts/civilian-head.py')
+head_spec=importlib.util.spec_from_file_location('civilian_head',ROOT/'scripts/rounded-civilian-head.py')
 head_builder=importlib.util.module_from_spec(head_spec);head_spec.loader.exec_module(head_builder)
 TAU=math.tau
 BODY=[(-.95,-.70),(-.65,-.94),(-.27,-1),(0,-1.035),(.27,-1),(.65,-.94),(.95,-.70),(1,-.36),(1,0),(1,.36),(.75,.9),(0,1.05),(-.75,.9),(-1,.36),(-1,0),(-1,-.36)]
@@ -185,12 +185,14 @@ def plaid(obj,cloth_slot):
 
 def clothes(rig,woman,cloth,skin,green,white):
     if woman:
+        # These NPCs are seated. A closed, pre-draped skirt follows the hips
+        # instead of rotating its entire lower hoop with two thigh bones.
         s=Surface('dress-skirt',rig,[green]);outer=[];inner=[]
         for inset,rings in [(False,outer),(True,inner)]:
-            for r,(z,rx,ry,h) in enumerate([(1.008,.150,.102,1),(.90,.164,.110,.88),(.785,.181,.120,.25),(.635,.201,.135,0)]):
+            for z,rx,ry,cy in [(1.008,.150,.102,0),(.982,.165,.120,-.055),(.936,.180,.155,-.205),(.872,.194,.105,-.325)]:
                 ring=[]
                 for x,y in BODY:
-                    l=(1-x)/2;w={'hips':h,'thigh.L':(1-h)*l,'thigh.R':(1-h)*(1-l)};ring.append(s.vertex((x*(rx-(.004 if inset else 0)),y*(ry-(.004 if inset else 0)),z),w))
+                    ring.append(s.vertex((x*(rx-(.004 if inset else 0)),cy+y*(ry-(.004 if inset else 0)),z),{'hips':1}))
                 rings.append(ring)
             for a,b in zip(rings,rings[1:]):s.strip(a,b)
         s.strip(inner[0],outer[0]);s.strip(outer[-1],inner[-1]);s.object()
@@ -222,6 +224,17 @@ def build(kind):
             uv=obj.data.uv_layers.new(name='Woven plaid')
             for loop in obj.data.loops:
                 p=obj.data.vertices[loop.vertex_index].co;uv.data[loop.index].uv=(p.x/.20,p.z/.20)
+    # Bake modest smooth subdivision into the actual runtime meshes. Keep the
+    # connected rig and weights; no smoothing illusion in screenshot rendering.
+    for obj in list(rig.children):
+        if obj.type!='MESH':continue
+        for polygon in obj.data.polygons:polygon.use_smooth=True
+        if obj.name.startswith(('continuous-body','continuous-legs','shoe-','pelvis','dress-skirt','denim-knot')):
+            bpy.context.view_layer.objects.active=obj
+            for polygon in obj.data.polygons:
+                if obj.name.startswith('continuous-body') and polygon.material_index==1:polygon.material_index=0
+            sub=obj.modifiers.new('Soft cartoon body','SUBSURF');sub.levels=1
+            bpy.ops.object.modifier_apply(modifier=sub.name)
     rig.name='detainee-'+kind+'-rig';bpy.context.preferences.filepaths.save_version=0
     bpy.ops.wm.save_as_mainfile(filepath=str(ROOT/f'public/models/detainee-{kind}.blend'))
     bpy.ops.object.select_all(action='DESELECT');rig.select_set(True)

@@ -110,7 +110,7 @@ export function createDetainee(kind,index){
         // The dress lies higher than the man's trousers. Keep the woman's
         // palms on its hem and the man's on his thighs, rather than hovering.
         const wrist=new THREE.Vector3(sign*(hipWidth+.040),
-          (woman?.703:.648)+.003*fidget,(woman?.130:.160)+.004*Math.sin(t*.48+sign));
+          (woman?.710:.648)+.003*fidget,(woman?.130:.160)+.004*Math.sin(t*.48+sign));
         limb('upper_arm.'+side,'forearm.'+side,'hand.'+side,wrist,new THREE.Vector3(sign*.75,-.45,-.60));
         // The fresh bind pose already has palms facing back. This single swing
         // lays them on the lap without twisting the shared wrist rings.
