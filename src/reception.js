@@ -127,7 +127,7 @@ export function createReception(scene,{box,pipe,plaque,plaster,paint,floor,wood,
   const screen=new THREE.Mesh(new THREE.PlaneGeometry(.455,.282),new THREE.MeshStandardMaterial({map:screenMap,emissive:'#9bbfcd',emissiveMap:screenMap,emissiveIntensity:.45,roughness:.35}));screen.position.set(0,.30,.0235);computer.add(screen);
   for(let i=0;i<9;i++)box(.025,.003,.002,-.16+i*.04,.37,-.0235,dark,computer);
   box(.055,.025,.003,0,.29,-.024,iron,computer);box(.01,.003,.003,.207,.143,.024,'#73b595',computer);
-  const keyboard=new THREE.Group();keyboard.position.set(-.24,ground+1.039,deskZ-.13);keyboard.rotation.y=.25;scene.add(keyboard);
+  const keyboard=new THREE.Group();keyboard.name='duty-keyboard';keyboard.position.set(-.24,ground+1.039,deskZ-.13);keyboard.rotation.y=.25;scene.add(keyboard);
   box(.43,.025,.15,0,0,0,casing,keyboard);
   for(let row=0;row<4;row++)for(let col=0;col<11;col++)box(.029,.009,.024,-.185+col*.037,.017,-.052+row*.03,keysMaterial,keyboard);
   box(.15,.009,.022,-.03,.018,.053,keysMaterial,keyboard);
@@ -138,7 +138,12 @@ export function createReception(scene,{box,pipe,plaque,plaster,paint,floor,wood,
   const workstation=new THREE.Group();workstation.position.set(.1,ground+1.02,deskZ);scene.add(workstation);workstation.userData.editor={id:'workstation',label:'Компьютер, клавиатура и мышь'};
   for(const object of scene.children.slice(workstationStart,-1))workstation.attach(object);
   const interior=furnishReception(scene,{ground,wood,frame,dark,pipe,plaque});
-  const officer=createOfficer();officer.position.set(-.35,ground,-4.75);officer.rotation.y=.25;scene.add(officer);
+  const officer=createOfficer({keyboard});officer.position.set(-.35,ground,-4.75);officer.rotation.y=.25;scene.add(officer);
+  // A real chair supports the seated rig instead of leaving standing legs under the desk.
+  const chair=new THREE.Group();chair.name='duty-officer-chair';officer.add(chair);
+  box(.39,.05,.34,0,.535,-.015,casing,chair);
+  box(.37,.49,.055,0,.85,-.16,casing,chair);
+  for(const x of [-.15,.15])for(const z of [-.13,.10])box(.025,.51,.025,x,.255,z,dark,chair);
   // Interaction belongs to the reception window, so the player can speak through the glass.
   const target=new THREE.Mesh(new THREE.BoxGeometry(3.4,1.46,.06),new THREE.MeshBasicMaterial({visible:false}));target.position.set(0,ground+1.72,front+.06);target.userData.type='dutyOfficer';scene.add(target);
   return {npcTarget:target,passageDoor,phoneTarget,noticeTargets:interior.noticeTargets,coffeeMachine:interior.coffeeMachine,updateOfficer:time=>{officer.userData.update(time);interior.update(time);}};
