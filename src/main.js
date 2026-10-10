@@ -145,8 +145,8 @@ function frame(now){
     let x=0,z=0;
     if(keys.has('KeyW'))z-=1;if(keys.has('KeyS'))z+=1;
     if(keys.has('KeyA'))x-=1;if(keys.has('KeyD'))x+=1;
-    const len=Math.hypot(x,z)||1,speed=coffee.order.phase==='paying'?0:2.6;
-    const dx=(x*Math.cos(yaw)+z*Math.sin(yaw))/len*dt*speed,dz=(-x*Math.sin(yaw)+z*Math.cos(yaw))/len*dt*speed;
+    const len=Math.hypot(x,z)||1;
+    const dx=(x*Math.cos(yaw)+z*Math.sin(yaw))/len*dt*2.6,dz=(-x*Math.sin(yaw)+z*Math.cos(yaw))/len*dt*2.6;
     if(canWalk(camera.position.x+dx,camera.position.z,camera.position.y,state.accessDoorOpen)&&!editor.blocked(camera.position.x+dx,camera.position.z,camera.position.y))camera.position.x+=dx;
     if(canWalk(camera.position.x,camera.position.z+dz,camera.position.y,state.accessDoorOpen)&&!editor.blocked(camera.position.x,camera.position.z+dz,camera.position.y))camera.position.z+=dz;
     camera.position.y=floorHeight(camera.position.x,camera.position.z,camera.position.y)+1.65;

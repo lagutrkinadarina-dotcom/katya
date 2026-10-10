@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {CoffeeOrder, drinks, DRINK_PRICE} from './coffee-order.js';
 import {createDrinkCup, createSteam} from './drink-cup.js';
-import {createPlayerHand,createPaymentSleeve} from './player-hand.js';
+import {createPlayerHand} from './player-hand.js';
 
 const clamp = THREE.MathUtils.clamp;
 const ease = t => {t=clamp(t,0,1);return t*t*(3-2*t);};
@@ -19,18 +19,17 @@ export function createCoffeeInteraction({scene,camera,machine,panel,close,toast,
   // Payment lives outside the editable model, so it cannot enlarge its collision box.
   const paymentAnchor=new THREE.Group();paymentAnchor.name='coffee-payment';scene.add(paymentAnchor);
   const paymentHand=createPlayerHand('payment');paymentAnchor.add(paymentHand);
-  const paymentSleeve=createPaymentSleeve(paymentHand,camera);scene.add(paymentSleeve.mesh);
   let handsLoaded=false;
   const ready=Promise.all([hand.ready,paymentHand.ready]).then(()=>{handsLoaded=true;});
   ready.catch(()=>toast('Не удалось загрузить модель руки. Обновите страницу.'));
   const billCanvas=document.createElement('canvas');billCanvas.width=384;billCanvas.height=192;
   const ctx=billCanvas.getContext('2d');ctx.fillStyle='#b5c4c4';ctx.fillRect(0,0,384,192);ctx.strokeStyle='#3c6973';ctx.lineWidth=8;ctx.strokeRect(12,12,360,168);ctx.fillStyle='#355d68';ctx.textAlign='center';ctx.font='bold 82px Georgia';ctx.fillText('50 ₽',192,119);ctx.font='16px Arial';ctx.fillText('ПЯТЬДЕСЯТ РУБЛЕЙ',192,153);
   const billMap=new THREE.CanvasTexture(billCanvas);billMap.colorSpace=THREE.SRGBColorSpace;
-  const bill=new THREE.Mesh(new THREE.PlaneGeometry(.105,.055),new THREE.MeshStandardMaterial({map:billMap,side:THREE.DoubleSide,roughness:.85}));paymentHand.add(bill);bill.position.set(-.044,.124,.029);
+  const bill=new THREE.Mesh(new THREE.PlaneGeometry(.105,.055),new THREE.MeshStandardMaterial({map:billMap,side:THREE.DoubleSide,roughness:.85}));paymentHand.add(bill);bill.position.set(-.042,.097,-.013);
   const hud=document.createElement('div');hud.id='coffee-wallet';hud.setAttribute('aria-label','Кошелёк');hud.innerHTML='<span aria-hidden="true">₽</span><output id="wallet-balance" aria-live="polite">50 ₽</output>';document.body.append(hud);
   const basePosition=new THREE.Vector3(.20,-.27,-.48),startPosition=new THREE.Vector3(),endPosition=new THREE.Vector3();
   const startQuaternion=new THREE.Quaternion(),endQuaternion=new THREE.Quaternion(),worldScale=new THREE.Vector3();
-  const billGrip=new THREE.Vector3(-.044,.124,.029),gripOffset=new THREE.Vector3();
+  const billGrip=new THREE.Vector3(-.042,.097,-.013),gripOffset=new THREE.Vector3();
   let selectedId=null,clock=0,lastScreen='',lastBalance=-1;
 
   function showMenu(id) {
@@ -107,7 +106,6 @@ export function createCoffeeInteraction({scene,camera,machine,panel,close,toast,
       transfer.root.quaternion.slerpQuaternions(startQuaternion,endQuaternion,t);transfer.root.scale.setScalar(1);transfer.setFill(1,color);
     }
     paymentAnchor.visible=visible&&phase==='paying'&&handsLoaded;
-    paymentSleeve.mesh.visible=paymentAnchor.visible;
     if(phase==='paying') {
       model.updateWorldMatrix(true,false);model.getWorldPosition(paymentAnchor.position);model.getWorldQuaternion(paymentAnchor.quaternion);model.getWorldScale(worldScale);paymentAnchor.scale.copy(worldScale);
       const t=order.progress,insertion=ease(t/.52),retreat=ease((t-.83)/.17);
@@ -115,8 +113,7 @@ export function createCoffeeInteraction({scene,camera,machine,panel,close,toast,
       paymentHand.rotation.set(-Math.PI/2*wrist*(1-retreat*.2),0,-.15*(1-insertion)+retreat*.05);
       gripOffset.copy(billGrip).applyEuler(paymentHand.rotation);
       paymentHand.position.set(.245+.12*(1-insertion),1.51-.18*(1-insertion)-retreat*.23,.41+.30*(1-insertion)+retreat*.20).sub(gripOffset);
-      bill.visible=t<.83;bill.position.y=.124+ease((t-.54)/.25)*.10;
-      if(paymentAnchor.visible)paymentSleeve.update();
+      bill.visible=t<.83;bill.position.y=.097+ease((t-.54)/.25)*.10;
     }
     machineSteam.update(clock,onMachine&&order.fill>.1);
     handSteam.update(clock,phase==='holding'||phase==='drinking'&&order.fill>.05);
