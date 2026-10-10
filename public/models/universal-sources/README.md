@@ -13,3 +13,5 @@ blender -b --factory-startup --python-exit-code 1 --python scripts/build-univers
 Outputs: `src/assets/detainee-{woman,man}.glb` and editable `public/models/detainee-{woman,man}.blend`. Runtime sitting, breathing, head turns, and blinking are in `src/detainee.js`.
 
 The builder imports mesh construction/material utilities from `scripts/build-detainees.py`, but does not import its old characters. Legacy generators will overwrite the current characters if run; use the Universal builder for current assets.
+
+Clothing is exported as separate weighted geometry: source-derived sleeves, cuffs and male shirt/trousers, a loose female blouse, underdress bodice and a seated cloth skirt. The female hair blends head and upper-spine weights below the shoulders. Eye depth and finger-phalange posing are adapted without camera or lighting changes in the game.

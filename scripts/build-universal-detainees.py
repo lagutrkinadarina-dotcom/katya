@@ -30,17 +30,17 @@ def build(woman):
    f=1+.24*head_amount;x*=f;y*=f;z=head_z+(z-head_z)*(1+.12*head_amount)
   else:
    torso=math.exp(-((z-1.09)/.28)**4);core=math.exp(-(abs(x)/.23)**4)
-   x*=1+(.56 if woman else .22)*torso*core
-   y*=1+(.52 if woman else .45)*torso*core
+   x*=1+(.56 if woman else .40)*torso*core
+   y*=1+(.52 if woman else .75)*torso*core
    # Full hips and thighs are grown around the original leg axes.
    leg=sum(v for n,v in (weights or {}).items() if n.startswith(('thigh','calf'))) if weights else 0
    if leg>.2:
-    centre=math.copysign(.1114 if woman else .1143,x);factor=1+(.50 if woman else .17)*leg*math.exp(-((z-.76)/.24)**2)
+    centre=math.copysign(.1114 if woman else .1143,x);factor=1+(.30 if woman else .17)*leg*math.exp(-((z-.76)/.24)**2)
     x=centre+(x-centre)*factor;y*=factor
    arm=sum(v for n,v in (weights or {}).items() if n.startswith(('upperarm','lowerarm'))) if weights else 0
    if arm>.2:
     centre_z=1.4181 if woman else 1.4555;centre_y=.055 if woman else .065
-    factor=1+(.50 if woman else .22)*arm;y=centre_y+(y-centre_y)*factor;z=centre_z+(z-centre_z)*factor
+    factor=1+(.16 if woman else .12)*arm;y=centre_y+(y-centre_y)*factor;z=centre_z+(z-centre_z)*factor
    shoulder=.1516 if woman else .212;shift=.055 if woman else .022
    if abs(x)>shoulder:x+=math.copysign(shift*min(1,(abs(x)-shoulder)/.07),x)
   return Vector((x,y,z))*scale
@@ -67,7 +67,9 @@ def build(woman):
   for poly in obj.data.polygons:poly.use_smooth=True
   oldslots=[p.material_index for p in obj.data.polygons];obj.data.materials.clear()
   if 'Eyes'==obj.name:
-   for v in obj.data.vertices:v.co.y-=.020
+   for side in [True,False]:
+    verts=[v for v in obj.data.vertices if (v.co.x<0)==side];cy=sum(v.co.y for v in verts)/len(verts);cz=sum(v.co.z for v in verts)/len(verts)
+    for v in verts:v.co.y=cy-.012+(v.co.y-cy)*.38;v.co.z=cz+(v.co.z-cz)*.90
    eyes=obj;obj.name='universal-'+kind+'-eyes';obj.data.materials.append(white);obj.data.materials.append(pupil)
    # The supplied FBX has untextured eye whites; paint an iris/pupil on
    # their original surface rather than attaching floating eye plates.
@@ -89,9 +91,9 @@ def build(woman):
    obj.shape_key_add(name='Basis');blink=obj.shape_key_add(name='Blink');eyez=sum(v.co.z for v in obj.data.vertices)/len(obj.data.vertices)
    for v in blink.data:v.co.z=eyez+(v.co.z-eyez)*.04
   elif 'Eyebrows'==obj.name:
-   obj.name='universal-'+kind+'-brows';obj.data.materials.append(hairmat)
+   obj.name='universal-'+kind+'-brows';obj.data.materials.append(h.material('universal-'+kind+'-brows','593521' if woman else '4F3323'))
    for v in obj.data.vertices:
-    if woman:v.co.z+=(abs(v.co.x)-.045)*.27
+    if woman:v.co.z+=(abs(v.co.x)-.045)*.10
     else:v.co.z+=.008 if v.co.x<0 else -.001
    for p in obj.data.polygons:p.material_index=0
   else:
@@ -103,7 +105,7 @@ def build(woman):
      for n,a in weights[index].items():ws[n]=ws.get(n,0)+a/len(p.vertices)
     head=sum(a for n,a in ws.items() if n in ['Head','neck_01']);arm=sum(a for n,a in ws.items() if n.startswith(('upperarm','lowerarm')));hand=sum(a for n,a in ws.items() if n.startswith(('hand','index','middle','ring','pinky','thumb')));leg=sum(a for n,a in ws.items() if n.startswith(('thigh','calf','foot','ball')))
     if head>.55 or hand>.5:p.material_index=0
-    elif leg>.45:p.material_index=2 if woman and raw.z>.58 else 0 if woman and raw.z>.115 else 3 if raw.z<.115 else 2
+    elif leg>.45:p.material_index=0 if woman and raw.z>.115 else 3 if raw.z<.115 else 2
     elif arm>.4:
      p.material_index=1 if sum(a for n,a in ws.items() if n.startswith('upperarm'))>.35 or abs(raw.x)<(.47 if woman else .54) else 0
     elif raw.z<1.025:p.material_index=2
@@ -116,6 +118,95 @@ def build(woman):
    bpy.context.view_layer.objects.active=obj;sub=obj.modifiers.new('Smooth original body','SUBSURF');sub.levels=1
    while obj.modifiers.find(sub.name)>0:bpy.ops.object.modifier_move_up(modifier=sub.name)
    bpy.ops.object.modifier_apply(modifier=sub.name)
+ if not woman:
+  trousers=main.copy();trousers.data=main.data.copy();bpy.context.collection.objects.link(trousers);trousers.name='universal-man-tailored-trousers'
+  bm=bmesh.new();bm.from_mesh(trousers.data);bmesh.ops.delete(bm,geom=[f for f in bm.faces if f.material_index!=2],context='FACES');bm.normal_update()
+  for v in bm.verts:v.co+=v.normal*.007
+  bm.to_mesh(trousers.data);bm.free();trousers.data.materials.clear();trousers.data.materials.append(pants)
+  for face in trousers.data.polygons:face.material_index=0;face.use_smooth=True
+  bpy.context.view_layer.objects.active=trousers;mod=trousers.modifiers.new('Loose trouser fabric','SMOOTH');mod.factor=.5;mod.iterations=4;bpy.ops.object.modifier_move_up(modifier=mod.name);bpy.ops.object.modifier_apply(modifier=mod.name)
+  for face in main.data.polygons:
+   if face.material_index==2:face.material_index=0
+ # Tailor a separate shell from the source surface and retain its weights.
+ cloth=main.copy();cloth.data=main.data.copy();bpy.context.collection.objects.link(cloth);cloth.name='universal-'+kind+'-tailored-shirt'
+ bm=bmesh.new();bm.from_mesh(cloth.data);drop=[]
+ for face in bm.faces:
+  c=face.calc_center_median();opening=woman and c.y<-.035 and abs(c.x)<(.057+max(0,1.52-c.z)*.10)
+  if face.material_index!=1 or opening or (woman and c.z<1.235 and abs(c.x)<.26):drop.append(face)
+ bmesh.ops.delete(bm,geom=drop,context='FACES');bm.normal_update()
+ for v in bm.verts:
+  v.co+=v.normal*.009
+  # Smooth the shirt over the source chest and the open front edges.
+  if abs(v.co.x)<.19 and v.co.y<-.05:v.co.y-=.008
+ if woman:
+  for v in bm.verts:
+   if v.is_boundary and v.co.y<-.075 and 1.15<v.co.z<1.50 and abs(v.co.x)<.145:
+    v.co.x=math.copysign(.063+(1.48-v.co.z)*.09,v.co.x)
+ if not woman:
+  for v in bm.verts:
+   if v.is_boundary and abs(v.co.x)<.13 and v.co.z>1.54:v.co.z=1.598+.010*math.tanh(v.co.y/.06)
+ # Rolled cuff strips follow exactly the source sleeve boundary and weights.
+ cuffmat=h.material('universal-'+kind+'-turned-cuff','7595AB' if woman else 'E0E7DF');cuffs=h.Surface('universal-'+kind+'-rolled-cuffs',rig,[cuffmat]);deform=bm.verts.layers.deform.active
+ for edge in bm.edges:
+  if not edge.is_boundary or min(abs(v.co.x) for v in edge.verts)<.43:continue
+  outer=[];inner=[]
+  for v in edge.verts:
+   w={cloth.vertex_groups[g].name:a for g,a in v[deform].items() if a>1e-7};total=sum(w.values());w={g:a/total for g,a in w.items()};offset=Vector((-math.copysign(.027,v.co.x),0,0))
+   outer.append(cuffs.vertex(v.co+v.normal*.009,w));inner.append(cuffs.vertex(v.co+offset+v.normal*.011,w))
+  cuffs.face((outer[0],outer[1],inner[1],inner[0]))
+ cuff=cuffs.object()
+ for face in cuff.data.polygons:face.use_smooth=True
+ bm.to_mesh(cloth.data);bm.free();cloth.data.materials.clear();cloth.data.materials.append(shirt)
+ for face in cloth.data.polygons:face.material_index=0;face.use_smooth=True
+ bpy.context.view_layer.objects.active=cloth
+ smooth=cloth.modifiers.new('Tailored fabric smoothing','SMOOTH');smooth.factor=.6;smooth.iterations=5
+ while cloth.modifiers.find(smooth.name)>0:bpy.ops.object.modifier_move_up(modifier=smooth.name)
+ bpy.ops.object.modifier_apply(modifier=smooth.name)
+ solid=cloth.modifiers.new('Real fabric thickness','SOLIDIFY');solid.thickness=.004;solid.offset=0
+ while cloth.modifiers.find(solid.name)>0:bpy.ops.object.modifier_move_up(modifier=solid.name)
+ bpy.ops.object.modifier_apply(modifier=solid.name)
+ if not woman:h.plaid(cloth,0)
+ for face in main.data.polygons:
+  if face.material_index==1:face.material_index=2 if woman else 0
+  centre=sum((main.data.vertices[i].co for i in face.vertices),Vector())/len(face.vertices)
+  if woman and face.material_index==2 and centre.z>1.48 and abs(centre.x)<.11 and centre.y<-.03:face.material_index=0
+ if woman:
+  # Build a loose blouse across the chest instead of tracing individual breasts.
+  # Keep the source sleeves and their source skin weights.
+  bm=bmesh.new();bm.from_mesh(cloth.data);deform=bm.verts.layers.deform.active;drop=[]
+  for face in bm.faces:
+   arm=sum(sum(a for g,a in v[deform].items() if cloth.vertex_groups[g].name.startswith(('upper_arm','forearm'))) for v in face.verts)/len(face.verts)
+   if arm<.45:drop.append(face)
+  bmesh.ops.delete(bm,geom=drop,context='FACES');bm.to_mesh(cloth.data);bm.free()
+  s=h.Surface('universal-woman-loose-blouse',rig,[shirt]);rings=[]
+  profiles=[(1.245,.265,.260,.210),(1.300,.260,.250,.190),(1.400,.255,.235,.160),(1.480,.245,.205,.140),(1.540,.240,.145,.120),(1.565,.230,.105,.100),(1.605,.095,.075,.085)]
+  for z,rx,frontdepth,backdepth in profiles:
+   width=.078 if z<1.48 else .045+.033*max(0,(1.60-z)/.12);angle=math.asin(width/rx);ring=[]
+   for i in range(97):
+    a=angle+(TAU-2*angle)*i/96;c=math.cos(a);x=rx*math.sin(a);y=-math.copysign((frontdepth if c>0 else backdepth)*abs(c)**.5,c)
+    ring.append(s.vertex((x,y,z),{'spine_03':1}))
+   rings.append(ring)
+  for a,b in zip(rings,rings[1:]):
+   for i in range(len(a)-1):s.face((a[i],a[i+1],b[i+1],b[i]))
+  blouse=s.object()
+  for face in blouse.data.polygons:face.use_smooth=True
+  bpy.context.view_layer.objects.active=blouse;sub=blouse.modifiers.new('Smooth tailored blouse','SUBSURF');sub.levels=2;bpy.ops.object.modifier_move_up(modifier=sub.name);bpy.ops.object.modifier_apply(modifier=sub.name)
+  solid=blouse.modifiers.new('Blouse fabric thickness','SOLIDIFY');solid.thickness=.003;bpy.ops.object.modifier_move_up(modifier=solid.name);bpy.ops.object.modifier_apply(modifier=solid.name)
+  cloth=blouse
+  # A real underdress gives a smooth neckline; no material boundary on skin.
+  for face in main.data.polygons:
+   if face.material_index==2:face.material_index=0
+  s=h.Surface('universal-woman-underdress-bodice',rig,[dress]);rings=[]
+  for j in range(13):
+   t=j/12;ring=[]
+   for i in range(96):
+    a=TAU*i/96;c=math.cos(a);rx=.250-.035*t;depth=(.220-.012*t) if c>0 else (.205-.060*t);z=1.240+(1.515-.085*max(0,c)**2-1.240)*t
+    ring.append(s.vertex((rx*math.sin(a),-math.copysign(depth*abs(c)**.5,c),z),{'spine_03':1}))
+   rings.append(ring)
+  for a,b in zip(rings,rings[1:]):s.strip(a,b)
+  bodice=s.object()
+  for face in bodice.data.polygons:face.use_smooth=True
+  bpy.context.view_layer.objects.active=bodice;solid=bodice.modifiers.new('Underdress fabric thickness','SOLIDIFY');solid.thickness=.003;bpy.ops.object.modifier_move_up(modifier=solid.name);bpy.ops.object.modifier_apply(modifier=solid.name)
  bpy.data.objects.remove(original,do_unlink=True)
  # Fit hairstyles from the same newly provided pack using the same head transform.
  before=set(bpy.data.objects);bpy.ops.import_scene.fbx(filepath=str(SRC/('Hair_Long.fbx' if woman else 'Hair_SimpleParted.fbx')));added=set(bpy.data.objects)-before
@@ -124,39 +215,62 @@ def build(woman):
   world=obj.matrix_world.copy()
   for v in obj.data.vertices:
    raw=world@v.co;raw.x=-raw.x;raw.y=-raw.y;v.co=point(raw,{'Head':1})
-   if woman and v.co.y>0 and v.co.z<1.66:v.co.y+=.035+(1.66-v.co.z)*.18
+   if woman and v.co.z<1.82:
+    z=v.co.z;t=max(0,min(1,(1.82-z)/.18));v.co.z=1.82+(z-1.82)*2.1
+    y=v.co.y;target=(.215 if y>0 else .280)*math.tanh(y/.085);v.co.y=y*(1-t)+target*t
+    v.co.x+=math.copysign(.12*t*math.exp(-(y/.10)**2),v.co.x)
   bm=bmesh.new();bm.from_mesh(obj.data);bmesh.ops.reverse_faces(bm,faces=list(bm.faces));bm.to_mesh(obj.data);bm.free()
   obj.parent=rig;obj.matrix_parent_inverse=Matrix.Identity(4);obj.matrix_world=Matrix.Identity(4);obj.vertex_groups.clear();g=obj.vertex_groups.new(name='head');g.add(list(range(len(obj.data.vertices))),1,'REPLACE');obj.modifiers.clear();mod=obj.modifiers.new('Universal hair attachment','ARMATURE');mod.object=rig;obj.data.materials.clear();obj.data.materials.append(hairmat);obj.name='universal-'+kind+'-hair'
   for p in obj.data.polygons:p.use_smooth=True;p.material_index=0
+  if woman:
+   torso=obj.vertex_groups.new(name='spine_03')
+   for v in obj.data.vertices:
+    a=max(0,min(1,(v.co.z-1.42)/.25));a=a*a*(3-2*a);head=.40+.60*a
+    g.add([v.index],head,'REPLACE')
+    if head<1:torso.add([v.index],1-head,'REPLACE')
  # Fashion the seated skirt, collar, pockets and knot as clothing edits.
  if woman:
-  s=h.Surface('universal-seated-dress-skirt',rig,[dress]);shells=[]
-  for inside in [False,True]:
-   rings=[]
-   for z,rx,ry,cy in [(1.105,.229,.150,0),(1.210,.269,.189,-.140),(1.200,.285,.181,-.255),(1.120,.282,.120,-.341)]:
-    f=.004 if inside else 0;ring=[s.vertex(((rx-f)*math.sin(TAU*i/64),cy-(ry-f)*math.cos(TAU*i/64),z),{'hips':1}) for i in range(64)];rings.append(ring)
-   for a,b in zip(rings,rings[1:]):s.strip(a,b)
-   shells.append(rings)
-  s.strip(shells[1][0],shells[0][0]);s.strip(shells[0][-1],shells[1][-1]);skirt=s.object()
-  for p in skirt.data.polygons:p.use_smooth=True
-  h.loft('universal-denim-knot',rig,[(0,-.250,1.111,.025,.016),(0,-.272,1.119,.038,.024),(0,-.245,1.137,.023,.013)],shirt,'spine',16)
-  for sign in [-1,1]:h.patch('universal-denim-tie',rig,[(sign*.009,-.275,1.119),(sign*.047,-.273,1.113),(sign*.090,-.248,1.071),(sign*.058,-.264,1.058),(sign*.023,-.284,1.092)],shirt)
- for sign in [-1,1]:
-  collar=h.patch('universal-shirt-collar',rig,[(sign*.045,-.075,1.616 if not woman else 1.586),(sign*.130,-.105 if not woman else -.125,1.568 if not woman else 1.540),(sign*.102,-.125 if not woman else -.187,1.492 if not woman else 1.468),(sign*.040,-.105 if not woman else -.160,1.560 if not woman else 1.545)],shirt)
-  bpy.context.view_layer.objects.active=collar;solid=collar.modifiers.new('Cloth edge thickness','SOLIDIFY');solid.thickness=.002;bpy.ops.object.modifier_apply(modifier=solid.name)
-  if not woman:h.plaid(collar,0)
- if not woman:
-  # The comic expression is an edit of this source character, not a reused head.
-  tongue=h.material('universal-comic-tongue','C46B68');s=h.Surface('universal-comic-tongue',rig,[tongue]);centre=point(Vector((.012,.114,1.633)),{'Head':1})+Vector((.019,.010,-.009));rings=[]
+  s=h.Surface('universal-seated-dress-skirt',rig,[dress]);rings=[]
   for j in range(13):
-   angle=math.pi*j/12;ring=[]
-   for i in range(24):
-    a=TAU*i/24;v=centre+Vector((.027*math.sin(angle)*math.cos(a),.038*math.sin(angle)*math.sin(a),.012*math.cos(angle)));ring.append(s.vertex(v,{'head':1}))
+   t=j/12;ring=[]
+   for i in range(96):
+    angle=TAU*i/96;front=max(0,math.cos(angle));rx=.250+.080*t;depth=.225+.32*t if math.cos(angle)>0 else .145
+    fold=.004*math.sin(angle*8)*math.sin(math.pi*t)
+    z=1.260-.180*t+(.035+.040*front)*math.sin(math.pi*t)
+    ring.append(s.vertex(((rx+fold)*math.sin(angle),-depth*math.cos(angle),z),{'hips':1}))
    rings.append(ring)
   for a,b in zip(rings,rings[1:]):s.strip(a,b)
-  obj=s.object()
-  for p in obj.data.polygons:p.use_smooth=True
- rig['visualStyle']='universal-reference';rig['sourceBody']=f'Superhero_{sex}_FullBody.fbx';rig['originalBoneCount']=len(source);rig['preservesSourceHierarchy']=True;rig['referencePose']='crossed-arms-angry' if woman else 'seated-comic';rig['weightEdit']='fuller waist, abdomen, hips, thighs and upper arms'
+  skirt=s.object()
+  for p in skirt.data.polygons:p.use_smooth=True
+  bpy.context.view_layer.objects.active=skirt;solid=skirt.modifiers.new('Draped fabric thickness','SOLIDIFY');solid.thickness=.003;bpy.ops.object.modifier_move_up(modifier=solid.name);bpy.ops.object.modifier_apply(modifier=solid.name)
+  h.loft('universal-denim-knot',rig,[(0,-.250,1.260,.025,.016),(0,-.272,1.275,.038,.024),(0,-.245,1.290,.023,.013)],shirt,'spine',16)
+  for sign in [-1,1]:h.patch('universal-denim-tie',rig,[(sign*.009,-.250,1.283),(sign*.047,-.280,1.283),(sign*.090,-.360,1.270),(sign*.058,-.380,1.270),(sign*.023,-.290,1.290)],shirt)
+ for sign in [-1,1]:
+  collar=h.patch('universal-shirt-collar',rig,[(sign*.045,-.075,1.616 if not woman else 1.586),(sign*.130,-.105 if not woman else -.125,1.568 if not woman else 1.540),(sign*.102,-.125 if not woman else -.220,1.492 if not woman else 1.468),(sign*.040,-.105 if not woman else -.160,1.560 if not woman else 1.545)],shirt)
+  bpy.context.view_layer.objects.active=collar;solid=collar.modifiers.new('Cloth edge thickness','SOLIDIFY');solid.thickness=.002;bpy.ops.object.modifier_apply(modifier=solid.name)
+  if not woman:h.plaid(collar,0)
+ if woman:h.denim_texture(rig,shirt)
+ from mathutils.bvhtree import BVHTree
+ tree=BVHTree.FromPolygons([v.co for v in cloth.data.vertices],[list(p.vertices) for p in cloth.data.polygons])
+ def clothfront(x,z):
+  hit=tree.ray_cast(Vector((x,-1,z)),Vector((0,1,0)))
+  return hit[0].y-.004 if hit[0] is not None else None
+ for sign in [-1,1] if woman else [1]:
+  pts=[]
+  for x,z in [(sign*.095,1.448),(sign*.170,1.448),(sign*.167,1.388),(sign*.132,1.373),(sign*.098,1.388)]:
+   y=clothfront(x,z)
+   if y is not None:pts.append((x,y,z))
+  if len(pts)==5:
+   if woman:
+    seam=h.material('universal-denim-stitch','829AAB');curve=bpy.data.curves.new('Pocket stitching','CURVE');curve.dimensions='3D';curve.bevel_depth=.0007;curve.bevel_resolution=2;line=curve.splines.new('POLY');line.points.add(len(pts)-1)
+    for vertex,(x,y,z) in zip(line.points,pts):vertex.co=(x,y-.003,z,1)
+    line.use_cyclic_u=True;obj=bpy.data.objects.new('universal-pocket-stitching',curve);bpy.context.collection.objects.link(obj);bpy.ops.object.select_all(action='DESELECT');obj.select_set(True);bpy.context.view_layer.objects.active=obj;bpy.ops.object.convert(target='MESH');obj=bpy.context.object;obj.data.materials.append(seam);obj.parent=rig;g=obj.vertex_groups.new(name='spine_03');g.add(list(range(len(obj.data.vertices))),1,'REPLACE');mod=obj.modifiers.new('Shirt skeleton','ARMATURE');mod.object=rig
+   obj=h.patch('universal-'+kind+'-breast-pocket',rig,pts,shirt,'spine_03');bpy.context.view_layer.objects.active=obj;mod=obj.modifiers.new('Pocket fabric thickness','SOLIDIFY');mod.thickness=.002;bpy.ops.object.modifier_apply(modifier=mod.name)
+ metal=h.material('universal-'+kind+'-shirt-buttons','D8D4BC')
+ for i in range(5):
+  z=1.47-i*.052;x=.081+(1.47-z)*.09 if woman else 0;y=clothfront(x,z)
+  if y is not None:h.patch('universal-shirt-button',rig,[(x+.004*math.cos(TAU*j/12),y-.002,z+.004*math.sin(TAU*j/12)) for j in range(12)],metal,'spine_03')
+  rig['visualStyle']='universal-reference';rig['sourceBody']=f'Superhero_{sex}_FullBody.fbx';rig['originalBoneCount']=len(source);rig['preservesSourceHierarchy']=True;rig['referencePose']='crossed-arms-angry' if woman else 'seated-comic';rig['weightEdit']='fuller waist, abdomen, hips, thighs and upper arms'
  # Keep source history in the native file and write actual game assets.
  bpy.data.orphans_purge(do_recursive=True);bpy.context.preferences.filepaths.save_version=0;bpy.ops.wm.save_as_mainfile(filepath=str(ROOT/f'public/models/detainee-{kind}.blend'))
  bpy.ops.object.select_all(action='DESELECT');rig.select_set(True)
