@@ -29,8 +29,8 @@ export function createHoldingCell(scene,{ground,wood,plaque}){
   box(.36,.065,1.72,-2.48,ground+.46,5.02,wood);
   box(.035,.27,1.72,-2.69,ground+.72,5.02,wood);
   for(const z of [4.40,5.65])for(const x of [-2.6,-2.37])box(.035,.43,.035,x,ground+.215,z);
-  const people=['shirt','hoodie'].map((kind,i)=>{
-    const person=createDetainee(kind,kind==='hoodie'?0:1);person.position.set(-2.48,ground,4.6+i*.86);person.rotation.y=Math.PI/2;root.add(person);return person;
+  const people=['man','woman'].map((kind,i)=>{
+    const person=createDetainee(kind,kind==='woman'?0:1);person.position.set(-2.48,ground,4.6+i*.86);person.rotation.y=Math.PI/2;root.add(person);return person;
   });
   root.userData.people=people;
   root.ready=Promise.all(people.map(person=>person.ready));

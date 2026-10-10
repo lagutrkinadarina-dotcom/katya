@@ -3,8 +3,8 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {solveTwoBone} from './officer-pose.js';
 
 const assets={
-  hoodie:new URL('./assets/detainee-hoodie.glb',import.meta.url).href,
-  shirt:new URL('./assets/detainee-shirt.glb',import.meta.url).href,
+  woman:new URL('./assets/detainee-woman.glb',import.meta.url).href,
+  man:new URL('./assets/detainee-man.glb',import.meta.url).href,
 };
 
 export function createDetainee(kind,index){
@@ -57,23 +57,23 @@ export function createDetainee(kind,index){
       const seated=rest.get('hips').position.clone();seated.y=.5525;
       hips.position.copy(hips.parent.worldToLocal(model.localToWorld(seated)));
       hips.quaternion.copy(rest.get('hips').localRotation);hips.updateMatrixWorld(true);
-      const hoodie=kind==='hoodie',cycle=t%(hoodie?15:19);
+      const woman=kind==='woman',cycle=t%(woman?15:19);
       const glance=THREE.MathUtils.smoothstep(cycle,6,7)*(1-THREE.MathUtils.smoothstep(cycle,10,11));
-      turn('spine',.023+.012*Math.sin(t*(hoodie?.55:.42)),.008*Math.sin(t*.35),.009*Math.sin(t*.47));
+      turn('spine',.023+.012*Math.sin(t*(woman?.55:.42)),.008*Math.sin(t*.35),.009*Math.sin(t*.47));
       turn('neck',.008*Math.sin(t*1.5));
       turn('head',.035+.025*Math.sin(t*.7),
-        (hoodie?-.21:.24)*glance+.055*Math.sin(t*.37),.015*Math.sin(t*.44));
+        (woman?-.21:.24)*glance+.055*Math.sin(t*.37),.015*Math.sin(t*.44));
       const blinkPhase=(t+.4)%4.6,blink=blinkPhase<.16?1-Math.abs(blinkPhase-.08)/.08:0;
       for(const mesh of blinkMeshes)mesh.morphTargetInfluences[mesh.morphTargetDictionary.Blink]=blink;
       for(const [side,sign] of [['L',-1],['R',1]]){
         limb('thigh.'+side,'shin.'+side,'foot.'+side,new THREE.Vector3(sign*.103,.12,.31),new THREE.Vector3(0,0,1));
         rotation('foot.'+side,rest.get('foot.'+side).rotation);
-        const fidget=.5+.5*Math.sin(t*(hoodie?.85:1.1)+sign*1.7);
+        const fidget=.5+.5*Math.sin(t*(woman?.85:1.1)+sign*1.7);
         const wrist=new THREE.Vector3(sign*.125,.707+.005*fidget,.145+.006*Math.sin(t*.48+sign));
         limb('upper_arm.'+side,'forearm.'+side,'hand.'+side,wrist,new THREE.Vector3(sign*.3,-.2,-1));
         orient('hand.'+side,`finger1.${side}`,new THREE.Vector3(0,-.66,.75));
         for(let i=0;i<4;i++){
-          const finger=bones.get(`finger${i}.${side}`),curl=.04+.045*Math.max(0,Math.sin(t*(hoodie?1.4:.8)+i*.7+sign));
+          const finger=bones.get(`finger${i}.${side}`),curl=.04+.045*Math.max(0,Math.sin(t*(woman?1.4:.8)+i*.7+sign));
           finger.quaternion.copy(rest.get(finger.name).localRotation)
             .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),curl));
           finger.updateMatrixWorld(true);
