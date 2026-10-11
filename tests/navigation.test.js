@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {canWalk,floorHeight,floorNumber,doorwayOccupied} from '../src/navigation.js';
+import {BASEMENT_LAYOUT,BASEMENT_STAIR,EYE_HEIGHT,FLOOR_BASES} from '../src/building-layout.js';
 
 // Sample complete routes at walking speed. Each accepted position determines the
 // next eye height, as it does in the game, rather than teleporting between floors.
@@ -55,4 +56,24 @@ test('existing save locations and the third-floor corridor remain valid',()=>{
     assert.ok(Math.abs(floorHeight(x,z,eye)+1.65-eye)<1e-8);
   }
   assert.equal(canWalk(4,.7,5.13,true),false,'Upper floor cannot lead into the open stair shaft');
+});
+test('continue straight from reception down the real basement flight and return',()=>{
+  const route=[[0,BASEMENT_LAYOUT.center],[12.65,BASEMENT_LAYOUT.center],[20.35,BASEMENT_LAYOUT.center]];
+  const eye=walk(route,FLOOR_BASES[0]+EYE_HEIGHT);
+  assert.ok(Math.abs(eye-(BASEMENT_LAYOUT.base+EYE_HEIGHT))<1e-8);
+  assert.equal(floorNumber(eye),0);
+  assert.ok(Math.abs(walk([...route].reverse(),eye)-(FLOOR_BASES[0]+EYE_HEIGHT))<1e-8);
+  assert.throws(()=>walk(route,FLOOR_BASES[0]+EYE_HEIGHT,false),/Blocked/,'The existing reception access door still gates both stair routes');
+});
+test('basement cannot snap sideways into another storey or be reached through its ceiling',()=>{
+  const x=(BASEMENT_STAIR.start+BASEMENT_STAIR.end)/2;
+  const eye=BASEMENT_STAIR.base+BASEMENT_STAIR.rise/2+EYE_HEIGHT;
+  assert.equal(canWalk(x,BASEMENT_STAIR.zMin-.1,eye,true),false);
+  assert.equal(canWalk(x,BASEMENT_STAIR.zMax+.1,eye,true),false);
+  assert.equal(canWalk(11,BASEMENT_LAYOUT.center,eye,true),false);
+  assert.equal(canWalk(20.35,BASEMENT_LAYOUT.center,FLOOR_BASES[0]+EYE_HEIGHT,true),false);
+  assert.equal(canWalk(14,BASEMENT_LAYOUT.center,BASEMENT_LAYOUT.base+EYE_HEIGHT,true),false);
+  assert.equal(canWalk(12.65,BASEMENT_LAYOUT.center,FLOOR_BASES[1]+EYE_HEIGHT,true),false);
+  assert.equal(canWalk(BASEMENT_LAYOUT.landingEnd+.01,BASEMENT_LAYOUT.center,BASEMENT_LAYOUT.base+EYE_HEIGHT,true),false);
+  assert.equal(canWalk(BASEMENT_LAYOUT.doorX+.01,BASEMENT_LAYOUT.center,BASEMENT_LAYOUT.base+EYE_HEIGHT,true),false,'A closed medical door is entered by interaction, not by walking through its leaf');
 });

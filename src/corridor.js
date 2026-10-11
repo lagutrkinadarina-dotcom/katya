@@ -1,10 +1,13 @@
 import * as THREE from 'three';
 import {createStreetWindow} from './street.js';
 import {createReception} from './reception.js';
-import {createWallStrip,alignFloorTiles} from './architecture.js';
+import {createWallStrip,alignFloorTiles,alignWallTexture} from './architecture.js';
 import {createUpperFloor} from './upper-floor.js';
+import {createWindowBlinds} from './window-blinds.js';
+import {createStationMaterials} from './station-materials.js';
+import {createCorridorDetails} from './station-details.js';
 
-// All surfaces are generated locally: no downloaded textures or model assets.
+// Architecture shares metre-scaled surfaces and inexpensive modelled details.
 export function createCorridor(scene, renderer) {
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -18,36 +21,15 @@ export function createCorridor(scene, renderer) {
   const ambient=new THREE.HemisphereLight(0xdce7e4,0x39443e,1.65);ambient.name='stationAmbient';scene.add(ambient);
   let seed = 41;
   const random = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
-  function texture(kind) {
-    const c = document.createElement('canvas'); c.width = c.height = 512;
-    const ctx = c.getContext('2d');
-    ctx.fillStyle = kind === 'wood' ? '#65513c' : kind === 'floor' ? '#747a72' : '#8c9382';
-    ctx.fillRect(0, 0, 512, 512);
-    for (let i = 0; i < 14000; i++) {
-      ctx.fillStyle = `rgba(${random() > .5 ? '255,255,240' : '20,29,24'},${random() * .08})`;
-      const x = random() * 512, y = random() * 512;
-      ctx.fillRect(x, y, kind === 'wood' ? 1 : 2, kind === 'wood' ? 15 + random() * 75 : 2);
-    }
-    if (kind === 'floor') {
-      ctx.strokeStyle = '#414a44'; ctx.lineWidth = 4; ctx.strokeRect(0, 0, 512, 512);
-      ctx.strokeStyle = '#a7aaa0'; ctx.lineWidth = 1; ctx.strokeRect(5, 5, 502, 502);
-    }
-    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
-    t.wrapS = t.wrapT = THREE.RepeatWrapping;
-    t.repeat.set(kind === 'floor' ? 1 : kind === 'wood' ? 1 : 8, kind === 'floor' ? 1 : kind === 'wood' ? 1 : 2);
-    t.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy()); return t;
-  }
-  const plaster = new THREE.MeshStandardMaterial({map: texture('plaster'),color:'#c0c5b4',roughness:.94});
-  const paint = new THREE.MeshStandardMaterial({color:'#49635b',roughness:.72});
-  const floor = new THREE.MeshStandardMaterial({map:texture('floor'),roughness:.65});
-  const wood = new THREE.MeshStandardMaterial({map:texture('wood'),roughness:.62});
-  const trim = new THREE.MeshStandardMaterial({color:'#726148',roughness:.63});
+  const stationMaterials=createStationMaterials(2);
+  const {plaster,paint,floor,trim,wood}=stationMaterials;
   const brass = new THREE.MeshStandardMaterial({color:'#b9ac81',metalness:.72,roughness:.3});
   const iron = new THREE.MeshStandardMaterial({color:'#b7b5a2',metalness:.25,roughness:.7});
   const dark = new THREE.MeshStandardMaterial({color:'#25322e',roughness:.85});
   function box(w,h,d,x,y,z,mat,parent=scene) {
     const mesh = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), typeof mat === 'string' ? new THREE.MeshStandardMaterial({color:mat,roughness:.8}) : mat);
-    mesh.position.set(x,y,z); mesh.castShadow=true; mesh.receiveShadow=true; parent.add(mesh); return mesh;
+    mesh.position.set(x,y,z); mesh.castShadow=true; mesh.receiveShadow=true; parent.add(mesh);
+    if(parent===scene&&mesh.material.userData.stationWall)alignWallTexture(mesh);return mesh;
   }
   function pipe(a,b,r,mat,parent=scene) {
     const start=new THREE.Vector3(...a),end=new THREE.Vector3(...b),dir=end.clone().sub(start);
@@ -74,6 +56,10 @@ export function createCorridor(scene, renderer) {
     box(.23,.12,24,x,3.18,-5,'#a5aa99');
   }
   const streetUpdates=[createStreetWindow(scene,-17,-1,{plaster,paint}),createStreetWindow(scene,7,1,{plaster,paint})];
+  const windowBlinds=[
+    createWindowBlinds(scene,{width:3.92,height:1.85,floor:2,position:[0,2,-16.72]}),
+    createWindowBlinds(scene,{width:3.92,height:1.85,floor:2,position:[0,2,6.72],rotationY:Math.PI})
+  ];
   // The open entrance overlooks a staircase with a real lower landing and left turn.
   const concrete=new THREE.MeshStandardMaterial({color:'#777d76',roughness:.92});
   // One continuous shell joins the corridor to both sides of the stair opening.
@@ -119,7 +105,9 @@ export function createCorridor(scene, renderer) {
     plaque(label,1.6,.28,0,2.83,.13,group);
   }
   door(-2.84,1,'office','КАБИНЕТ СЛЕДОВАТЕЛЯ');door(2.84,-3,'interrogation','ДОПРОСНАЯ');door(-2.84,-9,'archive','АРХИВ');
-  createUpperFloor(scene,{box,pipe,plaque,door,plaster,paint,floor,trim,brass,dark,concrete});
+  const upperFloor=createUpperFloor(scene,{box,pipe,plaque,door,plaster,paint,floor,trim,brass,dark,concrete});
+  windowBlinds.push(...upperFloor.windowBlinds);
+  createCorridorDetails(scene,{floorNumber:2,leftGaps:[[.14,1.86],[-9.86,-8.14]],rightGaps:[[-3.86,-2.14],[-.82,2.22],[2.48,5.52]],materials:stationMaterials});
   function radiator(side,z) {
     const group=new THREE.Group();group.position.set(side*2.77,0,z);scene.add(group);
     for(let i=0;i<12;i++) {
@@ -162,5 +150,6 @@ export function createCorridor(scene, renderer) {
   pipe([2.8,.32,-15],[2.8,.88,-15],.12,red);box(.1,.12,.14,2.8,.97,-15,dark);
   pipe([2.66,.84,-15],[2.66,1,-15],.025,dark);
   const {npcTarget,passageDoor,phoneTarget,noticeTargets,coffeeMachine,updateOfficer}=createReception(scene,{box,pipe,plaque,plaster,paint,floor,wood,iron,dark});
-  return {doors,passageDoor,coffeeMachine,interactables:[scene.getObjectByName('holding-cell-door-target'),...doors,...noticeTargets,phoneTarget,npcTarget,...passageDoor.userData.leaves,passageDoor.userData.target,...coffeeMachine.targets],updateStreet:time=>{streetUpdates.forEach(update=>update(time));updateOfficer(time);}};
+  createCorridorDetails(scene,{floorNumber:1,base:-3.365,xMin:-2.9,xMax:2.9,zMin:-3.55,zMax:6.8,rightGaps:[[.02,2.64]],materials:createStationMaterials(1)});
+  return {doors,passageDoor,coffeeMachine,windowBlinds,interactables:[scene.getObjectByName('holding-cell-door-target'),...doors,...noticeTargets,phoneTarget,npcTarget,...passageDoor.userData.leaves,passageDoor.userData.target,...coffeeMachine.targets,...windowBlinds.map(blind=>blind.target)],updateStreet:time=>{streetUpdates.forEach(update=>update(time));windowBlinds.forEach(blind=>blind.update(time));updateOfficer(time);}};
 }

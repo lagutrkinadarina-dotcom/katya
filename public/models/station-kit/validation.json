@@ -1,0 +1,149 @@
+{
+  "tool": "Chromium / Three.js GLTFLoader, actual WebGL render",
+  "models": [
+    {
+      "name": "chair",
+      "vertices": 4244,
+      "triangles": 6027,
+      "size": [
+        0.9393888711929321,
+        0.7799999713897705,
+        0.6481553912162781
+      ],
+      "floorMin": 0
+    },
+    {
+      "name": "cabinet-medium",
+      "vertices": 648,
+      "triangles": 428,
+      "size": [
+        2,
+        1.0000000074505806,
+        1.0015586018562317
+      ],
+      "floorMin": 0
+    },
+    {
+      "name": "archive-shelf",
+      "vertices": 715,
+      "triangles": 482,
+      "size": [
+        2.0000001192092896,
+        0.81751549243927,
+        0.5000000715752559
+      ],
+      "floorMin": 0
+    },
+    {
+      "name": "books",
+      "vertices": 325,
+      "triangles": 196,
+      "size": [
+        0.7799999713897705,
+        0.49999988079071045,
+        0.3649999648332596
+      ],
+      "floorMin": 0
+    },
+    {
+      "name": "table-lamp",
+      "vertices": 327,
+      "triangles": 392,
+      "size": [
+        1,
+        1.0216652032686397,
+        1
+      ],
+      "floorMin": 0
+    },
+    {
+      "name": "standing-lamp",
+      "vertices": 304,
+      "triangles": 320,
+      "size": [
+        1,
+        2.5200001001358032,
+        1
+      ],
+      "floorMin": 0
+    },
+    {
+      "name": "side-table",
+      "vertices": 260,
+      "triangles": 168,
+      "size": [
+        1,
+        1.0000000074505806,
+        1
+      ],
+      "floorMin": 0
+    },
+    {
+      "name": "meeting-table",
+      "vertices": 260,
+      "triangles": 168,
+      "size": [
+        3,
+        1.0000000074505806,
+        2
+      ],
+      "floorMin": 0
+    },
+    {
+      "name": "visitor-chair",
+      "vertices": 498,
+      "triangles": 384,
+      "size": [
+        0.75,
+        1.2583259418606758,
+        0.8451285362243652
+      ],
+      "floorMin": 0
+    },
+    {
+      "name": "stool",
+      "vertices": 298,
+      "triangles": 216,
+      "size": [
+        0.75,
+        0.5000000074505806,
+        0.75
+      ],
+      "floorMin": 0
+    },
+    {
+      "name": "sofa",
+      "vertices": 550,
+      "triangles": 636,
+      "size": [
+        3.000000238418579,
+        1.2240597009658813,
+        1.600000023841858
+      ],
+      "floorMin": 0
+    },
+    {
+      "name": "framed-photo",
+      "vertices": 114,
+      "triangles": 74,
+      "size": [
+        0.5,
+        0.6185388267040253,
+        0.3794697970151901
+      ],
+      "floorMin": 0
+    },
+    {
+      "name": "plant",
+      "vertices": 464,
+      "triangles": 448,
+      "size": [
+        0.8799095451831818,
+        0.8272461043670774,
+        0.8368438184261322
+      ],
+      "floorMin": 0
+    }
+  ],
+  "errors": []
+}

@@ -18,11 +18,28 @@ export function createWallStrip(scene,points,baseY,bands){
     const geometry=new THREE.ExtrudeGeometry(footprint,{depth:height,steps:1,bevelEnabled:false});
     // Adjacent bands/storeys use the same world-height texture phase at the seam.
     const position=geometry.attributes.position,normal=geometry.attributes.normal,uv=geometry.attributes.uv;
-    for(let i=0;i<position.count;i++)if(Math.abs(normal.getZ(i))<.5)uv.setY(i,1-position.getZ(i)-y);
+    for(let i=0;i<position.count;i++)if(Math.abs(normal.getZ(i))<.5){
+      const horizontal=Math.abs(normal.getX(i))>Math.abs(normal.getY(i))?-position.getY(i):position.getX(i);
+      uv.setXY(i,horizontal,1-position.getZ(i)-y);
+    }
+    uv.needsUpdate=true;
     const wall=new THREE.Mesh(geometry,material);
     wall.rotation.x=-Math.PI/2;wall.position.y=y;wall.castShadow=true;wall.receiveShadow=true;scene.add(wall);walls.push(wall);y+=height;
   }
   return walls;
+}
+
+// Box wall bands share a one-metre texture grid with the mitered wall strips.
+export function alignWallTexture(mesh){
+  mesh.updateMatrixWorld(true);
+  const position=mesh.geometry.attributes.position,normal=mesh.geometry.attributes.normal,uv=mesh.geometry.attributes.uv;
+  const point=new THREE.Vector3(),direction=new THREE.Vector3(),normalMatrix=new THREE.Matrix3().getNormalMatrix(mesh.matrixWorld);
+  for(let i=0;i<position.count;i++){
+    direction.fromBufferAttribute(normal,i).applyMatrix3(normalMatrix);if(Math.abs(direction.y)>.5)continue;
+    point.fromBufferAttribute(position,i).applyMatrix4(mesh.matrixWorld);
+    uv.setXY(i,Math.abs(direction.x)>Math.abs(direction.z)?point.z:point.x,1-point.y);
+  }
+  uv.needsUpdate=true;return mesh;
 }
 
 // One metre per tile, with a shared world-space grid across separate floor meshes.

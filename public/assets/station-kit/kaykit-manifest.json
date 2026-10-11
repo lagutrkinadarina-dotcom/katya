@@ -1,0 +1,157 @@
+{
+  "source": "KayKit Furniture Bits 1.0",
+  "author": "Kay Lousberg",
+  "license": "CC0-1.0",
+  "repository": "https://github.com/KayKit-Game-Assets/KayKit-Furniture-Bits-1.0",
+  "commit": "96d5930a8dbdb363409bbc2d3341718b00e17c9c",
+  "textureSize": [
+    256,
+    256
+  ],
+  "assets": {
+    "cabinet-medium": {
+      "file": "cabinet-medium.glb",
+      "original": "cabinet_medium.gltf",
+      "size": {
+        "width": 2,
+        "height": 1.0,
+        "depth": 1.00156
+      },
+      "triangles": 428,
+      "bytes": 32908,
+      "sha256": "11ec5bdb5a95ec5c3bf26fbfb8406487f86b7eaffdce8737ef5bc347fdaf7cb2"
+    },
+    "archive-shelf": {
+      "file": "archive-shelf.glb",
+      "original": "shelf_B_large_decorated.gltf",
+      "size": {
+        "width": 2.0,
+        "height": 0.81752,
+        "depth": 0.5
+      },
+      "triangles": 482,
+      "bytes": 35452,
+      "sha256": "a7e374820f99b9f94f5fd10bebfa93206482c0bedc99a7d64f4cc75c527adc87"
+    },
+    "books": {
+      "file": "books.glb",
+      "original": "book_set.gltf",
+      "size": {
+        "width": 0.78,
+        "height": 0.5,
+        "depth": 0.365
+      },
+      "triangles": 196,
+      "bytes": 21252,
+      "sha256": "0d0d66da033829b5b1cbbcee9522c0bea03aa7956397bb103ecfae46ea7fe17f"
+    },
+    "table-lamp": {
+      "file": "table-lamp.glb",
+      "original": "lamp_table.gltf",
+      "size": {
+        "width": 1.0,
+        "height": 1.02167,
+        "depth": 1.0
+      },
+      "triangles": 392,
+      "bytes": 22456,
+      "sha256": "caa560cff478c987d1f983a260283fa3d14cdb64292f526b517de961f1f1f6b0"
+    },
+    "standing-lamp": {
+      "file": "standing-lamp.glb",
+      "original": "lamp_standing.gltf",
+      "size": {
+        "width": 1.0,
+        "height": 2.52,
+        "depth": 1.0
+      },
+      "triangles": 320,
+      "bytes": 21288,
+      "sha256": "ed63d5a330e9da8bd6533fb768e28a01c4f19e57609f992c999676903f1c16f1"
+    },
+    "side-table": {
+      "file": "side-table.glb",
+      "original": "table_small.gltf",
+      "size": {
+        "width": 1.0,
+        "height": 1.0,
+        "depth": 1.0
+      },
+      "triangles": 168,
+      "bytes": 18900,
+      "sha256": "63ab63da9ae73af00f26815a352371373b83098b78b2335fae62c9780c914d22"
+    },
+    "meeting-table": {
+      "file": "meeting-table.glb",
+      "original": "table_medium_long.gltf",
+      "size": {
+        "width": 3.0,
+        "height": 1.0,
+        "depth": 2
+      },
+      "triangles": 168,
+      "bytes": 18900,
+      "sha256": "4dcba20c7c7d354dddc18ea069d6b6018e7fa148ab9bbcfac898318a2b6f9357"
+    },
+    "visitor-chair": {
+      "file": "visitor-chair.glb",
+      "original": "chair_B.gltf",
+      "size": {
+        "width": 0.75,
+        "height": 1.25833,
+        "depth": 0.84513
+      },
+      "triangles": 384,
+      "bytes": 27912,
+      "sha256": "4080986f244f3296debc4a5029514bba348158950fdc10db230ad446e5f34bd1"
+    },
+    "stool": {
+      "file": "stool.glb",
+      "original": "chair_stool.gltf",
+      "size": {
+        "width": 0.75,
+        "height": 0.5,
+        "depth": 0.75
+      },
+      "triangles": 216,
+      "bytes": 20496,
+      "sha256": "186c003b6ccbb104e7f7ce6b9dcba2cfeaf672a08d55dd9a6a31d332ed2925ba"
+    },
+    "sofa": {
+      "file": "sofa.glb",
+      "original": "couch.gltf",
+      "size": {
+        "width": 3.0,
+        "height": 1.22406,
+        "depth": 1.6
+      },
+      "triangles": 636,
+      "bytes": 31024,
+      "sha256": "2cac98115f0a85e967db3ab037eea8bc4052c471d772940baf0a953a14032680"
+    },
+    "framed-photo": {
+      "file": "framed-photo.glb",
+      "original": "pictureframe_standing_A.gltf",
+      "size": {
+        "width": 0.5,
+        "height": 0.61854,
+        "depth": 0.37947
+      },
+      "triangles": 74,
+      "bytes": 13736,
+      "sha256": "aa65def2f2adf69849a4c1ea2c481fd341585af522df89507e47229295d5fc8a"
+    },
+    "plant": {
+      "file": "plant.glb",
+      "original": "cactus_medium_A.gltf",
+      "size": {
+        "width": 0.87991,
+        "height": 0.82725,
+        "depth": 0.83684
+      },
+      "triangles": 448,
+      "bytes": 27232,
+      "sha256": "ef8a9bde9d6d89144d5b5556a007c98f46fccc3993efc931b2ad048e1ebe98cf"
+    }
+  }
+}

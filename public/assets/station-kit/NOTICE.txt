@@ -1,0 +1,18 @@
+Station interior asset sources
+
+KayKit Furniture Bits 1.0
+Copyright Kay Lousberg. CC0 1.0 Universal.
+https://github.com/KayKit-Game-Assets/KayKit-Furniture-Bits-1.0
+Source commit: 96d5930a8dbdb363409bbc2d3341718b00e17c9c
+Modified: packed to self-contained GLB, floor-centered origins, 256px gradient atlas.
+Original geometry and UVs retained. See LICENSE-KayKit.txt and kaykit-manifest.json.
+
+Sheen Chair
+Copyright 2020 Wayfair, LLC. Eric Chadwick. CC0 1.0 Universal.
+https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/SheenChair
+Modified: mesh reduction, removed decorative label, neutral green upholstery,
+ordinary PBR materials, normalized 0.78m height, 512px wood color map.
+Standalone wood-grain.jpg and upholstery-weave.jpg use the same CC0 source maps.
+See SOURCE-SheenChair.md for the original author's description and license.
+
+Full provenance: docs/station-asset-sources.md in the source repository.

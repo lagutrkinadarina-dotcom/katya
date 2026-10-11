@@ -30,7 +30,10 @@ export function createReception(scene,{box,pipe,plaque,plaster,paint,floor,wood,
   // Mitered wall strips share one footprint at every bend. Box end caps cannot leave
   // the former narrow columns or overlapping faces at the lobby/passage corners.
   const wallStrip=points=>createWallStrip(scene,points,ground,[[1.2,paint],[2.165,plaster]]);
-  wallStrip([[9.3,2.56],[2.9,2.56],[2.9,6.83],[-2.9,6.83],[-2.9,-6.2],[2.9,-6.2],[2.9,PASSAGE.north],[12.3,PASSAGE.north],[12.3,5.44],[2.98,5.44]]);
+  // Leave the straight eastbound passage open to the new basement flight;
+  // the right-hand landing still leads to the original staircase upstairs.
+  wallStrip([[9.3,2.56],[2.9,2.56],[2.9,6.83],[-2.9,6.83],[-2.9,-6.2],[2.9,-6.2],[2.9,PASSAGE.north],[12.3,PASSAGE.north]]);
+  wallStrip([[12.3,PASSAGE.south],[12.3,5.44],[2.98,5.44]]);
   // The access door belongs to the existing stair passage, facing the reception lobby.
   const doorway=new THREE.Group();doorway.name='stair-double-door';doorway.position.set(2.9,ground,PASSAGE.center);doorway.rotation.y=-Math.PI/2;scene.add(doorway);
   for(const x of [-1.09,1.09])box(.085,2.34,.2,x,1.17,0,frame,doorway);

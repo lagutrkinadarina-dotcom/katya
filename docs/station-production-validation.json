@@ -1,0 +1,58 @@
+{
+  "source": "Unmodified extracted production ZIP; ordinary UI, save-file setup and player mouse/E handlers only. No development API or source overrides.",
+  "models": [
+    {
+      "url": "http://localhost:5195/assets/detainee-man-BWiErJsN.glb",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:5195/assets/detainee-woman-B066sAhp.glb",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:5195/assets/officer-duty-BTIgDUex.glb",
+      "status": 200
+    }
+  ],
+  "resources": [
+    {
+      "url": "http://localhost:5195/assets/station-kit/wood-grain.jpg",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:5195/assets/station-kit/chair.glb",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:5195/assets/station-kit/plant.glb",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:5195/assets/station-kit/framed-photo.glb",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:5195/assets/station-kit/books.glb",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:5195/assets/station-kit/standing-lamp.glb",
+      "status": 200
+    }
+  ],
+  "errors": [],
+  "failures": [],
+  "assertions": [
+    "Production build does not expose development API",
+    "Actual corridor E opens 3D office with no illustrated room or hotspot overlay",
+    "Physical office door returns to second-floor corridor via player look and E",
+    "Pause remains available after leaving a 3D room",
+    "Duty officer can still be engaged via actual player E",
+    "Officer dialogue returns control and supports pause",
+    "All three current NPC model assets load with HTTP 200",
+    "Packaged CC0 furniture models load with HTTP 200",
+    "No JavaScript exceptions or missing production resources"
+  ],
+  "finished": "2026-10-11T00:17:39.844Z",
+  "archiveSha256": "6ef7c030a371f11ab87346e8345aca78aa51551d7863702036047cfc5faf8c6b"
+}
